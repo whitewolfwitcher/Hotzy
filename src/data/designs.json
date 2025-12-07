@@ -1,0 +1,306 @@
+[
+  {
+    "id": "chibi-ninja",
+    "title": "Chibi Ninja",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-a8871cec-20251111010407.jpg",
+    "style": "anime",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#101820", "#1D4ED8", "#10B981"],
+    "tags": ["anime", "chibi", "character", "kids"],
+    "wrap": "panel",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/chibi-ninja@2048.png",
+      "fit": "contain",
+      "area": "safe",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "watercolor-floral",
+    "title": "Watercolor Floral",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-52ed112a-20251111010405.jpg",
+    "style": "floral",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#EE609C", "#FFD166", "#06AED5", "#6DD3B5"],
+    "tags": ["pattern", "wrap", "spring", "colorful"],
+    "wrap": "full",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/watercolor-floral@4096.png",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "minimal-lines",
+    "title": "Minimal Lines",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-572f9a88-20251111010405.jpg",
+    "style": "abstract",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#2B6CB0", "#68D4E6", "#1F2937"],
+    "tags": ["minimal", "abstract", "clean"],
+    "wrap": "panel",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/minimal-lines@2048.png",
+      "fit": "contain",
+      "area": "safe",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "mountain-forest-matte",
+    "title": "Mountain Forest",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-4242e947-20251111015321.jpg",
+    "style": "outdoors",
+    "base_color": "matte_white",
+    "finish": "matte",
+    "palette": ["#0B0F0E", "#19D67E", "#0E5A2B"],
+    "tags": ["outdoors", "nature", "mountain", "forest"],
+    "wrap": "panel",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/mountain-forest@2048.png",
+      "fit": "contain",
+      "area": "safe",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "galaxy-dreams",
+    "title": "Galaxy Dreams",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-b7f26a2d-20251111015321.jpg",
+    "style": "cosmic",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#6D28D9", "#9333EA", "#0EA5E9"],
+    "tags": ["space", "stars", "fantasy", "cosmic"],
+    "wrap": "full",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/galaxy-dreams@2048.png",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "neon-grid",
+    "title": "Neon Grid",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-156c4d9c-20251111015322.jpg",
+    "style": "futuristic",
+    "base_color": "matte_white",
+    "finish": "matte",
+    "palette": ["#00FF66", "#1E40AF", "#000000"],
+    "tags": ["tech", "retro", "neon", "grid"],
+    "wrap": "full",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/neon-grid@2048.png",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "sunset-vibes",
+    "title": "Sunset Vibes",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-3d938261-20251111010413.jpg",
+    "style": "aesthetic",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#F97316", "#FB923C", "#F59E0B"],
+    "tags": ["sunset", "warm", "gradient"],
+    "wrap": "full",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/sunset-vibes@2048.png",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "vaporwave-dream",
+    "title": "Vaporwave Dream",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-2ad624e7-20251111010410.jpg",
+    "style": "retro",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#EC4899", "#8B5CF6", "#06B6D4"],
+    "tags": ["vaporwave", "retro", "artistic"],
+    "wrap": "full",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/vaporwave-dream@2048.png",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "geometric-blue",
+    "title": "Geometric Blue",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-6590e35f-20251111010407.jpg",
+    "style": "geometric",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#1D4ED8", "#60A5FA", "#E0E7FF"],
+    "tags": ["geometry", "modern", "minimal", "blue"],
+    "wrap": "panel",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/geometric-blue@2048.png",
+      "fit": "contain",
+      "area": "safe",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "cyber-samurai",
+    "title": "Cyber Samurai",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-a-wh-3b3bef29-20251111015850.jpg",
+    "style": "cyberpunk",
+    "base_color": "matte_white",
+    "finish": "matte",
+    "palette": ["#22D3EE", "#A855F7", "#0F172A"],
+    "tags": ["cyberpunk", "neon", "samurai", "futuristic"],
+    "wrap": "full",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/cyber-samurai@2048.png",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "botanical-haven",
+    "title": "Botanical Haven",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-5a5fe4e3-20251111010417.jpg",
+    "style": "nature",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#34D399", "#059669", "#064E3B"],
+    "tags": ["plants", "greenery", "nature", "botanical"],
+    "wrap": "full",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/botanical-haven@2048.png",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "street-art-burst",
+    "title": "Street Art Burst",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-59ed5515-20251111010419.jpg",
+    "style": "urban",
+    "base_color": "gloss_white",
+    "finish": "matte",
+    "palette": ["#F43F5E", "#3B82F6", "#10B981"],
+    "tags": ["graffiti", "urban", "colorful"],
+    "wrap": "full",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/street-art-burst@2048.png",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "tropical-paradise",
+    "title": "Tropical Paradise",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-6e8eacb5-20251111010421.jpg",
+    "style": "vacation",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#34D399", "#FBBF24", "#EF4444"],
+    "tags": ["summer", "beach", "bright"],
+    "wrap": "full",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/tropical-paradise@2048.png",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "neural-illusion",
+    "title": "Neural Illusion",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-32a999e6-20251111015325.jpg",
+    "style": "sci-fi",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#00E0FF", "#0044FF", "#000000"],
+    "tags": ["futuristic", "pattern", "ai"],
+    "wrap": "full",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/neural-illusion@2048.png",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "zen-wave",
+    "title": "Zen Wave",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-4b27df5f-20251111010442.jpg",
+    "style": "minimal",
+    "base_color": "gloss_white",
+    "finish": "matte",
+    "palette": ["#9CA3AF", "#4B5563", "#E5E7EB"],
+    "tags": ["japanese", "minimal", "calm", "zen"],
+    "wrap": "panel",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/zen-wave@2048.png",
+      "fit": "contain",
+      "area": "safe",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "sunrise-mist",
+    "title": "Sunrise Mist",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/professional-product-photography-of-whit-103418e9-20251111010422.jpg",
+    "style": "serene",
+    "base_color": "gloss_white",
+    "finish": "matte",
+    "palette": ["#FDE68A", "#F59E0B", "#7DD3FC"],
+    "tags": ["morning", "pastel", "soft", "sunrise"],
+    "wrap": "full",
+    "print_method": "sublimation",
+    "payload_to_customizer": {
+      "overlay_image_url": "/designs/sunrise-mist@2048.png",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  }
+]

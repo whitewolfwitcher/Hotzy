@@ -1,0 +1,353 @@
+/* Updated: 2025-11-15T15:42:10.502Z */
+/* Updated: 2025-11-14T22:39:18.583Z */
+/* Updated: 2025-11-14T02:11:47.486Z */
+/* Updated: 2025-11-14T00:45:40.412Z */
+/* Updated: 2025-11-14T00:07:07.083Z */
+/* Updated: 2025-11-12T23:26:47.160Z */
+/* Updated: 2025-11-11T23:27:40.149Z */
+/* Updated: 2025-11-10T23:21:52.964Z */
+/* Updated: 2025-11-10T01:15:03.971Z */
+/* Updated: 2025-11-09T22:47:41.930Z */
+/* Updated: 2025-11-09T18:49:40.902Z */
+/* Updated: 2025-11-09T16:44:35.573Z */
+/* Updated: 2025-11-09T01:05:39.907Z */
+/* Updated: 2025-11-08T21:36:33.857Z */
+/* Updated: 2025-11-08T21:19:51.505Z */
+/* Updated: 2025-11-08T20:47:54.642Z */
+/* Updated: 2025-11-08T18:50:15.447Z */
+/* Updated: 2025-11-08T18:48:18.865Z */
+/* Updated: 2025-11-08T18:36:51.298Z */
+/* Updated: 2025-11-08T17:58:21.372Z */
+/* Updated: 2025-11-07T00:43:56.439Z */
+/* Updated: 2025-11-06T22:44:09.274Z */
+/* Updated: 2025-11-06T22:09:38.178Z */
+/* Updated: 2025-11-06T22:05:23.530Z */
+/* Updated: 2025-11-06T22:02:58.017Z */
+/* Updated: 2025-11-06T00:22:54.687Z */
+/* Updated: 2025-11-05T23:26:53.962Z */
+/* Updated: 2025-11-05T23:00:27.749Z */
+/* Updated: 2025-11-05T22:04:50.437Z */
+/* Updated: 2025-11-04T02:02:48.063Z */
+/* Updated: 2025-11-04T01:52:21.050Z */
+/* Updated: 2025-11-04T01:50:38.846Z */
+/* Updated: 2025-11-03T21:43:24.240Z */
+/* Updated: 2025-11-03T09:52:13.292Z */
+/* Updated: 2025-11-03T00:58:18.417Z */
+/* Updated: 2025-11-02T14:13:54.718Z */
+/* Updated: 2025-11-02T02:14:29.239Z */
+/* Updated: 2025-11-01T16:06:48.753Z */
+/* Updated: 2025-11-01T15:48:59.270Z */
+/* Updated: 2025-11-01T00:47:04.823Z */
+/* Updated: 2025-10-31T20:37:14.435Z */
+/* Updated: 2025-10-31T00:43:25.468Z */
+/* Updated: 2025-10-30T10:27:19.555Z */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-background: #000000;
+  --color-foreground: #FFFFFF;
+
+  --color-card: #1A1A1A;
+  --color-card-foreground: #FFFFFF;
+
+  --color-popover: #1A1A1A;
+  --color-popover-foreground: #FFFFFF;
+
+  --color-primary: #76B900;
+  --color-primary-foreground: #000000;
+
+  --color-secondary: #1A1A1A;
+  --color-secondary-foreground: #FFFFFF;
+
+  --color-muted: #666666;
+  --color-muted-foreground: #B8B8B8;
+
+  --color-accent: #2A2A2A;
+  --color-accent-foreground: #FFFFFF;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #FFFFFF;
+
+  --color-border: #333333;
+  --color-input: #1A1A1A;
+  --color-ring: #76B900;
+
+  --color-chart-1: #76B900;
+  --color-chart-2: #666666;
+  --color-chart-3: #1e3a5f;
+  --color-chart-4: #f1c40f;
+  --color-chart-5: #e74c3c;
+
+  --color-sidebar: #000000;
+  --color-sidebar-foreground: #FFFFFF;
+  --color-sidebar-primary: #76B900;
+  --color-sidebar-primary-foreground: #000000;
+  --color-sidebar-accent: #1A1A1A;
+  --color-sidebar-accent-foreground: #FFFFFF;
+  --color-sidebar-border: #333333;
+  --color-sidebar-ring: #76B900;
+
+  --radius-lg: 0.5rem;
+  --radius-md: calc(0.5rem - 2px);
+  --radius-sm: calc(0.5rem - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-fade-in: fade-in 0.8s ease-out forwards;
+  --animate-slide-up: slide-up 0.8s ease-out forwards;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  --color-primary-green: #76B900;
+  --color-black: #000000;
+  --color-dark-gray-1: #1A1A1A;
+  --color-dark-gray-2: #2A2A2A;
+  --color-dark-gray-3: #333333;
+  --color-medium-gray: #666666;
+  --color-light-gray: #B8B8B8;
+  --color-white: #FFFFFF;
+  --color-accent-green-light: #9ACD32;
+  --color-accent-green-glow: rgba(118, 185, 0, 0.3);
+  --color-black-overlay: rgba(0, 0, 0, 0.7);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+/*
+  The default border color has changed to currentColor in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border);
+  }
+}
+
+@layer utilities {
+  body {
+    font-family: var(--font-body);
+  }
+}
+
+@layer base {
+  :root {
+    --background: var(--color-background);
+    --foreground: var(--color-foreground);
+    --card: var(--color-card);
+    --card-foreground: var(--color-card-foreground);
+    --popover: var(--color-popover);
+    --popover-foreground: var(--color-popover-foreground);
+    --primary: var(--color-primary);
+    --primary-foreground: var(--color-primary-foreground);
+    --secondary: var(--color-secondary);
+    --secondary-foreground: var(--color-secondary-foreground);
+    --muted: var(--color-muted);
+    --muted-foreground: var(--color-muted-foreground);
+    --accent: var(--color-accent);
+    --accent-foreground: var(--color-accent-foreground);
+    --destructive: var(--color-destructive);
+    --destructive-foreground: var(--color-destructive-foreground);
+    --border: var(--color-border);
+    --input: var(--color-input);
+    --ring: var(--color-ring);
+    --chart-1: var(--color-chart-1);
+    --chart-2: var(--color-chart-2);
+    --chart-3: var(--color-chart-3);
+    --chart-4: var(--color-chart-4);
+    --chart-5: var(--color-chart-5);
+    --radius: var(--radius-md);
+    --sidebar-background: var(--color-sidebar);
+    --sidebar-foreground: var(--color-sidebar-foreground);
+    --sidebar-primary: var(--color-sidebar-primary);
+    --sidebar-primary-foreground: var(--color-sidebar-primary-foreground);
+    --sidebar-accent: var(--color-sidebar-accent);
+    --sidebar-accent-foreground: var(--color-sidebar-accent-foreground);
+    --sidebar-border: var(--color-sidebar-border);
+    --sidebar-ring: var(--color-sidebar-ring);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-body);
+    font-size: 1rem; /* Body */
+    line-height: 1.6;
+    color: var(--color-light-gray);
+    background-color: var(--color-black);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    color: var(--color-white);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  h1 {
+    font-size: 3.5rem; /* H1 */
+  }
+
+  h2 {
+    font-size: 2.5rem; /* H2 */
+  }
+
+  h3 {
+    font-size: 2rem; /* H3 */
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  h4 {
+    font-size: 1.5rem; /* H4 */
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  p {
+    margin-bottom: 1rem;
+  }
+
+  a {
+    color: var(--color-white);
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+  }
+
+  a:hover {
+    color: var(--color-primary-green);
+  }
+
+  .text-hero-h1 {
+    font-size: 4.5rem; /* Hero H1 */
+    font-weight: 700; /* Can be 900 */
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .text-body-large {
+    font-size: 1.25rem; /* Body Large */
+    font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: 0;
+  }
+
+  .text-body-small {
+    font-size: 0.875rem; /* Body Small */
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0;
+  }
+
+  .text-caption {
+    font-size: 0.75rem; /* Caption */
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+  }
+
+  .text-button {
+    font-size: 1rem; /* Button */
+    font-weight: 700; /* Can be 600 */
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+
+  .text-nav {
+    font-size: 0.875rem; /* Nav */
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+
+  .text-eyebrow {
+    font-size: 0.875rem; /* Eyebrow */
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .text-price {
+    font-size: 2rem; /* Price */
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+
+  .container {
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 64px; /* Desktop */
+    padding-right: 64px; /* Desktop */
+  }
+
+  @media (max-width: 1023px) {
+    .container {
+      padding-left: 48px; /* Tablet */
+      padding-right: 48px; /* Tablet */
+    }
+  }
+
+  @media (max-width: 767px) {
+    .container {
+      padding-left: 24px; /* Mobile */
+      padding-right: 24px; /* Mobile */
+    }
+  }
+}
+
+/* Hide Next.js error overlay portal */
+nextjs-portal {
+  display: none !important;
+}
