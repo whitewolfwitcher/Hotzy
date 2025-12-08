@@ -1,17 +1,17 @@
-// next.config.ts
-import type { NextConfig } from "next";
+// next.config.mjs
 import path from "node:path";
 
 const LOADER = path.resolve(
-  __dirname,
+  process.cwd(),
   "src/visual-edits/component-tagger-loader.js"
 );
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   // We removed `output: "export"` earlier so API routes + Stripe work.
 
   // Allow dev access from your LAN IP (192.168.2.63:3000)
-  // so the future Next.js versions won't block /_next/* requests.
+  // so future Next.js versions won't block /_next/* requests.
   allowedDevOrigins: ["192.168.2.63:3000"],
 
   images: {
@@ -29,7 +29,8 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  outputFileTracingRoot: path.resolve(__dirname, "../../"),
+  // Keep your previous setting for output tracing root
+  outputFileTracingRoot: path.resolve(process.cwd(), "../../"),
 
   typescript: {
     ignoreBuildErrors: true,
