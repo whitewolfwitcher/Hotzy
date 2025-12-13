@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ShoppingCart,
@@ -30,19 +30,44 @@ const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 );
 
+type ShippingInfo = {
+  fullName: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string; // keep name for now; can be postal code in UI
+  country: string; // user input; we map to ISO for Stripe
+};
+
+function normalizeCountryToISO2(input: string): string | undefined {
+  const v = (input || "").trim().toLowerCase();
+  if (!v) return undefined;
+
+  // Common cases
+  if (v === "ca" || v.includes("canada")) return "CA";
+  if (v === "us" || v.includes("united states") || v.includes("usa")) return "US";
+
+  // If user already typed ISO2, accept it
+  if (v.length === 2) return v.toUpperCase();
+
+  // Unknown free-text country: omit (Stripe will still process the payment)
+  return undefined;
+}
+
 function CheckoutPageInner() {
   const router = useRouter();
   const { items, updateQuantity, removeItem, getTotalPrice, clearCart } =
     useCart();
 
-  const [shippingInfo, setShippingInfo] = useState({
+  const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     fullName: "",
     email: "",
     address: "",
     city: "",
     state: "",
     zipCode: "",
-    country: "United States",
+    country: "Canada",
   });
 
   const stripe = useStripe();
@@ -53,6 +78,11 @@ function CheckoutPageInner() {
   const shipping = subtotal > 50 ? 0 : 5.99;
   const tax = subtotal * 0.08; // 8% tax
   const total = subtotal + shipping + tax;
+
+  const countryISO2 = useMemo(
+    () => normalizeCountryToISO2(shippingInfo.country),
+    [shippingInfo.country]
+  );
 
   const handleQuantityChange = (id: string, change: number) => {
     const item = items.find((item) => item.id === id);
@@ -72,18 +102,17 @@ function CheckoutPageInner() {
     }
 
     // Validate shipping info
-    const requiredFields = [
+    const requiredFields: (keyof ShippingInfo)[] = [
       "fullName",
       "email",
       "address",
       "city",
       "state",
       "zipCode",
-    ] as const;
+      "country",
+    ];
 
-    const missingFields = requiredFields.filter(
-      (field) => !shippingInfo[field]
-    );
+    const missingFields = requiredFields.filter((field) => !shippingInfo[field]);
 
     if (missingFields.length > 0) {
       toast.error("Please fill in all shipping information");
@@ -133,12 +162,22 @@ function CheckoutPageInner() {
       const clientSecret = data.clientSecret as string;
 
       // 2) Confirm the card payment with Stripe
+      // IMPORTANT:
+      // - We hide Stripe's built-in postal/zip field (numeric-only)
+      // - We send your own postal code here, which supports letters (e.g., M5V 2T6)
       const result = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: cardElement,
           billing_details: {
             name: shippingInfo.fullName,
             email: shippingInfo.email,
+            address: {
+              line1: shippingInfo.address,
+              city: shippingInfo.city,
+              state: shippingInfo.state,
+              postal_code: shippingInfo.zipCode,
+              country: countryISO2, // "CA" / "US" (or undefined)
+            },
           },
         },
       });
@@ -253,6 +292,7 @@ function CheckoutPageInner() {
                         placeholder="John Doe"
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-muted-foreground mb-2">
                         Email
@@ -270,6 +310,7 @@ function CheckoutPageInner() {
                         placeholder="john@example.com"
                       />
                     </div>
+
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-muted-foreground mb-2">
                         Address
@@ -287,6 +328,7 @@ function CheckoutPageInner() {
                         placeholder="123 Main St"
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-muted-foreground mb-2">
                         City
@@ -301,12 +343,13 @@ function CheckoutPageInner() {
                           })
                         }
                         className="w-full px-4 py-3 bg-black border border-border rounded-lg text-white focus:border-primary focus:outline-none"
-                        placeholder="San Francisco"
+                        placeholder="Toronto"
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-muted-foreground mb-2">
-                        State
+                        State / Province
                       </label>
                       <input
                         type="text"
@@ -318,12 +361,13 @@ function CheckoutPageInner() {
                           })
                         }
                         className="w-full px-4 py-3 bg-black border border-border rounded-lg text-white focus:border-primary focus:outline-none"
-                        placeholder="CA"
+                        placeholder="ON"
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-muted-foreground mb-2">
-                        ZIP Code
+                        Postal Code
                       </label>
                       <input
                         type="text"
@@ -335,9 +379,10 @@ function CheckoutPageInner() {
                           })
                         }
                         className="w-full px-4 py-3 bg-black border border-border rounded-lg text-white focus:border-primary focus:outline-none"
-                        placeholder="94103"
+                        placeholder="M5V 2T6"
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-muted-foreground mb-2">
                         Country
@@ -352,6 +397,7 @@ function CheckoutPageInner() {
                           })
                         }
                         className="w-full px-4 py-3 bg-black border border-border rounded-lg text-white focus:border-primary focus:outline-none"
+                        placeholder="Canada"
                       />
                     </div>
                   </div>
@@ -399,6 +445,7 @@ function CheckoutPageInner() {
                     <div className="p-4 bg-black border border-border rounded-lg">
                       <CardElement
                         options={{
+                          hidePostalCode: true, // IMPORTANT: allow alphanumeric postal codes via your own input
                           style: {
                             base: {
                               fontSize: "16px",
@@ -478,9 +525,7 @@ function CheckoutPageInner() {
                           </h3>
                           <div className="flex items-center gap-2 mt-2">
                             <button
-                              onClick={() =>
-                                handleQuantityChange(item.id, -1)
-                              }
+                              onClick={() => handleQuantityChange(item.id, -1)}
                               className="w-6 h-6 bg-card border border-border rounded flex items-center justify-center hover:border-primary transition-colors"
                             >
                               -
@@ -489,9 +534,7 @@ function CheckoutPageInner() {
                               {item.quantity}
                             </span>
                             <button
-                              onClick={() =>
-                                handleQuantityChange(item.id, 1)
-                              }
+                              onClick={() => handleQuantityChange(item.id, 1)}
                               className="w-6 h-6 bg-card border border-border rounded flex items-center justify-center hover:border-primary transition-colors"
                             >
                               +
