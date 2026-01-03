@@ -286,23 +286,23 @@ export default function CustomizerPage() {
 
   const { addItem } = useCart();
   const router = useRouter();
-  const { currency, convertPrice, getText } = usePreferences();
+  const { currency, getText } = usePreferences();
 
   // Calculate number of uploaded images (not templates)
   const uploadedImageCount = Object.values(imageTypes).filter(type => type === 'uploaded').length;
-  
-  // Calculate price based on number of UPLOADED images only
-  const getPrice = () => {
-    if (currency === 'CAD') {
-      if (uploadedImageCount === 3) return 24.99;
-      if (uploadedImageCount === 2) return 20.99;
-      return 18.99;
-    }
-    // Convert from CAD base prices
-    if (uploadedImageCount === 3) return parseFloat(convertPrice(24.99));
-    if (uploadedImageCount === 2) return parseFloat(convertPrice(20.99));
-    return parseFloat(convertPrice(18.99));
-  };
+
+  const PRICE_CAD = {
+    hotzy: 20.45,
+    standard: 15.99,
+  } as const;
+  const CAD_TO_USD = 0.74;
+
+  const basePriceCad = PRICE_CAD[cupType];
+  const displayPriceAmount = currency === 'USD' ? basePriceCad * CAD_TO_USD : basePriceCad;
+  const displayPrice = `$${new Intl.NumberFormat('en-CA', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(displayPriceAmount)} ${currency}`;
 
   // Get current active section image
   const currentSectionImage = sectionImages[activeSection];
@@ -595,7 +595,7 @@ export default function CustomizerPage() {
         productType: 'custom-mug',
         imageCount: uploadedImageCount,
       },
-      price: getPrice(),
+      price: basePriceCad,
     });
   };
 
@@ -867,7 +867,7 @@ export default function CustomizerPage() {
                       className="px-4 pb-4 md:px-6 md:pb-6"
                     >
                       <div
-                        className={`relative border-2 border-dashed rounded-xl p-6 md:p-8 text-center transition-all duration-300 ${
+                        className={`relative border-2 border-dashed rounded-xl p-4 md:p-6 text-center max-h-[240px] md:max-h-[260px] transition-all duration-300 ${
                           isDragging
                             ? 'border-primary bg-primary/10 scale-[1.02]'
                             : 'border-primary/30 bg-black/40 hover:border-primary/60 hover:bg-black/60'
@@ -886,11 +886,11 @@ export default function CustomizerPage() {
                         <label htmlFor="image-upload" className="cursor-pointer">
                           <div className="flex flex-col items-center gap-2 md:gap-3">
                             <motion.div
-                              className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-primary to-[#9ACD32] rounded-full flex items-center justify-center"
+                              className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary to-[#9ACD32] rounded-full flex items-center justify-center"
                               whileHover={{ scale: 1.1, rotate: 5 }}
                               transition={{ type: "spring" }}
                             >
-                              <Upload className="w-6 h-6 md:w-8 md:h-8 text-black" />
+                              <Upload className="w-5 h-5 md:w-6 md:h-6 text-black" />
                             </motion.div>
                             <div>
                               <p className="text-white font-semibold text-sm md:text-base mb-1">
@@ -1135,7 +1135,7 @@ export default function CustomizerPage() {
                     {getText('Pricing', 'Prix')}
                   </h3>
                   <div className="flex items-center gap-2 md:gap-3">
-                    <span className="text-lg md:text-2xl font-black text-primary">${getPrice()} {currency}</span>
+                    <span className="text-lg md:text-2xl font-black text-primary">{displayPrice}</span>
                     <ChevronDown className={`w-5 h-5 text-primary transition-transform ${expandedSections.pricing ? 'rotate-180' : ''}`} />
                   </div>
                 </button>
@@ -1149,31 +1149,12 @@ export default function CustomizerPage() {
                       className="px-4 pb-4 md:px-6 md:pb-6 space-y-2 md:space-y-3"
                     >
                       <div className="flex justify-between items-center text-xs md:text-sm">
-                        <span className="text-muted-foreground">{getText('Templates (any)', 'Modèles (tous)')}</span>
-                        <span className="text-white font-semibold">${convertPrice(18.99)}</span>
+                        <span className="text-muted-foreground">{getText('Per Mug', 'Par Tasse')}</span>
+                        <span className="text-white font-semibold">{displayPrice}</span>
                       </div>
-                      <div className="border-t border-primary/20 pt-2 md:pt-3">
-                        <p className="text-[10px] md:text-xs text-muted-foreground mb-2">{getText('Uploaded:', 'Téléchargées:')}</p>
-                        <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">{getText('1 Image', '1 Image')}</span>
-                            <span className="text-white font-semibold">${convertPrice(18.99)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">{getText('2 Images', '2 Images')}</span>
-                            <span className="text-white font-semibold">${convertPrice(20.99)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">{getText('3 Images', '3 Images')}</span>
-                            <span className="text-white font-semibold">${convertPrice(24.99)}</span>
-                          </div>
-                        </div>
+                      <div className="border-t border-primary/20 pt-2 md:pt-3 text-[10px] md:text-xs text-muted-foreground">
+                        {getText('Price depends on cup type', 'Le prix depend du type de tasse')}
                       </div>
-                      {uploadedImageCount > 0 && (
-                        <p className="text-[10px] md:text-xs text-muted-foreground pt-2 border-t border-primary/20">
-                          {getText(`Based on ${uploadedImageCount} uploaded`, `Basé sur ${uploadedImageCount} téléchargée(s)`)}
-                        </p>
-                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1236,7 +1217,7 @@ export default function CustomizerPage() {
                   whileTap={{ scale: 0.98 }}
                 >
                   <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
-                  {getText('Order Now', 'Commander')} - ${getPrice()} {currency}
+                  {getText('Order Now', 'Commander')} - {displayPrice}
                   <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                 </motion.button>
 
