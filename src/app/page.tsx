@@ -1,5 +1,4 @@
 import NavigationHeader from "@/components/sections/navigation-header";
-import StickyNavTabs from "@/components/sections/sticky-nav-tabs";
 import HotzyHero from "@/components/sections/hotzy-hero";
 import GallerySection from "@/components/sections/gallery-section";
 import StorySlides from "@/components/sections/story-slides";
@@ -13,7 +12,6 @@ export default function Home() {
     <div className="min-h-screen bg-black">
       <NavigationHeader />
       <HotzyHero />
-      <StickyNavTabs />
       <GallerySection />
       <StorySlides />
       <FeaturesSection />
