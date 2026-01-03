@@ -1,13 +1,13 @@
-import { Canvas, useThree } from '@react-three/fiber'
-import { Suspense, useEffect, useRef, type RefObject } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { Suspense } from 'react'
 import { OrbitControls, ContactShadows } from '@react-three/drei'
 import Mug from './Mug'
 import * as THREE from 'three'
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 
 interface MugViewerProps {
   customImage?: string | null
   dividedMode?: boolean
+  cupType?: 'hotzy' | 'standard'
   sectionImages?: {
     section1: string | null
     section2: string | null
@@ -19,14 +19,14 @@ interface MugViewerProps {
 }
 
 // Balanced mid-tone studio floor
-function BalancedStudioFloor() {
+function BalancedStudioFloor({ floorColor }: { floorColor: string }) {
   return (
     <group>
       {/* Mid-gray floor with minimal reflection */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.045, 0]} receiveShadow>
         <planeGeometry args={[8, 8]} />
         <meshStandardMaterial 
-          color="#D4D4D4"
+          color={floorColor}
           roughness={0.9}
           metalness={0.1}
         />
@@ -46,83 +46,26 @@ function BalancedStudioFloor() {
   )
 }
 
-function AutoFrame({
-  targetRef,
-  controlsRef
-}: {
-  targetRef: RefObject<THREE.Object3D>
-  controlsRef: RefObject<OrbitControlsImpl>
-}) {
-  const { camera, invalidate } = useThree()
-  const hasFramed = useRef(false)
-
-  useEffect(() => {
-    if (hasFramed.current) return
-    let frameId = 0
-
-    const frame = () => {
-      const target = targetRef.current
-      if (!target) {
-        frameId = requestAnimationFrame(frame)
-        return
-      }
-
-      const box = new THREE.Box3().setFromObject(target)
-      if (box.isEmpty()) {
-        frameId = requestAnimationFrame(frame)
-        return
-      }
-
-      const sphere = box.getBoundingSphere(new THREE.Sphere())
-      const center = sphere.center
-      const radius = Math.max(sphere.radius, 0.001)
-      const fov = THREE.MathUtils.degToRad(camera.fov)
-      const fitOffset = 1.25
-      const distance = (radius / Math.sin(fov / 2)) * fitOffset
-
-      camera.position.set(center.x + distance * 0.12, center.y + distance * 0.05, center.z + distance)
-      camera.near = Math.max(distance / 100, 0.01)
-      camera.far = Math.max(distance * 10, 10)
-      camera.updateProjectionMatrix()
-
-      const controls = controlsRef.current
-      if (controls) {
-        controls.target.copy(center)
-        controls.minDistance = radius * 1.1
-        controls.maxDistance = radius * 3.5
-        controls.update()
-      }
-
-      hasFramed.current = true
-      invalidate()
-    }
-
-    frame()
-    return () => {
-      if (frameId) cancelAnimationFrame(frameId)
-    }
-  }, [camera, controlsRef, invalidate, targetRef])
-
-  return null
-}
-
 export default function MugViewer({ 
   customImage, 
   dividedMode,
+  cupType = 'hotzy',
   sectionImages,
   imagePosition = { x: 0, y: 0 },
   imageZoom = 1,
   imageRotation = 0
 }: MugViewerProps) {
-  const mugGroupRef = useRef<THREE.Group>(null)
-  const controlsRef = useRef<OrbitControlsImpl>(null)
+  const backgroundColor = cupType === 'standard' ? '#F4F4F4' : '#D8D8D8'
+  const floorColor = cupType === 'standard' ? '#E6E6E6' : '#D4D4D4'
+  const initialCameraPosition: [number, number, number] = [0, 0.06, 0.34]
+  const initialTarget: [number, number, number] = [0, 0.05, 0]
 
   return (
-    <div className="h-[70vh] w-full relative overflow-hidden rounded-lg border border-border" style={{ background: '#D8D8D8' }}>
+    <div className="h-[70vh] w-full relative overflow-hidden rounded-lg border border-border" style={{ background: backgroundColor }}>
       <Canvas
         shadows
         camera={{ 
-          position: [0, 0.06, 0.34], 
+          position: initialCameraPosition, 
           fov: 35, 
           near: 0.05, 
           far: 8 
@@ -143,11 +86,11 @@ export default function MugViewer({
           gl.outputColorSpace = THREE.SRGBColorSpace
           gl.shadowMap.enabled = true
           gl.shadowMap.type = THREE.PCFSoftShadowMap
-          scene.background = new THREE.Color('#D8D8D8')
+          scene.background = new THREE.Color(backgroundColor)
         }}
       >
         {/* Mid-tone neutral gray background */}
-        <color attach="background" args={['#D8D8D8']} />
+        <color attach="background" args={[backgroundColor]} />
 
         {/* Balanced studio lighting - performance optimized */}
         
@@ -188,14 +131,15 @@ export default function MugViewer({
 
         <Suspense fallback={null}>
           {/* Balanced studio floor */}
-          <BalancedStudioFloor />
+          <BalancedStudioFloor floorColor={floorColor} />
 
           {/* Mug with material tuning for balanced look */}
-          <group ref={mugGroupRef} position={[0, 0, 0]} rotation={[0, 0.15, 0]} scale={[1, 1, 1]}>
+          <group position={[0, 0, 0]} rotation={[0, 0.15, 0]} scale={[1, 1, 1]}>
             <Mug 
               scale={1.5} 
               customImage={customImage} 
               dividedMode={dividedMode}
+              cupType={cupType}
               sectionImages={sectionImages}
               imagePosition={imagePosition}
               imageZoom={imageZoom}
@@ -204,20 +148,17 @@ export default function MugViewer({
           </group>
         </Suspense>
 
-        <AutoFrame targetRef={mugGroupRef} controlsRef={controlsRef} />
-
         {/* Orbit controls - with right-click pan for easier movement */}
         <OrbitControls
-          ref={controlsRef}
           enablePan={true}
           enableZoom={true}
           enableRotate={true}
           autoRotate={false}
           enableDamping={true}
           dampingFactor={0.1}
-          minDistance={0.28}
-          maxDistance={0.85}
-          target={[0, 0, 0]}
+          minDistance={0.22}
+          maxDistance={1.1}
+          target={initialTarget}
           mouseButtons={{
             LEFT: THREE.MOUSE.ROTATE,
             RIGHT: THREE.MOUSE.PAN

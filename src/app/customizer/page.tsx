@@ -247,6 +247,7 @@ export default function CustomizerPage() {
   const [activeSection, setActiveSection] = useState<'section1' | 'section2' | 'section3'>('section1');
   const [isDragging, setIsDragging] = useState(false);
   const [applyTemplateToAll, setApplyTemplateToAll] = useState(false);
+  const [cupType, setCupType] = useState<'hotzy' | 'standard'>('hotzy');
   
   // Image position controls
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
@@ -464,14 +465,7 @@ export default function CustomizerPage() {
     if (file) {
       try {
         const resizedImage = await resizeImage(file);
-        setSectionImages(prev => ({
-          ...prev,
-          [activeSection]: resizedImage
-        }));
-        setImageTypes(prev => ({
-          ...prev,
-          [activeSection]: 'uploaded'
-        }));
+        applyDesignToSections(resizedImage, 'uploaded');
       } catch (error) {
         console.error('Error resizing image:', error);
       }
@@ -486,14 +480,7 @@ export default function CustomizerPage() {
     if (file && file.type.startsWith('image/')) {
       try {
         const resizedImage = await resizeImage(file);
-        setSectionImages(prev => ({
-          ...prev,
-          [activeSection]: resizedImage
-        }));
-        setImageTypes(prev => ({
-          ...prev,
-          [activeSection]: 'uploaded'
-        }));
+        applyDesignToSections(resizedImage, 'uploaded');
       } catch (error) {
         console.error('Error resizing image:', error);
       }
@@ -509,28 +496,35 @@ export default function CustomizerPage() {
     setIsDragging(false);
   };
 
-  const handleTemplateSelect = (templateImage: string) => {
+  const applyDesignToSections = (
+    designImage: string,
+    imageType: 'uploaded' | 'template'
+  ) => {
     if (applyTemplateToAll) {
       setSectionImages({
-        section1: templateImage,
-        section2: templateImage,
-        section3: templateImage,
+        section1: designImage,
+        section2: designImage,
+        section3: designImage,
       });
       setImageTypes({
-        section1: 'template',
-        section2: 'template',
-        section3: 'template',
+        section1: imageType,
+        section2: imageType,
+        section3: imageType,
       });
     } else {
       setSectionImages(prev => ({
         ...prev,
-        [activeSection]: templateImage
+        [activeSection]: designImage
       }));
       setImageTypes(prev => ({
         ...prev,
-        [activeSection]: 'template'
+        [activeSection]: imageType
       }));
     }
+  };
+
+  const handleTemplateSelect = (templateImage: string) => {
+    applyDesignToSections(templateImage, 'template');
     // Reset position controls when selecting a template
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
@@ -671,7 +665,13 @@ export default function CustomizerPage() {
             >
               <div className="relative">
                 {/* Main viewer container */}
-                <div className="relative bg-gradient-to-br from-[#1A1A1A] via-[#0d0d0d] to-black border-2 border-primary/30 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl">
+                <div
+                  className={`relative border-2 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl ${
+                    cupType === 'standard'
+                      ? 'bg-gradient-to-br from-[#F2F2F2] via-[#E2E2E2] to-[#D5D5D5] border-white/60'
+                      : 'bg-gradient-to-br from-[#1A1A1A] via-[#0d0d0d] to-black border-primary/30'
+                  }`}
+                >
                   {/* Corner accents - hidden on small mobile */}
                   <div className="hidden sm:block absolute top-0 left-0 w-12 h-12 md:w-20 md:h-20 border-t-2 border-l-2 border-primary rounded-tl-2xl md:rounded-tl-3xl z-10" />
                   <div className="hidden sm:block absolute top-0 right-0 w-12 h-12 md:w-20 md:h-20 border-t-2 border-r-2 border-primary rounded-tr-2xl md:rounded-tr-3xl z-10" />
@@ -686,6 +686,7 @@ export default function CustomizerPage() {
                     <MugViewer 
                       customImage={null}
                       dividedMode={true}
+                      cupType={cupType}
                       sectionImages={sectionImages}
                       imagePosition={imagePosition}
                       imageRotation={imageRotation}
@@ -735,6 +736,36 @@ export default function CustomizerPage() {
                     <h3 className="text-sm md:text-lg font-bold text-white">
                       {getText('Select Section', 'Sélectionner Section')}
                     </h3>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <span className="text-xs md:text-sm text-muted-foreground">
+                      {getText('Cup Type', 'Type de Tasse')}
+                    </span>
+                    <div className="flex items-center gap-2 bg-black/40 border border-primary/30 rounded-full p-1">
+                      <button
+                        type="button"
+                        onClick={() => setCupType('hotzy')}
+                        className={`px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold transition-all ${
+                          cupType === 'hotzy'
+                            ? 'bg-primary text-black'
+                            : 'text-white/80 hover:text-white'
+                        }`}
+                      >
+                        Hotzy
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCupType('standard')}
+                        className={`px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold transition-all ${
+                          cupType === 'standard'
+                            ? 'bg-primary text-black'
+                            : 'text-white/80 hover:text-white'
+                        }`}
+                      >
+                        Standard
+                      </button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2">

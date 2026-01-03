@@ -12,13 +12,15 @@ function FallbackMug({
   sectionImages,
   imagePosition = { x: 0, y: 0 },
   imageZoom = 1,
-  imageRotation = 0
+  imageRotation = 0,
+  cupType = 'hotzy'
 }: { 
   scale?: number | [number, number, number]
   position?: [number, number, number]
   rotation?: [number, number, number]
   customImage?: string | null
   dividedMode?: boolean
+  cupType?: 'hotzy' | 'standard'
   sectionImages?: {
     section1: string | null
     section2: string | null
@@ -186,6 +188,8 @@ function FallbackMug({
     }
   }, [texture])
 
+  const mugBaseColor = cupType === 'standard' ? '#f5f5f5' : '#1a1a1a'
+
   return (
     <group scale={scale} position={position} rotation={rotation}>
       {/* Main cylindrical body - Black matte ceramic with optional custom texture */}
@@ -201,9 +205,9 @@ function FallbackMug({
         />
         <meshStandardMaterial 
           ref={materialRef}
-          color={texture ? "#ffffff" : "#1a1a1a"}
+          color={texture ? "#ffffff" : mugBaseColor}
           map={texture}
-          roughness={0.8} 
+          roughness={cupType === 'standard' ? 0.7 : 0.8} 
           metalness={0.0}
           side={THREE.FrontSide}
         />
@@ -257,8 +261,8 @@ function FallbackMug({
             ]} 
           />
           <meshStandardMaterial 
-            color="#1a1a1a" 
-            roughness={0.8} 
+            color={mugBaseColor} 
+            roughness={cupType === 'standard' ? 0.7 : 0.8} 
             metalness={0.0}
           />
         </mesh>
@@ -273,8 +277,8 @@ function FallbackMug({
             args={[HANDLE_THICKNESS / 2, HANDLE_THICKNESS / 2, HANDLE_RADIUS * 2, 8]} 
           />
           <meshStandardMaterial 
-            color="#1a1a1a" 
-            roughness={0.8} 
+            color={mugBaseColor} 
+            roughness={cupType === 'standard' ? 0.7 : 0.8} 
             metalness={0.0}
           />
         </mesh>
@@ -288,8 +292,8 @@ function FallbackMug({
             args={[HANDLE_THICKNESS / 2, HANDLE_THICKNESS / 2, HANDLE_RADIUS * 2, 8]} 
           />
           <meshStandardMaterial 
-            color="#1a1a1a" 
-            roughness={0.8} 
+            color={mugBaseColor} 
+            roughness={cupType === 'standard' ? 0.7 : 0.8} 
             metalness={0.0}
           />
         </mesh>
@@ -306,8 +310,8 @@ function FallbackMug({
           ]} 
         />
         <meshStandardMaterial 
-          color="#1a1a1a" 
-          roughness={0.8} 
+          color={mugBaseColor} 
+          roughness={cupType === 'standard' ? 0.7 : 0.8} 
           metalness={0.0}
         />
       </mesh>
@@ -324,13 +328,15 @@ export default function Mug({
   sectionImages,
   imagePosition,
   imageZoom,
-  imageRotation
+  imageRotation,
+  cupType = 'hotzy'
 }: { 
   scale?: number | [number, number, number]
   position?: [number, number, number]
   rotation?: [number, number, number]
   customImage?: string | null
   dividedMode?: boolean
+  cupType?: 'hotzy' | 'standard'
   sectionImages?: {
     section1: string | null
     section2: string | null
@@ -348,6 +354,7 @@ export default function Mug({
       rotation={rotation} 
       customImage={customImage} 
       dividedMode={dividedMode}
+      cupType={cupType}
       sectionImages={sectionImages}
       imagePosition={imagePosition}
       imageZoom={imageZoom}
