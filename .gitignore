@@ -12,6 +12,7 @@
 .env.test
 .env.staging
 .env.preview
+!.env.example
 
 # ------------------------------------------------------------------------------
 # Dependencies
