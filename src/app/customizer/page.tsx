@@ -628,30 +628,12 @@ export default function CustomizerPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <motion.div
-              className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-primary/10 border border-primary/30 rounded-full mb-4 md:mb-6"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-primary" />
-              <span className="text-xs md:text-sm font-bold text-primary uppercase tracking-wider">
-                {getText('3D Studio', 'Studio 3D')}
-              </span>
-            </motion.div>
-
-            <h1 className="text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-white mb-4 md:mb-6 leading-tight px-4">
-              {getText('Design Your', 'Concevez Votre')}
-              <span className="block bg-gradient-to-r from-primary via-[#9ACD32] to-primary bg-clip-text text-transparent">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black text-white mb-4 md:mb-6 leading-tight px-4 lg:whitespace-nowrap">
+              {getText('Design Your', 'Concevez Votre')}{' '}
+              <span className="bg-gradient-to-r from-primary via-[#9ACD32] to-primary bg-clip-text text-transparent">
                 {getText('Perfect Mug', 'Tasse Parfaite')}
               </span>
             </h1>
-            <p className="text-sm md:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
-              {getText(
-                'Interactive 3D customization with real-time preview',
-                'Personnalisation 3D interactive avec aperçu en temps réel'
-              )}
-            </p>
           </motion.div>
 
           {/* Main Content Grid */}

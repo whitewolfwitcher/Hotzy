@@ -178,17 +178,17 @@ function FallbackMug({
     }
   }, [customImage, dividedMode, sectionImages, imagePosition.x, imagePosition.y, imageZoom, imageRotation])
 
-  // Update material when texture changes
+  const mugBaseColor = cupType === 'standard' ? '#f5f5f5' : '#1a1a1a'
+
+  // Update material when texture or cup type changes
   useEffect(() => {
     if (materialRef.current) {
       materialRef.current.map = texture
-      materialRef.current.color.set(texture ? "#ffffff" : "#1a1a1a")
+      materialRef.current.color.set(texture ? "#ffffff" : mugBaseColor)
       materialRef.current.needsUpdate = true
       console.log('Material updated with texture:', !!texture)
     }
-  }, [texture])
-
-  const mugBaseColor = cupType === 'standard' ? '#f5f5f5' : '#1a1a1a'
+  }, [texture, mugBaseColor])
 
   return (
     <group scale={scale} position={position} rotation={rotation}>
