@@ -1,8 +1,9 @@
-import { Canvas } from '@react-three/fiber'
-import { Suspense, useEffect } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
+import { Suspense, useEffect, useRef, type RefObject } from 'react'
 import { OrbitControls, ContactShadows } from '@react-three/drei'
 import Mug from './Mug'
 import * as THREE from 'three'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 
 interface MugViewerProps {
   customImage?: string | null
@@ -45,6 +46,66 @@ function BalancedStudioFloor() {
   )
 }
 
+function AutoFrame({
+  targetRef,
+  controlsRef
+}: {
+  targetRef: RefObject<THREE.Object3D>
+  controlsRef: RefObject<OrbitControlsImpl>
+}) {
+  const { camera, invalidate } = useThree()
+  const hasFramed = useRef(false)
+
+  useEffect(() => {
+    if (hasFramed.current) return
+    let frameId = 0
+
+    const frame = () => {
+      const target = targetRef.current
+      if (!target) {
+        frameId = requestAnimationFrame(frame)
+        return
+      }
+
+      const box = new THREE.Box3().setFromObject(target)
+      if (box.isEmpty()) {
+        frameId = requestAnimationFrame(frame)
+        return
+      }
+
+      const sphere = box.getBoundingSphere(new THREE.Sphere())
+      const center = sphere.center
+      const radius = Math.max(sphere.radius, 0.001)
+      const fov = THREE.MathUtils.degToRad(camera.fov)
+      const fitOffset = 1.25
+      const distance = (radius / Math.sin(fov / 2)) * fitOffset
+
+      camera.position.set(center.x + distance * 0.12, center.y + distance * 0.05, center.z + distance)
+      camera.near = Math.max(distance / 100, 0.01)
+      camera.far = Math.max(distance * 10, 10)
+      camera.updateProjectionMatrix()
+
+      const controls = controlsRef.current
+      if (controls) {
+        controls.target.copy(center)
+        controls.minDistance = radius * 1.1
+        controls.maxDistance = radius * 3.5
+        controls.update()
+      }
+
+      hasFramed.current = true
+      invalidate()
+    }
+
+    frame()
+    return () => {
+      if (frameId) cancelAnimationFrame(frameId)
+    }
+  }, [camera, controlsRef, invalidate, targetRef])
+
+  return null
+}
+
 export default function MugViewer({ 
   customImage, 
   dividedMode,
@@ -53,6 +114,9 @@ export default function MugViewer({
   imageZoom = 1,
   imageRotation = 0
 }: MugViewerProps) {
+  const mugGroupRef = useRef<THREE.Group>(null)
+  const controlsRef = useRef<OrbitControlsImpl>(null)
+
   return (
     <div className="h-[70vh] w-full relative overflow-hidden rounded-lg border border-border" style={{ background: '#D8D8D8' }}>
       <Canvas
@@ -127,7 +191,7 @@ export default function MugViewer({
           <BalancedStudioFloor />
 
           {/* Mug with material tuning for balanced look */}
-          <group position={[0, 0, 0]} rotation={[0, 0.15, 0]} scale={[1, 1, 1]}>
+          <group ref={mugGroupRef} position={[0, 0, 0]} rotation={[0, 0.15, 0]} scale={[1, 1, 1]}>
             <Mug 
               scale={1.5} 
               customImage={customImage} 
@@ -140,8 +204,11 @@ export default function MugViewer({
           </group>
         </Suspense>
 
+        <AutoFrame targetRef={mugGroupRef} controlsRef={controlsRef} />
+
         {/* Orbit controls - with right-click pan for easier movement */}
         <OrbitControls
+          ref={controlsRef}
           enablePan={true}
           enableZoom={true}
           enableRotate={true}

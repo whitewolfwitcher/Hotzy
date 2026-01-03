@@ -3,13 +3,12 @@
 import dynamic from 'next/dynamic';
 import NavigationHeader from '@/components/sections/navigation-header';
 import Footer from '@/components/sections/footer';
-import { Upload, Grid3x3, Check, Sparkles, Zap, Package, Truck, Shield, Move, ArrowLeft, ArrowRight, RotateCw, Image as ImageIcon, X, Copy, Download, FileImage, ChevronDown, ChevronUp } from 'lucide-react';
+import { Upload, Grid3x3, Check, Sparkles, Zap, Package, Truck, Shield, Move, ArrowLeft, ArrowRight, RotateCw, Image as ImageIcon, X, Copy, ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/cart-context';
 import { useRouter } from 'next/navigation';
 import { usePreferences } from '@/contexts/preferences-context';
-import { jsPDF } from 'jspdf';
 
 // Dynamically import the 3D viewer to avoid SSR issues
 const MugViewer = dynamic(() => import('@/components/3d/mug-viewer'), {
@@ -247,14 +246,11 @@ export default function CustomizerPage() {
   
   const [activeSection, setActiveSection] = useState<'section1' | 'section2' | 'section3'>('section1');
   const [isDragging, setIsDragging] = useState(false);
+  const [applyTemplateToAll, setApplyTemplateToAll] = useState(false);
   
   // Image position controls
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [imageRotation, setImageRotation] = useState(0);
-  
-  // Export controls
-  const [duplicatesPerSheet, setDuplicatesPerSheet] = useState<1 | 2 | 3>(3);
-  const [isExporting, setIsExporting] = useState(false);
   
   // Track if we're on desktop (for auto-expand sections)
   const [isDesktop, setIsDesktop] = useState(false);
@@ -265,7 +261,6 @@ export default function CustomizerPage() {
     position: false,
     templates: false,
     pricing: false,
-    export: false,
     details: false,
   });
 
@@ -515,14 +510,27 @@ export default function CustomizerPage() {
   };
 
   const handleTemplateSelect = (templateImage: string) => {
-    setSectionImages(prev => ({
-      ...prev,
-      [activeSection]: templateImage
-    }));
-    setImageTypes(prev => ({
-      ...prev,
-      [activeSection]: 'template'
-    }));
+    if (applyTemplateToAll) {
+      setSectionImages({
+        section1: templateImage,
+        section2: templateImage,
+        section3: templateImage,
+      });
+      setImageTypes({
+        section1: 'template',
+        section2: 'template',
+        section3: 'template',
+      });
+    } else {
+      setSectionImages(prev => ({
+        ...prev,
+        [activeSection]: templateImage
+      }));
+      setImageTypes(prev => ({
+        ...prev,
+        [activeSection]: 'template'
+      }));
+    }
     // Reset position controls when selecting a template
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
@@ -602,236 +610,6 @@ export default function CustomizerPage() {
     router.push('/checkout');
   };
 
-  // NEW: Generate mirrored 2360x1060 print-ready file
-  const generatePrintMaster = async (): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 2360;
-      canvas.height = 1060;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        reject(new Error('Failed to get canvas context'));
-        return;
-      }
-
-      // Fill with white background
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, 2360, 1060);
-
-      // Calculate dimensions for each section (3 sections side by side)
-      const sectionWidth = 2360 / 3;
-      const sectionHeight = 1060;
-
-      let loadedCount = 0;
-      const totalImages = 3;
-
-      const sections = ['section1', 'section2', 'section3'] as const;
-      
-      sections.forEach((section, index) => {
-        const imageUrl = sectionImages[section];
-        
-        if (!imageUrl) {
-          loadedCount++;
-          if (loadedCount === totalImages) {
-            // Mirror the canvas horizontally
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            if (tempCtx) {
-              tempCtx.scale(-1, 1);
-              tempCtx.drawImage(canvas, -canvas.width, 0);
-              resolve(tempCanvas.toDataURL('image/png'));
-            } else {
-              resolve(canvas.toDataURL('image/png'));
-            }
-          }
-          return;
-        }
-
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        img.onload = () => {
-          const x = index * sectionWidth;
-          
-          // Fit and center the image in the section
-          const scale = Math.min(sectionWidth / img.width, sectionHeight / img.height);
-          const scaledWidth = img.width * scale;
-          const scaledHeight = img.height * scale;
-          const offsetX = x + (sectionWidth - scaledWidth) / 2;
-          const offsetY = (sectionHeight - scaledHeight) / 2;
-          
-          ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
-          
-          loadedCount++;
-          if (loadedCount === totalImages) {
-            // Mirror the canvas horizontally
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            if (tempCtx) {
-              tempCtx.scale(-1, 1);
-              tempCtx.drawImage(canvas, -canvas.width, 0);
-              resolve(tempCanvas.toDataURL('image/png'));
-            } else {
-              resolve(canvas.toDataURL('image/png'));
-            }
-          }
-        };
-        
-        img.onerror = () => {
-          loadedCount++;
-          if (loadedCount === totalImages) {
-            // Mirror even on error
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            if (tempCtx) {
-              tempCtx.scale(-1, 1);
-              tempCtx.drawImage(canvas, -canvas.width, 0);
-              resolve(tempCanvas.toDataURL('image/png'));
-            } else {
-              resolve(canvas.toDataURL('image/png'));
-            }
-          }
-        };
-        
-        img.src = imageUrl;
-      });
-    });
-  };
-
-  // NEW: Generate A4 sheet with imposed designs and crop marks
-  const generateA4Sheet = async (printMasterDataUrl: string, copies: number): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [2480, 3508], // A4 at 300 DPI
-      });
-
-      const pageWidth = 2480;
-      const pageHeight = 3508;
-      const mugWidth = 2360;
-      const mugHeight = 1060;
-      const margin = 60;
-      const gutter = 40;
-      const cropMarkLength = 40;
-      const cropMarkStroke = 3;
-
-      // Calculate available space
-      const availableWidth = pageWidth - 2 * margin;
-      const availableHeight = pageHeight - 2 * margin;
-
-      // Scale design to fit within margins
-      const scale = Math.min(availableWidth / mugWidth, (availableHeight - (copies - 1) * gutter) / (copies * mugHeight));
-      const scaledWidth = mugWidth * scale;
-      const scaledHeight = mugHeight * scale;
-
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      img.onload = () => {
-        // Draw each copy vertically stacked
-        for (let i = 0; i < copies; i++) {
-          const y = margin + i * (scaledHeight + gutter);
-          const x = (pageWidth - scaledWidth) / 2;
-          
-          // Add the design
-          pdf.addImage(img, 'PNG', x, y, scaledWidth, scaledHeight);
-          
-          // Draw crop marks at corners
-          pdf.setLineWidth(cropMarkStroke);
-          pdf.setDrawColor(0, 0, 0);
-          
-          // Top-left corner
-          pdf.line(x - cropMarkLength, y, x, y); // Horizontal
-          pdf.line(x, y - cropMarkLength, x, y); // Vertical
-          
-          // Top-right corner
-          pdf.line(x + scaledWidth, y, x + scaledWidth + cropMarkLength, y); // Horizontal
-          pdf.line(x + scaledWidth, y - cropMarkLength, x + scaledWidth, y); // Vertical
-          
-          // Bottom-left corner
-          pdf.line(x - cropMarkLength, y + scaledHeight, x, y + scaledHeight); // Horizontal
-          pdf.line(x, y + scaledHeight, x, y + scaledHeight + cropMarkLength); // Vertical
-          
-          // Bottom-right corner
-          pdf.line(x + scaledWidth, y + scaledHeight, x + scaledWidth + cropMarkLength, y + scaledHeight); // Horizontal
-          pdf.line(x + scaledWidth, y + scaledHeight, x + scaledWidth, y + scaledHeight + cropMarkLength); // Vertical
-        }
-        
-        // Convert PDF to blob
-        const pdfBlob = pdf.output('blob');
-        resolve(pdfBlob);
-      };
-      
-      img.onerror = () => {
-        reject(new Error('Failed to load print master image'));
-      };
-      
-      img.src = printMasterDataUrl;
-    });
-  };
-
-  // NEW: Handle export
-  const handleExport = async () => {
-    // Check if at least one section has an image
-    const hasAnyImage = Object.values(sectionImages).some(img => img !== null);
-    if (!hasAnyImage) {
-      alert(getText(
-        'Please add at least one design before exporting',
-        'Veuillez ajouter au moins un design avant d\'exporter'
-      ));
-      return;
-    }
-
-    setIsExporting(true);
-    
-    try {
-      // Generate print master (mirrored 2360x1060)
-      const printMasterDataUrl = await generatePrintMaster();
-      
-      // Download print master PNG
-      const masterLink = document.createElement('a');
-      masterLink.href = printMasterDataUrl;
-      masterLink.download = `mug_print_${Date.now()}_master.png`;
-      masterLink.click();
-      
-      // Small delay between downloads
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Generate A4 sheet PDF
-      const a4Blob = await generateA4Sheet(printMasterDataUrl, duplicatesPerSheet);
-      
-      // Download A4 PDF
-      const pdfUrl = URL.createObjectURL(a4Blob);
-      const pdfLink = document.createElement('a');
-      pdfLink.href = pdfUrl;
-      pdfLink.download = `mug_print_${Date.now()}_A4.pdf`;
-      pdfLink.click();
-      
-      // Clean up
-      URL.revokeObjectURL(pdfUrl);
-      
-      alert(getText(
-        `Successfully exported!\n\n✓ Print Master (2360×1060 PNG)\n✓ A4 Sheet with ${duplicatesPerSheet} copies (PDF)`,
-        `Exportation réussie!\n\n✓ Master d'Impression (2360×1060 PNG)\n✓ Feuille A4 avec ${duplicatesPerSheet} copies (PDF)`
-      ));
-    } catch (error) {
-      console.error('Export error:', error);
-      alert(getText(
-        'Export failed. Please try again.',
-        'L\'exportation a échoué. Veuillez réessayer.'
-      ));
-    } finally {
-      setIsExporting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
@@ -1272,6 +1050,21 @@ export default function CustomizerPage() {
                       exit={{ height: 0, opacity: 0 }}
                       className="px-4 pb-4 md:px-6 md:pb-6"
                     >
+                      <div className="flex items-center justify-end mb-3">
+                        <label
+                          htmlFor="apply-template-all"
+                          className="flex items-center gap-2 text-[11px] md:text-xs text-muted-foreground cursor-pointer"
+                        >
+                          <input
+                            id="apply-template-all"
+                            type="checkbox"
+                            checked={applyTemplateToAll}
+                            onChange={(e) => setApplyTemplateToAll(e.target.checked)}
+                            className="h-3.5 w-3.5 accent-primary"
+                          />
+                          <span>{getText('Apply to all sections', 'Appliquer à toutes les sections')}</span>
+                        </label>
+                      </div>
                       <div className="relative">
                         <CircularGallery
                           items={DESIGN_TEMPLATES.map(template => ({
@@ -1368,91 +1161,6 @@ export default function CustomizerPage() {
                           {getText(`Based on ${uploadedImageCount} uploaded`, `Basé sur ${uploadedImageCount} téléchargée(s)`)}
                         </p>
                       )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Export - Collapsible (less important for mobile users initially) */}
-              <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl md:rounded-2xl shadow-xl overflow-hidden">
-                <button
-                  onClick={() => toggleSection('export')}
-                  className="w-full flex items-center justify-between p-4 md:p-6"
-                >
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                      <FileImage className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                    </div>
-                    <h3 className="text-base md:text-xl font-bold text-white">
-                      {getText('Export Files', 'Exporter')}
-                    </h3>
-                  </div>
-                  <ChevronDown className={`w-5 h-5 text-primary transition-transform ${expandedSections.export ? 'rotate-180' : ''}`} />
-                </button>
-
-                <AnimatePresence>
-                  {expandedSections.export && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="px-4 pb-4 md:px-6 md:pb-6"
-                    >
-                      <div className="mb-3 md:mb-4">
-                        <label className="text-xs md:text-sm text-white font-medium mb-2 block">
-                          {getText('Copies per Sheet', 'Copies par Feuille')}
-                        </label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {[1, 2, 3].map((num) => (
-                            <button
-                              key={num}
-                              onClick={() => setDuplicatesPerSheet(num as 1 | 2 | 3)}
-                              className={`py-2 md:py-3 rounded-lg font-semibold text-sm md:text-base transition-all ${
-                                duplicatesPerSheet === num
-                                  ? 'bg-primary text-black'
-                                  : 'bg-black/40 text-white border border-primary/20'
-                              }`}
-                            >
-                              {num}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="bg-black/40 border border-primary/20 rounded-lg p-3 md:p-4 mb-3 md:mb-4 space-y-1.5 md:space-y-2">
-                        <div className="flex justify-between text-[10px] md:text-xs">
-                          <span className="text-muted-foreground">{getText('Master', 'Master')}</span>
-                          <span className="text-primary font-semibold">2360×1060 PNG</span>
-                        </div>
-                        <div className="flex justify-between text-[10px] md:text-xs">
-                          <span className="text-muted-foreground">{getText('A4 Sheet', 'Feuille A4')}</span>
-                          <span className="text-primary font-semibold">PDF 300 DPI</span>
-                        </div>
-                      </div>
-
-                      <motion.button
-                        onClick={handleExport}
-                        disabled={isExporting}
-                        className={`w-full flex items-center justify-center gap-2 md:gap-3 py-3 md:py-4 rounded-xl font-bold text-sm md:text-base transition-all ${
-                          isExporting
-                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                            : 'bg-gradient-to-r from-primary to-[#9ACD32] text-black'
-                        }`}
-                        whileHover={!isExporting ? { scale: 1.02 } : {}}
-                        whileTap={!isExporting ? { scale: 0.98 } : {}}
-                      >
-                        {isExporting ? (
-                          <>
-                            <div className="w-4 h-4 md:w-5 md:h-5 border-3 border-black border-t-transparent rounded-full animate-spin" />
-                            {getText('Exporting...', 'Export...')}
-                          </>
-                        ) : (
-                          <>
-                            <Download className="w-4 h-4 md:w-5 md:h-5" />
-                            {getText('Export', 'Exporter')}
-                          </>
-                        )}
-                      </motion.button>
                     </motion.div>
                   )}
                 </AnimatePresence>
