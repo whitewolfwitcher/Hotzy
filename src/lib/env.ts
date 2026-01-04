@@ -26,6 +26,4 @@ export const getOrderUploadTokenSecret = () =>
   requireEnv('ORDER_UPLOAD_TOKEN_SECRET');
 
 export const getSiteUrl = () =>
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  process.env.FRONTEND_URL ??
-  'http://localhost:3000';
+  requireEnv('NEXT_PUBLIC_SITE_URL');

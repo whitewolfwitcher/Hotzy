@@ -53,11 +53,14 @@ export async function POST(req: Request) {
     currency === 'USD' ? roundAmount(baseCad * CAD_TO_USD) : baseCad;
 
   const siteUrl = getSiteUrl();
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Stripe checkout siteUrl', siteUrl);
+  }
   const successUrl = new URL('/checkout/success', siteUrl);
   successUrl.searchParams.set('orderId', orderId);
 
-  const cancelUrl = new URL('/customizer', siteUrl);
-  cancelUrl.searchParams.set('canceled', '1');
+  const cancelUrl = new URL('/checkout/cancel', siteUrl);
+  cancelUrl.searchParams.set('orderId', orderId);
 
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
