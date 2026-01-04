@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseServer } from '@/lib/supabase/server';
 import { getStripeSecretKey, getStripeWebhookSecret } from '@/lib/env';
+import { generateOrderPdf } from '@/lib/printing/generateOrderPdf';
 
 type OrderPayload = {
   status: 'paid';
@@ -76,6 +77,63 @@ const upsertOrder = async (
   return { error };
 };
 
+const finalizePaidOrder = async (orderId: string) => {
+  const supabase = supabaseServer();
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select('wrap_path, pdf_path')
+    .eq('id', orderId)
+    .single();
+
+  if (error || !order) {
+    return { ok: false, reason: 'order_not_found' };
+  }
+
+  if (!order.wrap_path) {
+    return { ok: true, skipped: true, reason: 'no_wrap' };
+  }
+
+  if (order.pdf_path) {
+    return { ok: true, skipped: true, reason: 'already_generated' };
+  }
+
+  const result = await generateOrderPdf(orderId);
+  if (!result.ok) {
+    return { ok: false, reason: 'pdf_failed' };
+  }
+
+  return { ok: true, skipped: false };
+};
+
+const lookupOrderId = async (params: {
+  orderId?: string | null;
+  stripePaymentIntentId?: string | null;
+  stripeCheckoutSessionId?: string | null;
+}) => {
+  if (params.orderId) return params.orderId;
+  const supabase = supabaseServer();
+
+  if (params.stripePaymentIntentId) {
+    const { data } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('stripe_payment_intent_id', params.stripePaymentIntentId)
+      .maybeSingle();
+    if (data?.id) return data.id;
+  }
+
+  if (params.stripeCheckoutSessionId) {
+    const { data } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('stripe_checkout_session_id', params.stripeCheckoutSessionId)
+      .maybeSingle();
+    if (data?.id) return data.id;
+  }
+
+  return null;
+};
+
 export async function POST(req: Request) {
   const body = await req.text();
   const sig = req.headers.get('stripe-signature');
@@ -133,6 +191,25 @@ export async function POST(req: Request) {
         );
       }
 
+      const resolvedOrderId = await lookupOrderId({
+        orderId,
+        stripePaymentIntentId: paymentIntent.id,
+      });
+      if (resolvedOrderId) {
+        const finalizeResult = await finalizePaidOrder(resolvedOrderId);
+        if (!finalizeResult.ok) {
+          console.error('Stripe webhook finalize failed', {
+            type: event.type,
+            id: event.id,
+          });
+        } else if (finalizeResult.reason === 'no_wrap') {
+          console.info('Stripe webhook paid but no wrap yet', {
+            type: event.type,
+            id: event.id,
+          });
+        }
+      }
+
       console.info('Stripe webhook processed', {
         type: event.type,
         id: event.id,
@@ -167,6 +244,26 @@ export async function POST(req: Request) {
           { error: 'Failed to write order' },
           { status: 500 }
         );
+      }
+
+      const resolvedOrderId = await lookupOrderId({
+        orderId,
+        stripePaymentIntentId: payload.stripe_payment_intent_id ?? null,
+        stripeCheckoutSessionId: session.id,
+      });
+      if (resolvedOrderId) {
+        const finalizeResult = await finalizePaidOrder(resolvedOrderId);
+        if (!finalizeResult.ok) {
+          console.error('Stripe webhook finalize failed', {
+            type: event.type,
+            id: event.id,
+          });
+        } else if (finalizeResult.reason === 'no_wrap') {
+          console.info('Stripe webhook paid but no wrap yet', {
+            type: event.type,
+            id: event.id,
+          });
+        }
       }
 
       console.info('Stripe webhook processed', {

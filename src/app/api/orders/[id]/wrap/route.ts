@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
+import { generateOrderPdf } from '@/lib/printing/generateOrderPdf';
 
 export const runtime = 'nodejs';
 
@@ -66,6 +67,22 @@ export async function POST(
       { ok: false, error: 'Failed to update order' },
       { status: 500 }
     );
+  }
+
+  const { data: order, error: orderError } = await supabase
+    .from('orders')
+    .select('status, pdf_path')
+    .eq('id', orderId)
+    .single();
+
+  if (!orderError && order?.status === 'paid' && !order.pdf_path) {
+    const result = await generateOrderPdf(orderId);
+    if (!result.ok) {
+      return NextResponse.json(
+        { ok: false, error: 'Failed to generate PDF' },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({ ok: true, wrap_path: wrapPath }, { status: 200 });
