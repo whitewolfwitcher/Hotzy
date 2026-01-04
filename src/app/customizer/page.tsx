@@ -248,6 +248,8 @@ export default function CustomizerPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [applyTemplateToAll, setApplyTemplateToAll] = useState(false);
   const [cupType, setCupType] = useState<'hotzy' | 'standard'>('hotzy');
+  const [testOrderId, setTestOrderId] = useState('');
+  const [wrapUploadStatus, setWrapUploadStatus] = useState<string | null>(null);
   
   // Image position controls
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
@@ -602,6 +604,67 @@ export default function CustomizerPage() {
   const handleOrderNow = async () => {
     await handleAddToCart();
     router.push('/checkout');
+  };
+
+  const showDevTools = process.env.NODE_ENV !== 'production';
+
+  const createTestWrapBlob = (): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1200;
+      canvas.height = 450;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas unavailable'));
+        return;
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#111111';
+      ctx.font = 'bold 64px Arial';
+      ctx.fillText('TEST WRAP', 80, 140);
+      ctx.font = '32px Arial';
+      ctx.fillText('Hotzy Customizer', 80, 220);
+      ctx.fillStyle = '#76B900';
+      ctx.fillRect(80, 260, 320, 12);
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Failed to create PNG'));
+          return;
+        }
+        resolve(blob);
+      }, 'image/png');
+    });
+  };
+
+  const handleUploadTestWrap = async () => {
+    if (!testOrderId) {
+      setWrapUploadStatus('Missing order id');
+      return;
+    }
+    setWrapUploadStatus('Uploading...');
+    try {
+      const blob = await createTestWrapBlob();
+      const formData = new FormData();
+      formData.append('file', blob, 'wrap.png');
+
+      const response = await fetch(`/api/orders/${testOrderId}/wrap`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        setWrapUploadStatus('Upload failed');
+        return;
+      }
+
+      const result = await response.json();
+      setWrapUploadStatus(`Uploaded: ${result.wrap_path || 'ok'}`);
+    } catch (error) {
+      setWrapUploadStatus('Upload error');
+    }
   };
 
 
@@ -1124,6 +1187,37 @@ export default function CustomizerPage() {
                   )}
                 </AnimatePresence>
               </div>
+
+              {showDevTools && (
+                <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl shadow-xl overflow-hidden">
+                  <div className="p-4 md:p-6 space-y-3">
+                    <div className="text-sm md:text-base font-bold text-white">
+                      {getText('Dev: Upload Test Wrap', 'Dev: Upload Test Wrap')}
+                    </div>
+                    <input
+                      type="text"
+                      value={testOrderId}
+                      onChange={(e) => setTestOrderId(e.target.value)}
+                      placeholder={getText('Paste Order ID', 'Coller ID commande')}
+                      className="w-full rounded-lg bg-black/40 border border-primary/30 px-3 py-2 text-xs md:text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleUploadTestWrap}
+                        className="px-3 py-2 rounded-lg bg-primary text-black text-xs md:text-sm font-semibold hover:bg-[#9ACD32] transition-colors"
+                      >
+                        {getText('Upload Test Wrap', 'Uploader Wrap Test')}
+                      </button>
+                      {wrapUploadStatus && (
+                        <span className="text-[10px] md:text-xs text-muted-foreground">
+                          {wrapUploadStatus}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Pricing - Collapsible */}
               <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl md:rounded-2xl shadow-xl overflow-hidden">
