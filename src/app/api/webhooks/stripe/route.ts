@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import type Stripe from 'stripe';
-import { stripe } from '@/lib/stripe';
+import Stripe from 'stripe';
 import { supabaseServer } from '@/lib/supabase/server';
-import { getStripeWebhookSecret } from '@/lib/env';
+import { getStripeSecretKey, getStripeWebhookSecret } from '@/lib/env';
 
 type OrderPayload = {
   status: 'paid';
@@ -11,6 +10,10 @@ type OrderPayload = {
   amount_usd: number | null;
   stripe_payment_intent_id?: string | null;
   stripe_checkout_session_id?: string | null;
+};
+
+type InsertPayload = OrderPayload & {
+  cup_type: 'hotzy';
 };
 
 const toMoney = (amountInCents: number | null | undefined) => {
@@ -61,7 +64,15 @@ const upsertOrder = async (
     if (data && data.length > 0) return { error: null };
   }
 
-  const { error } = await supabase.from('orders').insert(payload).select('id');
+  const insertPayload: InsertPayload = {
+    ...payload,
+    cup_type: 'hotzy',
+  };
+
+  const { error } = await supabase
+    .from('orders')
+    .insert(insertPayload)
+    .select('id');
   return { error };
 };
 
@@ -75,6 +86,10 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+
+  const stripe = new Stripe(getStripeSecretKey(), {
+    apiVersion: '2023-10-16',
+  });
 
   let event: Stripe.Event;
   try {
@@ -112,12 +127,17 @@ export async function POST(req: Request) {
           type: event.type,
           id: event.id,
         });
-      } else {
-        console.info('Stripe webhook processed', {
-          type: event.type,
-          id: event.id,
-        });
+        return NextResponse.json(
+          { error: 'Failed to write order' },
+          { status: 500 }
+        );
       }
+
+      console.info('Stripe webhook processed', {
+        type: event.type,
+        id: event.id,
+      });
+      return NextResponse.json({ received: true }, { status: 200 });
     }
 
     if (event.type === 'checkout.session.completed') {
@@ -143,18 +163,27 @@ export async function POST(req: Request) {
           type: event.type,
           id: event.id,
         });
-      } else {
-        console.info('Stripe webhook processed', {
-          type: event.type,
-          id: event.id,
-        });
+        return NextResponse.json(
+          { error: 'Failed to write order' },
+          { status: 500 }
+        );
       }
+
+      console.info('Stripe webhook processed', {
+        type: event.type,
+        id: event.id,
+      });
+      return NextResponse.json({ received: true }, { status: 200 });
     }
   } catch (err) {
     console.error('Stripe webhook handler error', {
       type: event.type,
       id: event.id,
     });
+    return NextResponse.json(
+      { error: 'Webhook handler error' },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ received: true }, { status: 200 });
