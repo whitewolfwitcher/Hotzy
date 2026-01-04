@@ -178,7 +178,10 @@ export async function POST(req: Request) {
         stripe_payment_intent_id: paymentIntent.id,
       };
 
-      const orderId = paymentIntent.metadata?.order_id || null;
+      const orderId =
+        paymentIntent.metadata?.orderId ??
+        paymentIntent.metadata?.order_id ??
+        null;
       const { error } = await upsertOrder(payload, orderId);
       if (error) {
         console.error('Stripe webhook upsert failed', {
@@ -233,7 +236,10 @@ export async function POST(req: Request) {
             : session.payment_intent?.id ?? null,
       };
 
-      const orderId = session.metadata?.order_id || null;
+      const orderId =
+        session.metadata?.orderId ??
+        session.metadata?.order_id ??
+        null;
       const { error } = await upsertOrder(payload, orderId);
       if (error) {
         console.error('Stripe webhook upsert failed', {

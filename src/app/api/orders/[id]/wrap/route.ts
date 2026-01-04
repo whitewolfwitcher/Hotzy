@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 import { generateOrderPdf } from '@/lib/printing/generateOrderPdf';
+import { verifyOrderUploadToken } from '@/lib/orders/orderUploadToken';
 
 export const runtime = 'nodejs';
 
@@ -8,6 +9,8 @@ const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(['image/png', 'image/jpeg']);
 
 const getToken = (req: Request) => req.headers.get('x-hotzy-token');
+const getOrderToken = (req: Request) =>
+  req.headers.get('x-order-upload-token');
 
 export async function POST(
   req: Request,
@@ -19,7 +22,13 @@ export async function POST(
   }
 
   const internalToken = process.env.HOTZY_INTERNAL_TOKEN;
-  if (!internalToken || getToken(req) !== internalToken) {
+  const orderToken = getOrderToken(req);
+  const isAdmin = internalToken && getToken(req) === internalToken;
+  const isOrderTokenValid = orderToken
+    ? verifyOrderUploadToken(orderToken, orderId)
+    : false;
+
+  if (!isAdmin && !isOrderTokenValid) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 

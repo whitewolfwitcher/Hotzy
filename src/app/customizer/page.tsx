@@ -250,6 +250,8 @@ export default function CustomizerPage() {
   const [cupType, setCupType] = useState<'hotzy' | 'standard'>('hotzy');
   const [testOrderId, setTestOrderId] = useState('');
   const [wrapUploadStatus, setWrapUploadStatus] = useState<string | null>(null);
+  const [isOrdering, setIsOrdering] = useState(false);
+  const [orderNowStatus, setOrderNowStatus] = useState<string | null>(null);
   
   // Image position controls
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
@@ -601,9 +603,141 @@ export default function CustomizerPage() {
     });
   };
 
+  const createWrapBlob = async (): Promise<Blob> => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 2400;
+    canvas.height = 800;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Canvas unavailable');
+    }
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const sections = ['section1', 'section2', 'section3'] as const;
+    const sectionWidth = canvas.width / 3;
+    const sectionHeight = canvas.height;
+
+    const loadImage = (src: string) =>
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = src;
+      });
+
+    for (let i = 0; i < sections.length; i += 1) {
+      const section = sections[i];
+      const imageSrc = sectionImages[section];
+      const x = i * sectionWidth;
+
+      if (imageSrc) {
+        try {
+          const img = await loadImage(imageSrc);
+          const scale = Math.min(sectionWidth / img.width, sectionHeight / img.height);
+          const scaledWidth = img.width * scale;
+          const scaledHeight = img.height * scale;
+          const offsetX = x + (sectionWidth - scaledWidth) / 2;
+          const offsetY = (sectionHeight - scaledHeight) / 2;
+          ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
+        } catch {
+          ctx.fillStyle = '#f2f2f2';
+          ctx.fillRect(x, 0, sectionWidth, sectionHeight);
+        }
+      } else {
+        ctx.fillStyle = '#f2f2f2';
+        ctx.fillRect(x, 0, sectionWidth, sectionHeight);
+        ctx.fillStyle = '#999999';
+        ctx.font = 'bold 32px Arial';
+        ctx.fillText('EMPTY', x + 40, 80);
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Failed to create PNG'));
+          return;
+        }
+        resolve(blob);
+      }, 'image/png');
+    });
+  };
+
   const handleOrderNow = async () => {
-    await handleAddToCart();
-    router.push('/checkout');
+    if (isOrdering) return;
+    setIsOrdering(true);
+    setOrderNowStatus(getText('Preparing design…', 'Préparation du design…'));
+
+    try {
+      const amountForCurrency = Number(
+        (currency === 'USD' ? basePriceCad * CAD_TO_USD : basePriceCad).toFixed(2)
+      );
+      const draftResponse = await fetch('/api/orders/create-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cupType,
+          currency,
+          amount_cad: currency === 'CAD' ? amountForCurrency : undefined,
+          amount_usd: currency === 'USD' ? amountForCurrency : undefined,
+        }),
+      });
+
+      if (!draftResponse.ok) {
+        setOrderNowStatus(getText('Failed to create order', 'Échec création'));
+        setIsOrdering(false);
+        return;
+      }
+
+      const draftData = await draftResponse.json();
+      const orderId = draftData.orderId as string;
+      const orderUploadToken = draftData.orderUploadToken as string;
+
+      setOrderNowStatus(getText('Uploading…', 'Téléversement…'));
+      const wrapBlob = await createWrapBlob();
+      const formData = new FormData();
+      formData.append('file', wrapBlob, 'wrap.png');
+
+      const uploadResponse = await fetch(`/api/orders/${orderId}/wrap`, {
+        method: 'POST',
+        headers: { 'x-order-upload-token': orderUploadToken },
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        setOrderNowStatus(getText('Upload failed', 'Échec téléversement'));
+        setIsOrdering(false);
+        return;
+      }
+
+      setOrderNowStatus(getText('Redirecting…', 'Redirection…'));
+      const sessionResponse = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      });
+
+      if (!sessionResponse.ok) {
+        setOrderNowStatus(getText('Checkout failed', 'Échec paiement'));
+        setIsOrdering(false);
+        return;
+      }
+
+      const sessionData = await sessionResponse.json();
+      if (sessionData.url) {
+        window.location.href = sessionData.url;
+        return;
+      }
+
+      setOrderNowStatus(getText('Checkout failed', 'Échec paiement'));
+    } catch (error) {
+      setOrderNowStatus(getText('Something went wrong', 'Erreur'));
+    } finally {
+      setIsOrdering(false);
+    }
   };
 
   const showDevTools = process.env.NODE_ENV !== 'production';
@@ -1306,7 +1440,12 @@ export default function CustomizerPage() {
               <div className="space-y-3 sticky bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl p-4 -mx-4 border-t border-primary/20 md:static md:bg-transparent md:backdrop-blur-none md:p-0 md:border-none z-20">
                 <motion.button
                   onClick={handleOrderNow}
-                  className="w-full bg-gradient-to-r from-primary via-[#9ACD32] to-primary text-black font-black text-base md:text-lg py-4 md:py-5 rounded-xl hover:shadow-[0_0_30px_rgba(118,185,0,0.5)] transition-all duration-300 flex items-center justify-center gap-2 md:gap-3"
+                  disabled={isOrdering}
+                  className={`w-full bg-gradient-to-r from-primary via-[#9ACD32] to-primary text-black font-black text-base md:text-lg py-4 md:py-5 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 md:gap-3 ${
+                    isOrdering
+                      ? 'opacity-70 cursor-not-allowed'
+                      : 'hover:shadow-[0_0_30px_rgba(118,185,0,0.5)]'
+                  }`}
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -1314,6 +1453,11 @@ export default function CustomizerPage() {
                   {getText('Order Now', 'Commander')} - {displayPrice}
                   <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                 </motion.button>
+                {orderNowStatus && (
+                  <div className="text-[10px] md:text-xs text-muted-foreground text-center">
+                    {orderNowStatus}
+                  </div>
+                )}
 
                 <motion.button
                   onClick={handleAddToCart}
