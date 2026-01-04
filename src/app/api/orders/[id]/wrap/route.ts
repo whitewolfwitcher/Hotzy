@@ -18,8 +18,7 @@ export async function POST(
   }
 
   const internalToken = process.env.HOTZY_INTERNAL_TOKEN;
-  const isProd = process.env.NODE_ENV === 'production';
-  if (isProd && (!internalToken || getToken(req) !== internalToken)) {
+  if (!internalToken || getToken(req) !== internalToken) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -56,9 +55,10 @@ export async function POST(
     );
   }
 
+  const wrapPath = `wraps/${objectPath}`;
   const { error: updateError } = await supabase
     .from('orders')
-    .update({ wrap_path: objectPath })
+    .update({ wrap_path: wrapPath })
     .eq('id', orderId);
 
   if (updateError) {
@@ -68,5 +68,5 @@ export async function POST(
     );
   }
 
-  return NextResponse.json({ ok: true, wrap_path: objectPath }, { status: 200 });
+  return NextResponse.json({ ok: true, wrap_path: wrapPath }, { status: 200 });
 }
