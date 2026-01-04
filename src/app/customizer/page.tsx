@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/cart-context';
 import { useRouter } from 'next/navigation';
 import { usePreferences } from '@/contexts/preferences-context';
+import { CAD_TO_USD, PRICE_CAD } from '@/lib/pricing';
 
 // Dynamically import the 3D viewer to avoid SSR issues
 const MugViewer = dynamic(() => import('@/components/3d/mug-viewer'), {
@@ -294,12 +295,6 @@ export default function CustomizerPage() {
 
   // Calculate number of uploaded images (not templates)
   const uploadedImageCount = Object.values(imageTypes).filter(type => type === 'uploaded').length;
-
-  const PRICE_CAD = {
-    hotzy: 20.45,
-    standard: 15.99,
-  } as const;
-  const CAD_TO_USD = 0.74;
 
   const basePriceCad = PRICE_CAD[cupType];
   const displayPriceAmount = currency === 'USD' ? basePriceCad * CAD_TO_USD : basePriceCad;
@@ -714,25 +709,8 @@ export default function CustomizerPage() {
       }
 
       setOrderNowStatus(getText('Redirecting…', 'Redirection…'));
-      const sessionResponse = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId }),
-      });
-
-      if (!sessionResponse.ok) {
-        setOrderNowStatus(getText('Checkout failed', 'Échec paiement'));
-        setIsOrdering(false);
-        return;
-      }
-
-      const sessionData = await sessionResponse.json();
-      if (sessionData.url) {
-        window.location.href = sessionData.url;
-        return;
-      }
-
-      setOrderNowStatus(getText('Checkout failed', 'Échec paiement'));
+      router.push(`/checkout?orderId=${orderId}`);
+      return;
     } catch (error) {
       setOrderNowStatus(getText('Something went wrong', 'Erreur'));
     } finally {

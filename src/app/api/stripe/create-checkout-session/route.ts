@@ -2,18 +2,10 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { supabaseServer } from '@/lib/supabase/server';
 import { getSiteUrl } from '@/lib/env';
+import { getUnitAmount, PRICE_CAD } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
-const PRICE_CAD = {
-  hotzy: 20.45,
-  standard: 15.99,
-} as const;
-
-const CAD_TO_USD = 0.74;
-
-const roundAmount = (amount: number) =>
-  Number(amount.toFixed(2));
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -48,9 +40,7 @@ export async function POST(req: Request) {
 
   const cupType = order.cup_type as 'hotzy' | 'standard';
   const currency = (order.currency || 'CAD').toUpperCase() as 'CAD' | 'USD';
-  const baseCad = PRICE_CAD[cupType] ?? PRICE_CAD.hotzy;
-  const unitAmount =
-    currency === 'USD' ? roundAmount(baseCad * CAD_TO_USD) : baseCad;
+  const unitAmount = getUnitAmount(cupType, currency);
 
   const siteUrl = getSiteUrl();
   if (process.env.NODE_ENV !== 'production') {
