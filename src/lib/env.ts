@@ -13,3 +13,8 @@ export const getSupabaseAnonKey = () =>
 
 export const getSupabaseServiceRoleKey = () =>
   requireEnv('SUPABASE_SERVICE_ROLE_KEY');
+
+export const getStripeSecretKey = () => requireEnv('STRIPE_SECRET_KEY');
+
+export const getStripeWebhookSecret = () =>
+  requireEnv('STRIPE_WEBHOOK_SECRET');
