@@ -8,7 +8,6 @@ export const runtime = 'nodejs';
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(['image/png', 'image/jpeg']);
 
-const getToken = (req: Request) => req.headers.get('x-hotzy-token');
 const getOrderToken = (req: Request) =>
   req.headers.get('x-order-upload-token');
 
@@ -21,14 +20,12 @@ export async function POST(
     return NextResponse.json({ ok: false, error: 'Missing order id' }, { status: 400 });
   }
 
-  const internalToken = process.env.HOTZY_INTERNAL_TOKEN;
   const orderToken = getOrderToken(req);
-  const isAdmin = internalToken && getToken(req) === internalToken;
   const isOrderTokenValid = orderToken
     ? verifyOrderUploadToken(orderToken, orderId)
     : false;
 
-  if (!isAdmin && !isOrderTokenValid) {
+  if (!isOrderTokenValid) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -80,11 +77,16 @@ export async function POST(
 
   const { data: order, error: orderError } = await supabase
     .from('orders')
-    .select('status, pdf_path')
+    .select('status, pdf_path, email_sent')
     .eq('id', orderId)
     .single();
 
-  if (!orderError && order?.status === 'paid' && !order.pdf_path) {
+  const shouldFinalize =
+    !orderError &&
+    order?.status === 'paid' &&
+    (!order.pdf_path || !order.email_sent);
+
+  if (shouldFinalize) {
     const result = await generateOrderPdf(orderId);
     if (!result.ok) {
       return NextResponse.json(

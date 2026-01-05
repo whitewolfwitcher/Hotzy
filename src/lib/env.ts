@@ -19,9 +19,6 @@ export const getStripeSecretKey = () => requireEnv('STRIPE_SECRET_KEY');
 export const getStripeWebhookSecret = () =>
   requireEnv('STRIPE_WEBHOOK_SECRET');
 
-export const getHotzyInternalToken = () =>
-  requireEnv('HOTZY_INTERNAL_TOKEN');
-
 export const getOrderUploadTokenSecret = () =>
   requireEnv('ORDER_UPLOAD_TOKEN_SECRET');
 

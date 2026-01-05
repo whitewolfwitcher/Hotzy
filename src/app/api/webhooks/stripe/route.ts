@@ -81,7 +81,7 @@ const finalizePaidOrder = async (orderId: string) => {
   const supabase = supabaseServer();
   const { data: order, error } = await supabase
     .from('orders')
-    .select('wrap_path, pdf_path')
+    .select('wrap_path, pdf_path, email_sent')
     .eq('id', orderId)
     .single();
 
@@ -89,11 +89,11 @@ const finalizePaidOrder = async (orderId: string) => {
     return { ok: false, reason: 'order_not_found' };
   }
 
-  if (!order.wrap_path) {
+  if (!order.wrap_path && !order.pdf_path) {
     return { ok: true, skipped: true, reason: 'no_wrap' };
   }
 
-  if (order.pdf_path) {
+  if (order.pdf_path && order.email_sent) {
     return { ok: true, skipped: true, reason: 'already_generated' };
   }
 
