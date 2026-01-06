@@ -1,6 +1,6 @@
 import { PDFDocument } from 'pdf-lib';
 import { supabaseServer } from '@/lib/supabase/server';
-import { sendOrderPdfEmail } from '@/lib/email/sendOrderPdfEmail';
+import { sendOrderReadyEmail } from '@/lib/email/resendClient';
 
 export type GenerateOrderPdfResult =
   | { ok: true; pdf_path: string; skipped: boolean }
@@ -97,19 +97,20 @@ export const generateOrderPdf = async (
     .createSignedUrl(pdfKey, ttlSeconds);
 
   if (signedError || !signedData?.signedUrl) {
-    return { ok: false, error: 'Failed to sign PDF url', status: 500 };
+    console.error('Failed to sign order PDF url', { orderId });
+    return { ok: true, pdf_path: pdfPath, skipped: hadExistingPdf };
   }
 
   if (!order.email_sent) {
     const currency = (order.currency || 'CAD').toUpperCase();
     const amount =
       currency === 'USD' ? order.amount_usd ?? null : order.amount_cad ?? null;
-    const emailResult = await sendOrderPdfEmail({
+    const emailResult = await sendOrderReadyEmail({
       orderId,
       cupType: order.cup_type ?? 'hotzy',
       currency,
       amount,
-      signedPdfUrl: signedData.signedUrl,
+      pdfUrl: signedData.signedUrl,
     });
 
     if (emailResult.ok) {
