@@ -1,12 +1,19 @@
 import { PDFDocument } from 'pdf-lib';
 import { supabaseServer } from '@/lib/supabase/server';
 import { sendOrderReadyEmail } from '@/lib/email/resendClient';
+import { PRINT_SPECS, type CupType } from '@/lib/printing/printSpecs';
 
 export type GenerateOrderPdfResult =
   | { ok: true; pdf_path: string; skipped: boolean }
   | { ok: false; error: string; status: number };
 
+type GenerateOrderPdfOptions = {
+  forceRegenerate?: boolean;
+};
+
 const DEFAULT_SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
+
+const mmToPt = (mm: number) => (mm / 25.4) * 72;
 
 const getSignedUrlTtlSeconds = () => {
   const raw = process.env.SIGNED_URL_TTL_SECONDS;
@@ -19,7 +26,8 @@ const getSignedUrlTtlSeconds = () => {
 };
 
 export const generateOrderPdf = async (
-  orderId: string
+  orderId: string,
+  options: GenerateOrderPdfOptions = {}
 ): Promise<GenerateOrderPdfResult> => {
   const supabase = supabaseServer();
   const { data: order, error: orderError } = await supabase
@@ -43,7 +51,7 @@ export const generateOrderPdf = async (
   let pdfPath = order.pdf_path;
   const pdfKey = `${orderId}/print.pdf`;
 
-  if (!pdfPath) {
+  if (!pdfPath || options.forceRegenerate) {
     const wrapKey = order.wrap_path.replace(/^wraps\//, '');
     const { data: wrapBlob, error: downloadError } = await supabase.storage
       .from('wraps')
@@ -63,9 +71,16 @@ export const generateOrderPdf = async (
       image = await pdfDoc.embedJpg(wrapBytes);
     }
 
-    const { width, height } = image.scale(1);
-    const page = pdfDoc.addPage([width, height]);
-    page.drawImage(image, { x: 0, y: 0, width, height });
+    const cupType: CupType =
+      order.cup_type === 'standard' || order.cup_type === 'hotzy'
+        ? order.cup_type
+        : 'hotzy';
+    const { widthMm, heightMm, bleedMm } = PRINT_SPECS[cupType];
+    const widthPt = mmToPt(widthMm + bleedMm * 2);
+    const heightPt = mmToPt(heightMm + bleedMm * 2);
+
+    const page = pdfDoc.addPage([widthPt, heightPt]);
+    page.drawImage(image, { x: 0, y: 0, width: widthPt, height: heightPt });
 
     const pdfBytes = await pdfDoc.save();
 
