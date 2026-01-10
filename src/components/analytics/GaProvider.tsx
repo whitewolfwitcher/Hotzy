@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { initGa, isGaEnabled, pageView } from "@/lib/analytics/ga";
 import {
   readConsent,
@@ -9,21 +9,8 @@ import {
   type ConsentState,
 } from "@/lib/analytics/consent";
 
-const buildPagePath = (
-  pathname: string,
-  searchParams: URLSearchParams | null,
-): string => {
-  const search = searchParams?.toString();
-  if (!search) {
-    return pathname;
-  }
-
-  return `${pathname}?${search}`;
-};
-
 export default function GaProvider(): null {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [consent, setConsent] = useState<ConsentState>("unknown");
 
   useEffect(() => {
@@ -31,10 +18,7 @@ export default function GaProvider(): null {
     return subscribeConsentChange(setConsent);
   }, []);
 
-  const pagePath = useMemo(
-    () => buildPagePath(pathname ?? "/", searchParams),
-    [pathname, searchParams],
-  );
+  const pagePath = useMemo(() => pathname ?? "/", [pathname]);
 
   useEffect(() => {
     if (consent !== "granted" || !isGaEnabled()) {

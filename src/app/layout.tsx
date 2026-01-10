@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import VisualEditsMessenger from "../visual-edits/VisualEditsMessenger";
 import ErrorReporter from "@/components/ErrorReporter";
@@ -24,7 +25,9 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <ErrorReporter />
-        <GaProvider />
+        <Suspense fallback={null}>
+          <GaProvider />
+        </Suspense>
         <ConsentBanner />
         <Script
           src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/scripts//route-messenger.js"
