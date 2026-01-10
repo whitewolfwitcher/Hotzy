@@ -7,6 +7,8 @@ import { Toaster } from "@/components/ui/sonner";
 import CustomAutumnProvider from "@/lib/autumn-provider";
 import { CartProvider } from "@/contexts/cart-context";
 import { PreferencesProvider } from "@/contexts/preferences-context";
+import GaProvider from "@/components/analytics/GaProvider";
+import ConsentBanner from "@/components/analytics/ConsentBanner";
 
 export const metadata: Metadata = {
   title: "Hotzy - AR Custom Mug Website",
@@ -22,6 +24,8 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <ErrorReporter />
+        <GaProvider />
+        <ConsentBanner />
         <Script
           src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/scripts//route-messenger.js"
           strategy="afterInteractive"
