@@ -7,9 +7,11 @@ import {
   writeConsent,
   type ConsentState,
 } from "@/lib/analytics/consent";
+import { getGaMeasurementId, grantAnalyticsConsent } from "@/lib/analytics/ga";
 
 export default function ConsentBanner() {
   const [consent, setConsent] = useState<ConsentState>("unknown");
+  const measurementId = getGaMeasurementId();
 
   useEffect(() => {
     setConsent(readConsent());
@@ -46,6 +48,9 @@ export default function ConsentBanner() {
             onClick={() => {
               writeConsent("granted");
               setConsent("granted");
+              if (measurementId.trim().length > 0) {
+                grantAnalyticsConsent(measurementId);
+              }
             }}
             className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
           >
