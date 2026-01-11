@@ -2,7 +2,7 @@ const CLIENT_ID_COOKIE = "hotzy_ga_cid";
 
 const logNonFatal = (err: unknown) => {
   if (process.env.NODE_ENV !== "production") {
-    console.warn("[analytics] non-fatal error", err);
+    console.warn("[analytics] suppressed error", err);
   }
 };
 

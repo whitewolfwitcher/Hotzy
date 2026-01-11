@@ -14,7 +14,7 @@ const COOKIE_MAX_AGE = 2592000;
 
 const logNonFatal = (err: unknown) => {
   if (process.env.NODE_ENV !== "production") {
-    console.warn("[analytics] non-fatal error", err);
+    console.warn("[analytics] suppressed error", err);
   }
 };
 

@@ -39,9 +39,10 @@ export default function GaProvider(): null {
       if (!clientId) return;
 
       const attribution = getAttribution();
-      const referrer = typeof document !== "undefined"
-        ? document.referrer || attribution?.referrer || undefined
-        : undefined;
+      const referrer =
+        typeof document !== "undefined"
+          ? document.referrer || attribution?.referrer || undefined
+          : undefined;
       const payload = {
         url: window.location.href,
         title: typeof document !== "undefined" ? document.title : "",
@@ -51,20 +52,24 @@ export default function GaProvider(): null {
         clientId,
       };
 
-      fetch("/api/analytics/ga4/pageview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }).catch((error) => {
-        if (hasLoggedErrorRef.current) return;
-        hasLoggedErrorRef.current = true;
-        if (process.env.NODE_ENV !== "production") {
-          console.warn("[analytics] non-fatal error", error);
-        }
-      });
+      const send = () => {
+        void fetch("/api/analytics/ga4/pageview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).catch((error) => {
+          if (hasLoggedErrorRef.current) return;
+          hasLoggedErrorRef.current = true;
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[analytics] suppressed error", error);
+          }
+        });
+      };
+
+      send();
     } catch (err) {
       if (process.env.NODE_ENV !== "production") {
-        console.warn("[analytics] non-fatal error", err);
+        console.warn("[analytics] suppressed error", err);
       }
     }
   }, [consent, pathname]);
