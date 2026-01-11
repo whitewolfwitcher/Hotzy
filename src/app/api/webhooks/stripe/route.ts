@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { supabaseServer } from '@/lib/supabase/server';
 import { getStripeSecretKey, getStripeWebhookSecret } from '@/lib/env';
 import { generateOrderPdf } from '@/lib/printing/generateOrderPdf';
+import { sendGa4Event } from '@/lib/analytics/ga4Mp';
 
 type OrderPayload = {
   status: 'paid';
@@ -28,6 +29,30 @@ const buildAmountFields = (currency: string, amountInCents: number) => {
     amount_cad: currency === 'CAD' ? amount : null,
     amount_usd: currency === 'USD' ? amount : null,
   };
+};
+
+const getRequestIp = (req: Request) => {
+  const forwarded = req.headers.get('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0]?.trim() ?? null;
+  return req.headers.get('x-real-ip');
+};
+
+const generateServerClientId = () =>
+  `${Date.now()}.${Math.floor(Math.random() * 1_000_000_000)}`;
+
+const lookupGaClientId = async (orderId?: string | null) => {
+  if (!orderId) return null;
+  const supabase = supabaseServer();
+  const { data, error } = await supabase
+    .from('orders')
+    .select('ga_client_id')
+    .eq('id', orderId)
+    .maybeSingle();
+  if (error) return null;
+  const gaClientId = (data as { ga_client_id?: unknown })?.ga_client_id;
+  return typeof gaClientId === 'string' && gaClientId.trim().length > 0
+    ? gaClientId
+    : null;
 };
 
 const upsertOrder = async (
@@ -137,6 +162,8 @@ const lookupOrderId = async (params: {
 export async function POST(req: Request) {
   const body = await req.text();
   const sig = req.headers.get('stripe-signature');
+  const requestUserAgent = req.headers.get('user-agent');
+  const requestIp = getRequestIp(req);
 
   if (!sig) {
     return NextResponse.json(
@@ -170,6 +197,7 @@ export async function POST(req: Request) {
       const currency = paymentIntent.currency.toUpperCase();
       const amountInCents =
         paymentIntent.amount_received ?? paymentIntent.amount ?? 0;
+      const value = toMoney(amountInCents) ?? 0;
 
       const payload: OrderPayload = {
         status: 'paid',
@@ -213,6 +241,32 @@ export async function POST(req: Request) {
         }
       }
 
+      const gaClientId =
+        (await lookupGaClientId(resolvedOrderId ?? orderId)) ??
+        generateServerClientId();
+      await sendGa4Event({
+        clientId: gaClientId,
+        userAgent: requestUserAgent,
+        ip: requestIp,
+        events: [
+          {
+            name: 'purchase',
+            params: {
+              transaction_id: paymentIntent.id,
+              value,
+              currency,
+              items: [
+                {
+                  item_name: 'Custom Mug',
+                  quantity: 1,
+                  price: value,
+                },
+              ],
+            },
+          },
+        ],
+      });
+
       console.info('Stripe webhook processed', {
         type: event.type,
         id: event.id,
@@ -224,6 +278,7 @@ export async function POST(req: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       const currency = session.currency?.toUpperCase() ?? 'USD';
       const amountInCents = session.amount_total ?? 0;
+      const value = toMoney(amountInCents) ?? 0;
 
       const payload: OrderPayload = {
         status: 'paid',
@@ -271,6 +326,32 @@ export async function POST(req: Request) {
           });
         }
       }
+
+      const gaClientId =
+        (await lookupGaClientId(resolvedOrderId ?? orderId)) ??
+        generateServerClientId();
+      await sendGa4Event({
+        clientId: gaClientId,
+        userAgent: requestUserAgent,
+        ip: requestIp,
+        events: [
+          {
+            name: 'purchase',
+            params: {
+              transaction_id: session.id,
+              value,
+              currency,
+              items: [
+                {
+                  item_name: 'Custom Mug',
+                  quantity: 1,
+                  price: value,
+                },
+              ],
+            },
+          },
+        ],
+      });
 
       console.info('Stripe webhook processed', {
         type: event.type,
