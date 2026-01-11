@@ -51,9 +51,9 @@ export default function FooterColumnShop() {
         },
         {
           label: "Limited Editions",
-          href: "/gallery",
+          href: "/limitededition",
           icon: <Star size={18} />,
-          ariaLabel: "View limited edition mugs in gallery",
+          ariaLabel: "View limited edition mugs",
           isPrimary: false
         },
         {
@@ -77,7 +77,7 @@ export default function FooterColumnShop() {
         },
         {
           label: "Éditions limitées",
-          href: "/gallery",
+          href: "/limitededition",
           icon: <Star size={18} />,
           ariaLabel: "Voir les mugs en édition limitée dans la galerie",
           isPrimary: false

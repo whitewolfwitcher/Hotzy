@@ -7,7 +7,7 @@ import MaterialsCraftSection from '@/components/sections/materials-craft-section
 import DesignGalleryCustomizer from '@/components/sections/design-gallery-customizer';
 
 export const metadata: Metadata = {
-  title: 'Discover Hotzy – Color-Changing Science, Materials & Design Inspiration',
+  title: 'Hotzy - Discover',
   description: 'See how heat-reactive color-changing technology reveals art, explore our materials & craft, then pick a preset design and customize it in 3D.',
 };
 

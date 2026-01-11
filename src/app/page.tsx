@@ -6,10 +6,12 @@ import FeaturesSection from "@/components/sections/features-section";
 import SpecificationsSection from "@/components/sections/specifications-section";
 import DesignGallery from "@/components/sections/design-gallery";
 import Footer from "@/components/sections/footer";
+import HashTitleSync from "@/components/seo/HashTitleSync";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-black">
+      <HashTitleSync />
       <NavigationHeader />
       <HotzyHero />
       <GallerySection />

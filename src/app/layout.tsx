@@ -10,7 +10,10 @@ import GaProvider from "@/components/analytics/GaProvider";
 import ConsentBanner from "@/components/analytics/ConsentBanner";
 
 export const metadata: Metadata = {
-  title: "Hotzy - AR Custom Mug Website",
+  title: {
+    default: "Hotzy",
+    template: "%s",
+  },
   description: "Customize your mug. See it in AR. Premium thermochromic mugs with real-time AR preview.",
 };
 
