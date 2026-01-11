@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import { Sparkles, Check, Zap, Crown, Shield } from 'lucide-react';
-import { PricingTable } from '@/components/autumn/pricing-table';
 import NavigationHeader from '@/components/sections/navigation-header';
 import Footer from '@/components/sections/footer';
 
@@ -128,11 +127,58 @@ export default function PricingPage() {
 
           {/* Pricing Table */}
           <motion.div
+            className="grid gap-6 lg:grid-cols-3"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.8 }}
           >
-            <PricingTable productDetails={productDetails} />
+            {productDetails.map((plan) => (
+              <div
+                key={plan.id}
+                className={`relative bg-gradient-to-br from-[#1A1A1A] to-black border rounded-2xl p-8 ${
+                  plan.recommendText
+                    ? "border-primary/60 shadow-[0_0_30px_rgba(118,185,0,0.25)]"
+                    : "border-primary/20"
+                }`}
+              >
+                {plan.recommendText && (
+                  <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-black">
+                    {plan.recommendText}
+                  </span>
+                )}
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  {plan.id.replace("hotzy_", "").replace("_", " ")}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  {plan.description}
+                </p>
+                {plan.price && (
+                  <div className="mb-6">
+                    <div className="text-3xl font-black text-white">
+                      {plan.price.primaryText}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {plan.price.secondaryText}
+                    </div>
+                  </div>
+                )}
+                <ul className="space-y-3 text-sm text-light-gray">
+                  {plan.items.map((item, idx) => (
+                    <li key={`${plan.id}-${idx}`} className="flex gap-2">
+                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                      <span>
+                        {item.primaryText}
+                        {item.secondaryText && (
+                          <span className="block text-xs text-muted-foreground">
+                            {item.secondaryText}
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </motion.div>
 
           {/* Features Comparison */}

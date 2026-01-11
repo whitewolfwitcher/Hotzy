@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { Autumn as autumn } from "autumn-js";
 
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
@@ -9,40 +8,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body = {};
-  try {
-    body = await request.json();
-  } catch {}
-
-  const { returnUrl } = body as { returnUrl?: string };
-
-  try {
-    const res = await autumn.customers.billingPortal(session.user.id, {
-      return_url: returnUrl || undefined,
-    } as any);
-
-    // Check for error in result
-    if (!res?.data) {
-      return NextResponse.json(
-        { error: "Failed to generate billing portal URL" },
-        { status: 500 }
-      );
-    }
-
-    const url = (res.data as any).url;
-
-    if (!url) {
-      return NextResponse.json(
-        { error: "Failed to generate billing portal URL" },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ url }, { status: 200 });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: "Failed to generate billing portal URL", message: err.message },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    { error: "Billing portal is unavailable." },
+    { status: 501 }
+  );
 }
