@@ -1,31 +1,15 @@
 const GA4_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ?? "";
 
-type GtagCommand =
-  | ["js", Date]
-  | ["config", string, Record<string, unknown>]
-  | ["event", string, Record<string, unknown>]
-  | ["consent", "default" | "update", Record<string, unknown>];
-
 declare global {
   interface Window {
-    dataLayer?: Array<unknown>;
-    gtag?: (...args: GtagCommand) => void;
+    dataLayer?: any[];
+    gtag?: (...args: any[]) => void;
+    __hotzyGaBaseLoaded?: boolean;
     __hotzyGaConfigured?: boolean;
   }
 }
 
-let defaultConsentSet = false;
-let jsInitialized = false;
 let devConsentLogged = false;
-
-const hasMeasurementId = (measurementId?: string | null): boolean =>
-  typeof measurementId === "string" && measurementId.trim().length > 0;
-
-const isBrowser = (): boolean =>
-  typeof window !== "undefined" && typeof document !== "undefined";
-
-const isGaEnabled = (measurementId?: string | null): boolean =>
-  isBrowser() && hasMeasurementId(measurementId);
 
 export const getGaMeasurementId = (): string | null => {
   const trimmed = GA4_MEASUREMENT_ID.trim();
@@ -33,27 +17,32 @@ export const getGaMeasurementId = (): string | null => {
 };
 
 export const ensureGaBaseLoaded = (measurementId: string): void => {
-  if (!isGaEnabled(measurementId)) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (window.__hotzyGaBaseLoaded) {
+    return;
+  }
+
+  if (typeof measurementId !== "string" || measurementId.trim().length === 0) {
     return;
   }
 
   window.dataLayer = window.dataLayer || [];
   window.gtag =
     window.gtag ||
-    function gtag(...args: GtagCommand) {
+    function gtag(...args: any[]) {
       window.dataLayer?.push(args);
     };
 
-  if (!defaultConsentSet && typeof window.gtag === "function") {
-    window.gtag("consent", "default", {
-      analytics_storage: "denied",
-      ad_storage: "denied",
-      wait_for_update: 500,
-    });
-    defaultConsentSet = true;
-  }
+  window.gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    wait_for_update: 500,
+  });
 
-  if (!document.getElementById("hotzy-ga4")) {
+  if (typeof document !== "undefined" && !document.getElementById("hotzy-ga4")) {
     const script = document.createElement("script");
     script.async = true;
     script.id = "hotzy-ga4";
@@ -63,32 +52,28 @@ export const ensureGaBaseLoaded = (measurementId: string): void => {
     document.head.appendChild(script);
   }
 
-  if (!jsInitialized && typeof window.gtag === "function") {
-    window.gtag("js", new Date());
-    jsInitialized = true;
-  }
+  window.gtag("js", new Date());
+  window.__hotzyGaBaseLoaded = true;
 };
 
 export const grantGaAnalytics = (measurementId: string): void => {
-  if (!isGaEnabled(measurementId)) {
+  if (typeof window === "undefined") {
     return;
   }
 
   ensureGaBaseLoaded(measurementId);
 
-  if (typeof window.gtag !== "function") {
+  if (window.__hotzyGaConfigured || typeof window.gtag !== "function") {
     return;
   }
 
   window.gtag("consent", "update", { analytics_storage: "granted" });
 
-  if (!window.__hotzyGaConfigured) {
-    window.gtag("config", measurementId, {
-      send_page_view: false,
-      transport_type: "beacon",
-    });
-    window.__hotzyGaConfigured = true;
-  }
+  window.gtag("config", measurementId, {
+    send_page_view: false,
+    transport_type: "beacon",
+  });
+  window.__hotzyGaConfigured = true;
 
   if (process.env.NODE_ENV !== "production" && !devConsentLogged) {
     console.log("[ga] consent granted + configured");
@@ -97,7 +82,11 @@ export const grantGaAnalytics = (measurementId: string): void => {
 };
 
 export const trackGaPageView = (measurementId: string, url: string): void => {
-  if (!isGaEnabled(measurementId) || typeof window.gtag !== "function") {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (!window.__hotzyGaConfigured || typeof window.gtag !== "function") {
     return;
   }
 

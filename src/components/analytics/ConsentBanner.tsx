@@ -8,7 +8,6 @@ import {
   type ConsentState,
 } from "@/lib/analytics/consent";
 import {
-  ensureGaBaseLoaded,
   getGaMeasurementId,
   grantGaAnalytics,
 } from "@/lib/analytics/ga";
@@ -53,7 +52,6 @@ export default function ConsentBanner() {
               writeConsent("granted");
               setConsent("granted");
               if (measurementId) {
-                ensureGaBaseLoaded(measurementId);
                 grantGaAnalytics(measurementId);
               }
             }}

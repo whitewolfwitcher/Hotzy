@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
-  ensureGaBaseLoaded,
   getGaMeasurementId,
   grantGaAnalytics,
   trackGaPageView,
@@ -29,7 +28,6 @@ export default function GaProvider(): null {
       return;
     }
 
-    ensureGaBaseLoaded(measurementId);
     grantGaAnalytics(measurementId);
   }, [consent, measurementId]);
 
