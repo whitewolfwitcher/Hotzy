@@ -23,6 +23,12 @@ export default function GaProvider(): null {
 
   useEffect(() => {
     try {
+      if (!pathname) {
+        return;
+      }
+      if (pathname === "/customizer" || pathname.startsWith("/customizer/")) {
+        return;
+      }
       if (consent !== "granted") {
         return;
       }
