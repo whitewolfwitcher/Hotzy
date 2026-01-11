@@ -4,13 +4,14 @@ import dynamic from 'next/dynamic';
 import NavigationHeader from '@/components/sections/navigation-header';
 import Footer from '@/components/sections/footer';
 import { Upload, Grid3x3, Check, Sparkles, Zap, Package, Truck, Shield, Move, ArrowLeft, ArrowRight, RotateCw, Image as ImageIcon, X, Copy, ChevronDown } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/cart-context';
 import { useRouter } from 'next/navigation';
 import { usePreferences } from '@/contexts/preferences-context';
 import { CAD_TO_USD, PRICE_CAD } from '@/lib/pricing';
 import { trackEvent } from '@/lib/analytics/events';
+import { track } from '@/lib/analytics/track';
 
 // Dynamically import the 3D viewer to avoid SSR issues
 const MugViewer = dynamic(() => import('@/components/3d/mug-viewer'), {
@@ -254,6 +255,7 @@ export default function CustomizerPage() {
   const [wrapUploadStatus, setWrapUploadStatus] = useState<string | null>(null);
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderNowStatus, setOrderNowStatus] = useState<string | null>(null);
+  const hasTrackedCustomizerView = useRef(false);
   
   // Image position controls
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
@@ -284,6 +286,15 @@ export default function CustomizerPage() {
   }, []);
 
   useEffect(() => {
+    if (hasTrackedCustomizerView.current) return;
+    hasTrackedCustomizerView.current = true;
+    void track('customizer_view', {
+      cup_type: cupType,
+      locale: language,
+    });
+  }, [cupType, language]);
+
+  useEffect(() => {
     void trackEvent('view_item', {
       item_name: 'Custom Mug',
       item_category: 'Mugs',
@@ -291,15 +302,27 @@ export default function CustomizerPage() {
   }, []);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
+    setExpandedSections(prev => {
+      const nextValue = !prev[section];
+      if (section === 'templates' && nextValue) {
+        const currentTemplate = DESIGN_TEMPLATES.find(
+          (template) => template.image === sectionImages[activeSection]
+        );
+        void track('template_view', {
+          cup_type: cupType,
+          template_category: currentTemplate?.category,
+        });
+      }
+      return {
+        ...prev,
+        [section]: nextValue
+      };
+    });
   };
 
   const { addItem } = useCart();
   const router = useRouter();
-  const { currency, getText } = usePreferences();
+  const { currency, getText, language } = usePreferences();
 
   // Calculate number of uploaded images (not templates)
   const uploadedImageCount = Object.values(imageTypes).filter(type => type === 'uploaded').length;
@@ -473,6 +496,12 @@ export default function CustomizerPage() {
       try {
         const resizedImage = await resizeImage(file);
         applyDesignToSections(resizedImage, 'uploaded');
+        void track('design_upload_success', {
+          cup_type: cupType,
+          section: applyTemplateToAll ? 'all' : activeSection,
+          file_type: file.type || 'unknown',
+          file_size_kb: Math.round(file.size / 1024),
+        });
       } catch (error) {
         console.error('Error resizing image:', error);
       }
@@ -486,8 +515,19 @@ export default function CustomizerPage() {
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
       try {
+        void track('design_upload_start', {
+          cup_type: cupType,
+          section: applyTemplateToAll ? 'all' : activeSection,
+          method: 'drop',
+        });
         const resizedImage = await resizeImage(file);
         applyDesignToSections(resizedImage, 'uploaded');
+        void track('design_upload_success', {
+          cup_type: cupType,
+          section: applyTemplateToAll ? 'all' : activeSection,
+          file_type: file.type || 'unknown',
+          file_size_kb: Math.round(file.size / 1024),
+        });
       } catch (error) {
         console.error('Error resizing image:', error);
       }
@@ -535,6 +575,17 @@ export default function CustomizerPage() {
     // Reset position controls when selecting a template
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
+    const selectedTemplate = DESIGN_TEMPLATES.find(
+      (template) => template.image === templateImage
+    );
+    if (selectedTemplate) {
+      void track('template_apply', {
+        cup_type: cupType,
+        template_id: selectedTemplate.id,
+        template_name: selectedTemplate.name,
+        section: applyTemplateToAll ? 'all' : activeSection,
+      });
+    }
   };
 
   const handleRemoveImage = (section: 'section1' | 'section2' | 'section3') => {
@@ -1075,7 +1126,17 @@ export default function CustomizerPage() {
                           onChange={handleFileChange}
                           className="hidden"
                         />
-                        <label htmlFor="image-upload" className="cursor-pointer">
+                        <label
+                          htmlFor="image-upload"
+                          className="cursor-pointer"
+                          onClick={() => {
+                            void track('design_upload_start', {
+                              cup_type: cupType,
+                              section: applyTemplateToAll ? 'all' : activeSection,
+                              method: 'picker',
+                            });
+                          }}
+                        >
                           <div className="flex flex-col items-center gap-2 md:gap-3">
                             <motion.div
                               className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary to-[#9ACD32] rounded-full flex items-center justify-center"

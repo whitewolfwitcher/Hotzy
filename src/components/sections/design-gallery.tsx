@@ -8,6 +8,7 @@ import designs from '@/data/designs.json';
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/contexts/cart-context';
 import { usePreferences } from '@/contexts/preferences-context';
+import { track } from '@/lib/analytics/track';
 
 type FilterId = 'all' | 'anime' | 'floral' | 'abstract' | 'outdoors' | 'matte' | 'white';
 type SortId = 'pop' | 'new';
@@ -128,7 +129,16 @@ const DesignGallery = () => {
             {filters.map((filter) => (
               <button
                 key={filter.id}
-                onClick={() => setActiveFilter(filter.id)}
+                onClick={() => {
+                  if (filter.id === activeFilter) return;
+                  setActiveFilter(filter.id);
+                  void track('filter_change', {
+                    page_context: 'design_gallery',
+                    filter_name: 'category',
+                    filter_value: filter.id,
+                    filter_action: 'set',
+                  });
+                }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeFilter === filter.id
                     ? 'bg-primary text-primary-foreground'
@@ -149,7 +159,16 @@ const DesignGallery = () => {
               {sortOptions.map((sort) => (
                 <button
                   key={sort.id}
-                  onClick={() => setActiveSort(sort.id)}
+                  onClick={() => {
+                    if (sort.id === activeSort) return;
+                    setActiveSort(sort.id);
+                    void track('filter_change', {
+                      page_context: 'design_gallery',
+                      filter_name: 'sort',
+                      filter_value: sort.id,
+                      filter_action: 'set',
+                    });
+                  }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     activeSort === sort.id
                       ? 'bg-primary text-primary-foreground'
