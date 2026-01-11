@@ -2,19 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { loadStripe } from "@stripe/stripe-js";
 import {
-  Elements,
   PaymentElement,
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
 import Link from "next/link";
 import { Lock, ArrowLeft } from "lucide-react";
-
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
+import CheckoutProviders from "./providers";
 
 function CheckoutForm({ orderId }: { orderId: string }) {
   const stripe = useStripe();
@@ -173,9 +168,9 @@ export default function CheckoutClient() {
             )}
 
             {orderId && clientSecret && options && (
-              <Elements stripe={stripePromise} options={options}>
+              <CheckoutProviders options={options}>
                 <CheckoutForm orderId={orderId} />
-              </Elements>
+              </CheckoutProviders>
             )}
           </div>
         </div>
