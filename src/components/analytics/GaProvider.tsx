@@ -1,22 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import {
-  getGaMeasurementId,
-  grantGaAnalytics,
-  trackGaPageView,
-} from "@/lib/analytics/ga";
 import {
   readConsent,
   subscribeConsentChange,
   type ConsentState,
 } from "@/lib/analytics/consent";
+import { getOrCreateClientId } from "@/lib/analytics/clientId";
 
 export default function GaProvider(): null {
   const pathname = usePathname();
   const [consent, setConsent] = useState<ConsentState>("unknown");
-  const measurementId = getGaMeasurementId();
+  const hasLoggedErrorRef = useRef(false);
 
   useEffect(() => {
     setConsent(readConsent());
@@ -24,20 +20,33 @@ export default function GaProvider(): null {
   }, []);
 
   useEffect(() => {
-    if (consent !== "granted" || !measurementId) {
+    if (consent !== "granted") {
+      return;
+    }
+    if (typeof window === "undefined") {
       return;
     }
 
-    grantGaAnalytics(measurementId);
-  }, [consent, measurementId]);
+    const clientId = getOrCreateClientId();
+    if (!clientId) return;
 
-  useEffect(() => {
-    if (consent !== "granted" || !measurementId) {
-      return;
-    }
+    const payload = {
+      url: window.location.href,
+      title: document.title,
+      path: `${window.location.pathname}${window.location.search}`,
+      clientId,
+    };
 
-    trackGaPageView(measurementId, window.location.href);
-  }, [consent, measurementId, pathname]);
+    fetch("/api/analytics/ga4/pageview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).catch((error) => {
+      if (hasLoggedErrorRef.current) return;
+      hasLoggedErrorRef.current = true;
+      console.error("[ga4-mp] page_view failed", error);
+    });
+  }, [consent, pathname]);
 
   return null;
 }

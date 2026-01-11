@@ -13,6 +13,13 @@ type SendGa4EventInput = {
   userProperties?: Ga4UserProperties;
 };
 
+type SendGa4MpEventInput = {
+  clientId: string;
+  userAgent?: string | null;
+  ip?: string | null;
+  events: Ga4Event[];
+};
+
 const GA4_MEASUREMENT_ID = process.env.GA4_MEASUREMENT_ID ?? "";
 // Create this in GA4 Admin -> Data Streams -> Measurement Protocol API secrets.
 const GA4_API_SECRET = process.env.GA4_API_SECRET ?? "";
@@ -48,13 +55,13 @@ const logSendErrorOnce = (error: unknown) => {
   console.error("[ga4-mp] Failed to send Measurement Protocol event", error);
 };
 
-export async function sendGa4Event({
+const sendPayload = async ({
   clientId,
   userAgent,
   ip,
   events,
   userProperties,
-}: SendGa4EventInput): Promise<void> {
+}: SendGa4EventInput): Promise<void> => {
   try {
     if (!hasValue(GA4_MEASUREMENT_ID) || !hasValue(GA4_API_SECRET)) {
       logConfigErrorOnce();
@@ -104,4 +111,17 @@ export async function sendGa4Event({
   } catch (error) {
     logSendErrorOnce(error);
   }
+};
+
+export async function sendGa4MpEvent({
+  clientId,
+  userAgent,
+  ip,
+  events,
+}: SendGa4MpEventInput): Promise<void> {
+  await sendPayload({ clientId, userAgent, ip, events });
+}
+
+export async function sendGa4Event(input: SendGa4EventInput): Promise<void> {
+  await sendPayload(input);
 }

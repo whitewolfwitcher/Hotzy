@@ -12,6 +12,11 @@ import {
   grantGaAnalytics,
 } from "@/lib/analytics/ga";
 
+const setConsentCookie = (value: "granted" | "denied") => {
+  if (typeof document === "undefined") return;
+  document.cookie = `hotzy_consent=${value}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
+};
+
 export default function ConsentBanner() {
   const [consent, setConsent] = useState<ConsentState>("unknown");
   const measurementId = getGaMeasurementId();
@@ -40,6 +45,7 @@ export default function ConsentBanner() {
             type="button"
             onClick={() => {
               writeConsent("denied");
+              setConsentCookie("denied");
               setConsent("denied");
             }}
             className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
@@ -50,6 +56,7 @@ export default function ConsentBanner() {
             type="button"
             onClick={() => {
               writeConsent("granted");
+              setConsentCookie("granted");
               setConsent("granted");
               if (measurementId) {
                 grantGaAnalytics(measurementId);
