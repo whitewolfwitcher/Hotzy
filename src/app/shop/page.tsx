@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingCart, Star, Sparkles, Check, Globe, DollarSign } from 'lucide-react';
+import { trackEvent } from '@/lib/analytics/trackEvent';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -146,7 +147,17 @@ export default function ShopPage() {
         <div className="container py-8">
           <div className="flex justify-end gap-3 pointer-events-auto">
             <motion.button
-              onClick={() => setCurrency(currency === 'CAD' ? 'USD' : 'CAD')}
+              onClick={() => {
+                const next = currency === 'CAD' ? 'USD' : 'CAD';
+                setCurrency(next);
+                void trackEvent('filter_change', {
+                  page_context: 'shop',
+                  filter_name: 'currency',
+                  filter_value: next,
+                  filter_action: 'set',
+                  ui_component: 'top_toggle',
+                });
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:border-primary transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}>
@@ -155,7 +166,17 @@ export default function ShopPage() {
             </motion.button>
 
             <motion.button
-              onClick={() => setLanguage(language === 'en' ? 'fr' : 'en')}
+              onClick={() => {
+                const next = language === 'en' ? 'fr' : 'en';
+                setLanguage(next);
+                void trackEvent('filter_change', {
+                  page_context: 'shop',
+                  filter_name: 'language',
+                  filter_value: next,
+                  filter_action: 'set',
+                  ui_component: 'top_toggle',
+                });
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:border-primary transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}>

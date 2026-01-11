@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Globe, Menu, X, ShoppingCart, DollarSign } from 'lucide-react';
 import { useCart } from '@/contexts/cart-context';
 import { usePreferences } from '@/contexts/preferences-context';
+import { trackEvent } from '@/lib/analytics/trackEvent';
 
 const HotzyLogo = () => (
   <svg
@@ -81,14 +82,34 @@ const NavigationHeader = () => {
                                     )}
                                 </Link>
                                 <button 
-                                    onClick={() => setCurrency(currency === 'CAD' ? 'USD' : 'CAD')}
+                                    onClick={() => {
+                                        const next = currency === 'CAD' ? 'USD' : 'CAD';
+                                        setCurrency(next);
+                                        void trackEvent('filter_change', {
+                                            page_context: 'home',
+                                            filter_name: 'currency',
+                                            filter_value: next,
+                                            filter_action: 'set',
+                                            ui_component: 'header_toggle',
+                                        });
+                                    }}
                                     aria-label="Toggle currency" 
                                     className="hover:text-primary transition-colors flex items-center gap-1">
                                     <DollarSign size={18} />
                                     <span className="text-xs font-bold">{currency}</span>
                                 </button>
                                 <button 
-                                    onClick={() => setLanguage(language === 'en' ? 'fr' : 'en')}
+                                    onClick={() => {
+                                        const next = language === 'en' ? 'fr' : 'en';
+                                        setLanguage(next);
+                                        void trackEvent('filter_change', {
+                                            page_context: 'home',
+                                            filter_name: 'language',
+                                            filter_value: next,
+                                            filter_action: 'set',
+                                            ui_component: 'header_toggle',
+                                        });
+                                    }}
                                     aria-label="Toggle language" 
                                     className="hover:text-primary transition-colors flex items-center gap-1">
                                     <Globe size={18} />
@@ -107,14 +128,34 @@ const NavigationHeader = () => {
                                 )}
                             </Link>
                             <button 
-                                onClick={() => setCurrency(currency === 'CAD' ? 'USD' : 'CAD')}
+                                onClick={() => {
+                                    const next = currency === 'CAD' ? 'USD' : 'CAD';
+                                    setCurrency(next);
+                                    void trackEvent('filter_change', {
+                                        page_context: 'home',
+                                        filter_name: 'currency',
+                                        filter_value: next,
+                                        filter_action: 'set',
+                                        ui_component: 'header_toggle',
+                                    });
+                                }}
                                 aria-label="Toggle currency" 
                                 className="hover:text-primary transition-colors flex items-center gap-1">
                                 <DollarSign size={20} />
                                 <span className="text-xs font-bold">{currency}</span>
                             </button>
                             <button 
-                                onClick={() => setLanguage(language === 'en' ? 'fr' : 'en')}
+                                onClick={() => {
+                                    const next = language === 'en' ? 'fr' : 'en';
+                                    setLanguage(next);
+                                    void trackEvent('filter_change', {
+                                        page_context: 'home',
+                                        filter_name: 'language',
+                                        filter_value: next,
+                                        filter_action: 'set',
+                                        ui_component: 'header_toggle',
+                                    });
+                                }}
                                 aria-label="Toggle language" 
                                 className="hover:text-primary transition-colors flex items-center gap-1">
                                 <Globe size={20} />

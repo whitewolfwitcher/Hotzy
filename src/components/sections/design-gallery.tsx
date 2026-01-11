@@ -8,7 +8,7 @@ import designs from '@/data/designs.json';
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/contexts/cart-context';
 import { usePreferences } from '@/contexts/preferences-context';
-import { track } from '@/lib/analytics/track';
+import { trackEvent } from '@/lib/analytics/trackEvent';
 
 type FilterId = 'all' | 'anime' | 'floral' | 'abstract' | 'outdoors' | 'matte' | 'white';
 type SortId = 'pop' | 'new';
@@ -132,11 +132,12 @@ const DesignGallery = () => {
                 onClick={() => {
                   if (filter.id === activeFilter) return;
                   setActiveFilter(filter.id);
-                  void track('filter_change', {
+                  void trackEvent('filter_change', {
                     page_context: 'design_gallery',
                     filter_name: 'category',
                     filter_value: filter.id,
                     filter_action: 'set',
+                    ui_component: 'filter_button',
                   });
                 }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -162,11 +163,12 @@ const DesignGallery = () => {
                   onClick={() => {
                     if (sort.id === activeSort) return;
                     setActiveSort(sort.id);
-                    void track('filter_change', {
+                    void trackEvent('filter_change', {
                       page_context: 'design_gallery',
                       filter_name: 'sort',
                       filter_value: sort.id,
                       filter_action: 'set',
+                      ui_component: 'sort_button',
                     });
                   }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${

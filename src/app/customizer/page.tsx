@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { usePreferences } from '@/contexts/preferences-context';
 import { CAD_TO_USD, PRICE_CAD } from '@/lib/pricing';
 import { trackEvent } from '@/lib/analytics/events';
+import { trackEvent as trackFilterEvent } from '@/lib/analytics/trackEvent';
 import { track } from '@/lib/analytics/track';
 
 // Dynamically import the 3D viewer to avoid SSR issues
@@ -970,7 +971,17 @@ export default function CustomizerPage() {
                     <div className="flex items-center gap-2 bg-black/40 border border-primary/30 rounded-full p-1">
                       <button
                         type="button"
-                        onClick={() => setCupType('hotzy')}
+                        onClick={() => {
+                          if (cupType === 'hotzy') return;
+                          setCupType('hotzy');
+                          void trackFilterEvent('filter_change', {
+                            page_context: 'customizer',
+                            filter_name: 'cup_type',
+                            filter_value: 'hotzy',
+                            filter_action: 'set',
+                            ui_component: 'cup_type_toggle',
+                          });
+                        }}
                         className={`px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold transition-all ${
                           cupType === 'hotzy'
                             ? 'bg-primary text-black'
@@ -981,7 +992,17 @@ export default function CustomizerPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setCupType('standard')}
+                        onClick={() => {
+                          if (cupType === 'standard') return;
+                          setCupType('standard');
+                          void trackFilterEvent('filter_change', {
+                            page_context: 'customizer',
+                            filter_name: 'cup_type',
+                            filter_value: 'standard',
+                            filter_action: 'set',
+                            ui_component: 'cup_type_toggle',
+                          });
+                        }}
                         className={`px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold transition-all ${
                           cupType === 'standard'
                             ? 'bg-primary text-black'
