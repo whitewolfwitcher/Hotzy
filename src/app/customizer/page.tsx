@@ -10,6 +10,7 @@ import { useCart } from '@/contexts/cart-context';
 import { useRouter } from 'next/navigation';
 import { usePreferences } from '@/contexts/preferences-context';
 import { CAD_TO_USD, PRICE_CAD } from '@/lib/pricing';
+import { trackEvent } from '@/lib/analytics/events';
 
 // Dynamically import the 3D viewer to avoid SSR issues
 const MugViewer = dynamic(() => import('@/components/3d/mug-viewer'), {
@@ -280,6 +281,13 @@ export default function CustomizerPage() {
     window.addEventListener('resize', checkDesktop);
     
     return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
+
+  useEffect(() => {
+    void trackEvent('view_item', {
+      item_name: 'Custom Mug',
+      item_category: 'Mugs',
+    });
   }, []);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -596,6 +604,11 @@ export default function CustomizerPage() {
       },
       price: basePriceCad,
     });
+
+    void trackEvent('add_to_cart', {
+      item_name: 'Custom Mug',
+      item_category: 'Mugs',
+    });
   };
 
   const createWrapBlob = async (): Promise<Blob> => {
@@ -664,6 +677,10 @@ export default function CustomizerPage() {
   const handleOrderNow = async () => {
     if (isOrdering) return;
     setIsOrdering(true);
+    void trackEvent('begin_checkout', {
+      item_name: 'Custom Mug',
+      item_category: 'Mugs',
+    });
     setOrderNowStatus(getText('Preparing design…', 'Préparation du design…'));
 
     try {
