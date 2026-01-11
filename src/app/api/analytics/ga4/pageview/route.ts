@@ -15,12 +15,28 @@ const getRequestIp = () => {
 };
 
 export async function POST(request: Request) {
-  const consent = cookies().get("hotzy_consent")?.value;
+  const consent = cookies().get("hotzy_consent")?.value ?? "unknown";
+  const body = (await request.json().catch(() => null)) as PageViewPayload | null;
+  let derivedPath = "";
+  if (typeof body?.path === "string" && body.path.length > 0) {
+    derivedPath = body.path;
+  } else if (typeof body?.url === "string") {
+    try {
+      derivedPath = new URL(body.url).pathname;
+    } catch {
+      derivedPath = "";
+    }
+  }
+
+  console.log("[ga4] pageview endpoint hit", {
+    consent,
+    path: derivedPath,
+  });
+
   if (consent !== "granted") {
     return new Response(null, { status: 204 });
   }
 
-  const body = (await request.json().catch(() => null)) as PageViewPayload | null;
   if (!body || typeof body.url !== "string" || typeof body.clientId !== "string") {
     return new Response(null, { status: 400 });
   }
@@ -28,10 +44,8 @@ export async function POST(request: Request) {
   const userAgent = headers().get("user-agent");
   const ip = getRequestIp();
 
-  await sendGa4MpEvent({
-    clientId: body.clientId,
-    userAgent,
-    ip,
+  const payload = {
+    client_id: body.clientId,
     events: [
       {
         name: "page_view",
@@ -42,7 +56,16 @@ export async function POST(request: Request) {
         },
       },
     ],
-  });
+  };
+
+  await sendGa4MpEvent(
+    {
+      ...payload,
+      user_agent: userAgent ?? undefined,
+      ip_override: ip ?? undefined,
+    },
+    { debug: process.env.GA4_DEBUG === "true" }
+  );
 
   return new Response(null, { status: 204 });
 }

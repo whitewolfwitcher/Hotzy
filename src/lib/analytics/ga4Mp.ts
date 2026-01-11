@@ -13,11 +13,16 @@ type SendGa4EventInput = {
   userProperties?: Ga4UserProperties;
 };
 
-type SendGa4MpEventInput = {
-  clientId: string;
-  userAgent?: string | null;
-  ip?: string | null;
+type Ga4MpPayload = {
+  client_id: string;
   events: Ga4Event[];
+  user_properties?: Ga4UserProperties;
+  user_agent?: string;
+  ip_override?: string;
+};
+
+type SendGa4MpOptions = {
+  debug?: boolean;
 };
 
 const GA4_MEASUREMENT_ID = process.env.GA4_MEASUREMENT_ID ?? "";
@@ -25,14 +30,8 @@ const GA4_MEASUREMENT_ID = process.env.GA4_MEASUREMENT_ID ?? "";
 const GA4_API_SECRET = process.env.GA4_API_SECRET ?? "";
 const GA4_DEBUG = process.env.GA4_DEBUG ?? "";
 
-let loggedConfigError = false;
-let loggedSendError = false;
-
 const hasValue = (value?: string | null) =>
   typeof value === "string" && value.trim().length > 0;
-
-const isDebugEnabled = () =>
-  ["1", "true", "yes", "on"].includes(GA4_DEBUG.trim().toLowerCase());
 
 const getCollectUrl = (debug = false) => {
   const measurementId = encodeURIComponent(GA4_MEASUREMENT_ID);
@@ -43,85 +42,98 @@ const getCollectUrl = (debug = false) => {
   return `${base}?measurement_id=${measurementId}&api_secret=${apiSecret}`;
 };
 
-const logConfigErrorOnce = () => {
-  if (loggedConfigError) return;
-  loggedConfigError = true;
-  console.error("[ga4-mp] Missing GA4_MEASUREMENT_ID or GA4_API_SECRET");
+const logMissingEnv = () => {
+  console.error("[ga4mp] missing env");
 };
 
-const logSendErrorOnce = (error: unknown) => {
-  if (loggedSendError) return;
-  loggedSendError = true;
-  console.error("[ga4-mp] Failed to send Measurement Protocol event", error);
+const logSendError = (error: unknown) => {
+  console.error("[ga4mp] send error", error);
 };
 
-const sendPayload = async ({
-  clientId,
-  userAgent,
-  ip,
-  events,
-  userProperties,
-}: SendGa4EventInput): Promise<void> => {
+const logCollectStatus = (status?: number) => {
+  if (typeof status === "number") {
+    console.log("[ga4mp] collect status", status);
+  } else {
+    console.log("[ga4mp] collect status unknown");
+  }
+};
+
+const logValidationMessages = (messages: unknown) => {
+  console.log("[ga4mp] validationMessages", messages);
+};
+
+export const sendCollect = async (payload: Ga4MpPayload) => {
   try {
-    if (!hasValue(GA4_MEASUREMENT_ID) || !hasValue(GA4_API_SECRET)) {
-      logConfigErrorOnce();
-      return;
-    }
-
-    if (!hasValue(clientId) || !Array.isArray(events) || events.length === 0) {
-      return;
-    }
-
-    const payload: Record<string, unknown> = {
-      client_id: clientId,
-      events,
-    };
-
-    if (userProperties && Object.keys(userProperties).length > 0) {
-      payload.user_properties = userProperties;
-    }
-
-    if (hasValue(userAgent)) {
-      payload.user_agent = userAgent;
-    }
-
-    if (hasValue(ip)) {
-      payload.ip_override = ip;
-    }
-
-    await fetch(getCollectUrl(), {
+    return await fetch(getCollectUrl(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
-    if (isDebugEnabled()) {
-      const debugResponse = await fetch(getCollectUrl(true), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const debugBody = await debugResponse.json().catch(() => null);
-      const validationMessages = debugBody?.validationMessages;
-      if (Array.isArray(validationMessages) && validationMessages.length > 0) {
-        console.log("[ga4-mp] validationMessages", validationMessages);
-      }
-    }
   } catch (error) {
-    logSendErrorOnce(error);
+    logSendError(error);
+    return null;
   }
 };
 
-export async function sendGa4MpEvent({
-  clientId,
-  userAgent,
-  ip,
-  events,
-}: SendGa4MpEventInput): Promise<void> {
-  await sendPayload({ clientId, userAgent, ip, events });
+export const sendDebug = async (payload: Ga4MpPayload) => {
+  try {
+    const response = await fetch(getCollectUrl(true), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return await response.json().catch(() => null);
+  } catch (error) {
+    logSendError(error);
+    return null;
+  }
+};
+
+export async function sendGa4MpEvent(
+  payload: Ga4MpPayload,
+  options: SendGa4MpOptions = {}
+): Promise<void> {
+  try {
+    if (!hasValue(GA4_MEASUREMENT_ID) || !hasValue(GA4_API_SECRET)) {
+      logMissingEnv();
+      return;
+    }
+
+    if (!payload?.client_id || !Array.isArray(payload.events) || payload.events.length === 0) {
+      return;
+    }
+
+    const debugEnabled =
+      GA4_DEBUG.trim().toLowerCase() === "true" || options.debug === true;
+    if (debugEnabled) {
+      const debugBody = await sendDebug(payload);
+      logValidationMessages(debugBody?.validationMessages ?? debugBody);
+    }
+
+    const response = await sendCollect(payload);
+    logCollectStatus(response?.status);
+  } catch (error) {
+    logSendError(error);
+  }
 }
 
 export async function sendGa4Event(input: SendGa4EventInput): Promise<void> {
-  await sendPayload(input);
+  const payload: Ga4MpPayload = {
+    client_id: input.clientId,
+    events: input.events,
+  };
+
+  if (input.userProperties && Object.keys(input.userProperties).length > 0) {
+    payload.user_properties = input.userProperties;
+  }
+
+  if (hasValue(input.userAgent)) {
+    payload.user_agent = input.userAgent ?? undefined;
+  }
+
+  if (hasValue(input.ip)) {
+    payload.ip_override = input.ip ?? undefined;
+  }
+
+  await sendGa4MpEvent(payload);
 }
