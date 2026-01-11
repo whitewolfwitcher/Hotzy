@@ -28,7 +28,7 @@ const isBrowser = (): boolean =>
 export const isGaEnabled = (measurementId?: string): boolean =>
   isBrowser() && hasMeasurementId(measurementId);
 
-export const ensureGaLoaded = (measurementId: string): void => {
+export const ensureGaBase = (measurementId: string): void => {
   if (!isGaEnabled(measurementId)) {
     return;
   }
@@ -70,12 +70,12 @@ export const ensureGaLoaded = (measurementId: string): void => {
   }
 };
 
-export const grantAnalyticsConsent = (measurementId: string): void => {
+export const grantGaAnalytics = (measurementId: string): void => {
   if (!isGaEnabled(measurementId)) {
     return;
   }
 
-  ensureGaLoaded(measurementId);
+  ensureGaBase(measurementId);
 
   if (typeof window.gtag !== "function") {
     return;

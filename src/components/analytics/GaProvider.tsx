@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
-  ensureGaLoaded,
+  ensureGaBase,
   getGaMeasurementId,
-  grantAnalyticsConsent,
+  grantGaAnalytics,
   isGaEnabled,
   pageView,
 } from "@/lib/analytics/ga";
@@ -32,8 +32,8 @@ export default function GaProvider(): null {
       return;
     }
 
-    ensureGaLoaded(measurementId);
-    grantAnalyticsConsent(measurementId);
+    ensureGaBase(measurementId);
+    grantGaAnalytics(measurementId);
   }, [consent, measurementId]);
 
   useEffect(() => {
