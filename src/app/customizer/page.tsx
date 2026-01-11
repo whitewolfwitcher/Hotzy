@@ -10,8 +10,7 @@ import { useCart } from '@/contexts/cart-context';
 import { useRouter } from 'next/navigation';
 import { usePreferences } from '@/contexts/preferences-context';
 import { CAD_TO_USD, PRICE_CAD } from '@/lib/pricing';
-import { trackEvent } from '@/lib/analytics/events';
-import { trackEvent as trackFilterEvent } from '@/lib/analytics/trackEvent';
+import { trackEvent } from '@/lib/analytics/trackEvent';
 import { track } from '@/lib/analytics/track';
 
 // Dynamically import the 3D viewer to avoid SSR issues
@@ -291,19 +290,38 @@ export default function CustomizerPage() {
   }, []);
 
   useEffect(() => {
-    if (hasTrackedCustomizerView.current) return;
-    hasTrackedCustomizerView.current = true;
-    void track('customizer_view', {
-      cup_type: cupType,
-      locale: language,
-    });
-  }, [cupType, language]);
+    try {
+      if (hasTrackedCustomizerView.current) return;
+      hasTrackedCustomizerView.current = true;
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[ga] customizer_view');
+      }
+      void trackEvent('customizer_view', {
+        page_context: 'customizer',
+        cup_type: cupType,
+      });
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[analytics] suppressed error', err);
+      }
+    }
+  }, [cupType]);
 
   useEffect(() => {
-    void trackEvent('view_item', {
-      item_name: 'Custom Mug',
-      item_category: 'Mugs',
-    });
+    try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[ga] view_item variant=${cupType}`);
+      }
+      void trackEvent('view_item', {
+        item_name: 'Custom Mug',
+        item_category: 'Mugs',
+        item_variant: cupType,
+      });
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[analytics] suppressed error', err);
+      }
+    }
   }, []);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -974,7 +992,10 @@ export default function CustomizerPage() {
                         onClick={() => {
                           if (cupType === 'hotzy') return;
                           setCupType('hotzy');
-                          void trackFilterEvent('filter_change', {
+                          if (process.env.NODE_ENV !== 'production') {
+                            console.log(`[ga] filter_change cup_type=hotzy`);
+                          }
+                          void trackEvent('filter_change', {
                             page_context: 'customizer',
                             filter_name: 'cup_type',
                             filter_value: 'hotzy',
@@ -995,7 +1016,10 @@ export default function CustomizerPage() {
                         onClick={() => {
                           if (cupType === 'standard') return;
                           setCupType('standard');
-                          void trackFilterEvent('filter_change', {
+                          if (process.env.NODE_ENV !== 'production') {
+                            console.log(`[ga] filter_change cup_type=standard`);
+                          }
+                          void trackEvent('filter_change', {
                             page_context: 'customizer',
                             filter_name: 'cup_type',
                             filter_value: 'standard',
