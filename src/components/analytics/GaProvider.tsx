@@ -8,11 +8,13 @@ import {
   type ConsentState,
 } from "@/lib/analytics/consent";
 import { getOrCreateClientId } from "@/lib/analytics/clientId";
+import { captureAttribution, getAttribution } from "@/lib/analytics/attribution";
 
 export default function GaProvider(): null {
   const pathname = usePathname();
   const [consent, setConsent] = useState<ConsentState>("unknown");
   const hasLoggedErrorRef = useRef(false);
+  const hasCapturedAttributionRef = useRef(false);
 
   useEffect(() => {
     setConsent(readConsent());
@@ -27,13 +29,22 @@ export default function GaProvider(): null {
       return;
     }
 
+    if (!hasCapturedAttributionRef.current) {
+      captureAttribution();
+      hasCapturedAttributionRef.current = true;
+    }
+
     const clientId = getOrCreateClientId();
     if (!clientId) return;
 
+    const attribution = getAttribution();
+    const referrer = document.referrer || attribution?.referrer || undefined;
     const payload = {
       url: window.location.href,
       title: document.title,
       path: `${window.location.pathname}${window.location.search}`,
+      attribution: attribution ?? undefined,
+      referrer,
       clientId,
     };
 

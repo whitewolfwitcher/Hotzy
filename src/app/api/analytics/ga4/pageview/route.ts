@@ -5,6 +5,8 @@ type PageViewPayload = {
   url: string;
   title?: string;
   path?: string;
+  attribution?: Record<string, string>;
+  referrer?: string;
   clientId: string;
 };
 
@@ -44,6 +46,10 @@ export async function POST(request: Request) {
   const userAgent = headers().get("user-agent");
   const ip = getRequestIp();
 
+  const attribution =
+    body.attribution && typeof body.attribution === "object"
+      ? body.attribution
+      : {};
   const payload = {
     client_id: body.clientId,
     events: [
@@ -53,6 +59,15 @@ export async function POST(request: Request) {
           page_location: body.url,
           page_title: body.title ?? "",
           page_path: body.path ?? "",
+          page_referrer:
+            typeof body.referrer === "string" ? body.referrer : undefined,
+          utm_source: attribution.utm_source,
+          utm_medium: attribution.utm_medium,
+          utm_campaign: attribution.utm_campaign,
+          utm_content: attribution.utm_content,
+          utm_term: attribution.utm_term,
+          gclid: attribution.gclid,
+          fbclid: attribution.fbclid,
         },
       },
     ],
