@@ -40,6 +40,8 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  productionBrowserSourceMaps: true,
+
   turbopack: {
     rules: {
       "*.{jsx,tsx}": {
