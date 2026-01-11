@@ -22,41 +22,51 @@ export default function GaProvider(): null {
   }, []);
 
   useEffect(() => {
-    if (consent !== "granted") {
-      return;
+    try {
+      if (consent !== "granted") {
+        return;
+      }
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      if (!hasCapturedAttributionRef.current) {
+        captureAttribution();
+        hasCapturedAttributionRef.current = true;
+      }
+
+      const clientId = getOrCreateClientId();
+      if (!clientId) return;
+
+      const attribution = getAttribution();
+      const referrer = typeof document !== "undefined"
+        ? document.referrer || attribution?.referrer || undefined
+        : undefined;
+      const payload = {
+        url: window.location.href,
+        title: typeof document !== "undefined" ? document.title : "",
+        path: `${window.location.pathname}${window.location.search}`,
+        attribution: attribution ?? undefined,
+        referrer,
+        clientId,
+      };
+
+      fetch("/api/analytics/ga4/pageview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch((error) => {
+        if (hasLoggedErrorRef.current) return;
+        hasLoggedErrorRef.current = true;
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[analytics] non-fatal error", error);
+        }
+      });
+    } catch (err) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[analytics] non-fatal error", err);
+      }
     }
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    if (!hasCapturedAttributionRef.current) {
-      captureAttribution();
-      hasCapturedAttributionRef.current = true;
-    }
-
-    const clientId = getOrCreateClientId();
-    if (!clientId) return;
-
-    const attribution = getAttribution();
-    const referrer = document.referrer || attribution?.referrer || undefined;
-    const payload = {
-      url: window.location.href,
-      title: document.title,
-      path: `${window.location.pathname}${window.location.search}`,
-      attribution: attribution ?? undefined,
-      referrer,
-      clientId,
-    };
-
-    fetch("/api/analytics/ga4/pageview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }).catch((error) => {
-      if (hasLoggedErrorRef.current) return;
-      hasLoggedErrorRef.current = true;
-      console.error("[ga4-mp] page_view failed", error);
-    });
   }, [consent, pathname]);
 
   return null;
