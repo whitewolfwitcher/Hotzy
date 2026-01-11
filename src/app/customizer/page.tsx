@@ -273,6 +273,10 @@ export default function CustomizerPage() {
     details: false,
   });
 
+  const { addItem } = useCart();
+  const router = useRouter();
+  const { currency, getText, language } = usePreferences();
+
   // Check if we're on desktop on mount and window resize
   useEffect(() => {
     const checkDesktop = () => {
@@ -319,10 +323,6 @@ export default function CustomizerPage() {
       };
     });
   };
-
-  const { addItem } = useCart();
-  const router = useRouter();
-  const { currency, getText, language } = usePreferences();
 
   // Calculate number of uploaded images (not templates)
   const uploadedImageCount = Object.values(imageTypes).filter(type => type === 'uploaded').length;
