@@ -10,32 +10,32 @@ declare global {
   interface Window {
     dataLayer?: Array<unknown>;
     gtag?: (...args: GtagCommand) => void;
+    __hotzyGaConfigured?: boolean;
   }
 }
 
-const loadedMeasurementIds = new Set<string>();
-const configuredMeasurementIds = new Set<string>();
 let defaultConsentSet = false;
 let jsInitialized = false;
 let devConsentLogged = false;
 
-const hasMeasurementId = (measurementId?: string): boolean =>
+const hasMeasurementId = (measurementId?: string | null): boolean =>
   typeof measurementId === "string" && measurementId.trim().length > 0;
 
 const isBrowser = (): boolean =>
   typeof window !== "undefined" && typeof document !== "undefined";
 
-export const isGaEnabled = (measurementId?: string): boolean =>
+const isGaEnabled = (measurementId?: string | null): boolean =>
   isBrowser() && hasMeasurementId(measurementId);
 
-export const ensureGaBase = (measurementId: string): void => {
+export const getGaMeasurementId = (): string | null => {
+  const trimmed = GA4_MEASUREMENT_ID.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+export const ensureGaBaseLoaded = (measurementId: string): void => {
   if (!isGaEnabled(measurementId)) {
     return;
   }
-
-  const scriptSrc = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(
-    measurementId,
-  )}`;
 
   window.dataLayer = window.dataLayer || [];
   window.gtag =
@@ -44,7 +44,7 @@ export const ensureGaBase = (measurementId: string): void => {
       window.dataLayer?.push(args);
     };
 
-  if (!defaultConsentSet) {
+  if (!defaultConsentSet && typeof window.gtag === "function") {
     window.gtag("consent", "default", {
       analytics_storage: "denied",
       ad_storage: "denied",
@@ -53,18 +53,17 @@ export const ensureGaBase = (measurementId: string): void => {
     defaultConsentSet = true;
   }
 
-  if (!loadedMeasurementIds.has(measurementId)) {
-    if (!document.querySelector(`script[data-ga4-id="${measurementId}"]`)) {
-      const script = document.createElement("script");
-      script.async = true;
-      script.src = scriptSrc;
-      script.dataset.ga4Id = measurementId;
-      document.head.appendChild(script);
-    }
-    loadedMeasurementIds.add(measurementId);
+  if (!document.getElementById("hotzy-ga4")) {
+    const script = document.createElement("script");
+    script.async = true;
+    script.id = "hotzy-ga4";
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(
+      measurementId,
+    )}`;
+    document.head.appendChild(script);
   }
 
-  if (!jsInitialized) {
+  if (!jsInitialized && typeof window.gtag === "function") {
     window.gtag("js", new Date());
     jsInitialized = true;
   }
@@ -75,7 +74,7 @@ export const grantGaAnalytics = (measurementId: string): void => {
     return;
   }
 
-  ensureGaBase(measurementId);
+  ensureGaBaseLoaded(measurementId);
 
   if (typeof window.gtag !== "function") {
     return;
@@ -83,27 +82,34 @@ export const grantGaAnalytics = (measurementId: string): void => {
 
   window.gtag("consent", "update", { analytics_storage: "granted" });
 
-  if (!configuredMeasurementIds.has(measurementId)) {
-    window.gtag("config", measurementId, { send_page_view: false });
-    configuredMeasurementIds.add(measurementId);
+  if (!window.__hotzyGaConfigured) {
+    window.gtag("config", measurementId, {
+      send_page_view: false,
+      transport_type: "beacon",
+    });
+    window.__hotzyGaConfigured = true;
   }
 
   if (process.env.NODE_ENV !== "production" && !devConsentLogged) {
-    console.info("[ga] consent granted");
+    console.log("[ga] consent granted + configured");
     devConsentLogged = true;
   }
 };
 
-export const pageView = (params: {
-  page_location: string;
-  page_path: string;
-  page_title: string;
-}, measurementId?: string): void => {
+export const trackGaPageView = (measurementId: string, url: string): void => {
   if (!isGaEnabled(measurementId) || typeof window.gtag !== "function") {
     return;
   }
 
-  window.gtag("event", "page_view", params);
-};
+  const location = new URL(url);
+  window.gtag("event", "page_view", {
+    send_to: measurementId,
+    page_location: url,
+    page_path: `${location.pathname}${location.search}`,
+    page_title: document.title,
+  });
 
-export const getGaMeasurementId = (): string => GA4_MEASUREMENT_ID;
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[ga] page_view", window.location.pathname);
+  }
+};

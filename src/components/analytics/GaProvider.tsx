@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
-  ensureGaBase,
+  ensureGaBaseLoaded,
   getGaMeasurementId,
   grantGaAnalytics,
-  isGaEnabled,
-  pageView,
+  trackGaPageView,
 } from "@/lib/analytics/ga";
 import {
   readConsent,
@@ -25,28 +24,22 @@ export default function GaProvider(): null {
     return subscribeConsentChange(setConsent);
   }, []);
 
-  const pagePath = useMemo(() => pathname ?? "/", [pathname]);
-
   useEffect(() => {
-    if (consent !== "granted" || !isGaEnabled(measurementId)) {
+    if (consent !== "granted" || !measurementId) {
       return;
     }
 
-    ensureGaBase(measurementId);
+    ensureGaBaseLoaded(measurementId);
     grantGaAnalytics(measurementId);
   }, [consent, measurementId]);
 
   useEffect(() => {
-    if (consent !== "granted" || !isGaEnabled(measurementId)) {
+    if (consent !== "granted" || !measurementId) {
       return;
     }
 
-    pageView({
-      page_location: window.location.href,
-      page_path: pagePath,
-      page_title: document.title,
-    }, measurementId);
-  }, [consent, measurementId, pagePath]);
+    trackGaPageView(measurementId, window.location.href);
+  }, [consent, measurementId, pathname]);
 
   return null;
 }

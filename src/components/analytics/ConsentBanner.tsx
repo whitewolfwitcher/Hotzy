@@ -7,7 +7,11 @@ import {
   writeConsent,
   type ConsentState,
 } from "@/lib/analytics/consent";
-import { ensureGaBase, getGaMeasurementId, grantGaAnalytics } from "@/lib/analytics/ga";
+import {
+  ensureGaBaseLoaded,
+  getGaMeasurementId,
+  grantGaAnalytics,
+} from "@/lib/analytics/ga";
 
 export default function ConsentBanner() {
   const [consent, setConsent] = useState<ConsentState>("unknown");
@@ -48,8 +52,8 @@ export default function ConsentBanner() {
             onClick={() => {
               writeConsent("granted");
               setConsent("granted");
-              if (measurementId.trim().length > 0) {
-                ensureGaBase(measurementId);
+              if (measurementId) {
+                ensureGaBaseLoaded(measurementId);
                 grantGaAnalytics(measurementId);
               }
             }}
