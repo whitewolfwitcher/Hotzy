@@ -4,7 +4,6 @@ import "./globals.css";
 import VisualEditsMessenger from "../visual-edits/VisualEditsMessenger";
 import ErrorReporter from "@/components/ErrorReporter";
 import { Toaster } from "@/components/ui/sonner";
-import { CartProvider } from "@/contexts/cart-context";
 import { PreferencesProvider } from "@/contexts/preferences-context";
 import GaProvider from "@/components/analytics/GaProvider";
 import ConsentBanner from "@/components/analytics/ConsentBanner";
@@ -30,11 +29,7 @@ export default function RootLayout({
           <GaProvider />
         </Suspense>
         <ConsentBanner />
-        <PreferencesProvider>
-          <CartProvider>
-            {children}
-          </CartProvider>
-        </PreferencesProvider>
+        <PreferencesProvider>{children}</PreferencesProvider>
         <Toaster />
         <VisualEditsMessenger />
       </body>

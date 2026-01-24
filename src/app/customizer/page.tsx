@@ -11,8 +11,7 @@ import { usePreferences } from '@/contexts/preferences-context';
 import { CAD_TO_USD, PRICE_CAD } from '@/lib/pricing';
 import { trackEvent } from '@/lib/analytics/trackEvent';
 import { track } from '@/lib/analytics/track';
-import { setCurrentOrderId } from '@/lib/cart/currentOrder';
-import { setCurrentOrderDraft } from '@/lib/cart/currentOrderDraft';
+import { addItem as addCartItem } from '@/lib/cart/cart';
 import { toast } from 'sonner';
 
 // Dynamically import the 3D viewer to avoid SSR issues
@@ -46,7 +45,7 @@ const DESIGN_TEMPLATES = [
   {
     id: 'geometric',
     name: 'Geometric Pattern',
-    nameFr: 'Motif GÃ©omÃ©trique',
+    nameFr: 'Motif GÃƒÆ’Ã‚Â©omÃƒÆ’Ã‚Â©trique',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/minimalist-geometric-pattern-design-with-bc266fca-20251110004625.jpg',
     category: 'minimalist'
   },
@@ -74,14 +73,14 @@ const DESIGN_TEMPLATES = [
   {
     id: 'retro',
     name: 'Retro Groovy',
-    nameFr: 'RÃ©tro Groovy',
+    nameFr: 'RÃƒÆ’Ã‚Â©tro Groovy',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/retro-groovy-geometric-pattern-with-bold-f85a21d2-20251110004626.jpg',
     category: 'artistic'
   },
   {
     id: 'kawaii',
     name: 'Kawaii Coffee',
-    nameFr: 'CafÃ© Kawaii',
+    nameFr: 'CafÃƒÆ’Ã‚Â© Kawaii',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cute-kawaii-pattern-with-small-coffee-be-365025da-20251109175917.jpg',
     category: 'minimalist'
   },
@@ -102,7 +101,7 @@ const DESIGN_TEMPLATES = [
   {
     id: 'cyberpunk',
     name: 'Cyberpunk Neon',
-    nameFr: 'Cyberpunk NÃ©on',
+    nameFr: 'Cyberpunk NÃƒÆ’Ã‚Â©on',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cyberpunk-neon-pattern-design-with-elect-2567b26d-20251110010149.jpg',
     category: 'artistic'
   },
@@ -151,28 +150,28 @@ const DESIGN_TEMPLATES = [
   {
     id: 'coffee-beans-minimal',
     name: 'Coffee Beans Minimal',
-    nameFr: 'Grains de CafÃ© Minimal',
+    nameFr: 'Grains de CafÃƒÆ’Ã‚Â© Minimal',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/minimalist-repeating-pattern-design-with-485fb06e-20251110010613.jpg',
     category: 'minimalist'
   },
   {
     id: 'coffee-watercolor',
     name: 'Coffee Watercolor',
-    nameFr: 'CafÃ© Aquarelle',
+    nameFr: 'CafÃƒÆ’Ã‚Â© Aquarelle',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/artistic-watercolor-illustration-pattern-7772371b-20251110010614.jpg',
     category: 'artistic'
   },
   {
     id: 'coffee-vintage',
     name: 'Vintage Coffee',
-    nameFr: 'CafÃ© Vintage',
+    nameFr: 'CafÃƒÆ’Ã‚Â© Vintage',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/vintage-retro-coffee-beans-pattern-desig-a45729cb-20251110010613.jpg',
     category: 'artistic'
   },
   {
     id: 'coffee-geometric',
     name: 'Geometric Coffee',
-    nameFr: 'CafÃ© GÃ©omÃ©trique',
+    nameFr: 'CafÃƒÆ’Ã‚Â© GÃƒÆ’Ã‚Â©omÃƒÆ’Ã‚Â©trique',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/modern-abstract-geometric-pattern-design-7b2ca45e-20251110010613.jpg',
     category: 'minimalist'
   },
@@ -660,39 +659,28 @@ const router = useRouter();
 
   const handleAddToCart = async () => {
     try {
-      const sectionsFilledCount = Object.values(sectionImages).filter(
-        (value) => typeof value === 'string' && value.trim().length > 0
-      ).length;
-
       const price =
         currency === 'USD' ? basePriceCad * CAD_TO_USD : basePriceCad;
       const priceCents = Math.round(price * 100);
 
-      const res = await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cupType,
-          currency,
-          priceCents,
-          sectionsFilledCount,
-          designMeta: {
-            imageCount: uploadedImageCount,
-            layoutMode: 'triple',
-            productType: 'custom-mug',
-          },
-        }),
+      addCartItem({
+        id: `custom-mug-${Date.now()}`,
+        name:
+          uploadedImageCount > 0
+            ? getText('Custom Design Mug', 'Tasse Design PersonnalisÃ©')
+            : getText('Premium Black Mug', 'Tasse Noire Premium'),
+        priceCents,
+        currency,
+        qty: 1,
+        meta: {
+          sectionImages,
+          layoutMode: 'triple',
+          productType: 'custom-mug',
+          imageCount: uploadedImageCount,
+        },
       });
 
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.ok || !data?.orderId) {
-        toast.error(data?.error || 'Couldn’t add to cart.');
-        return;
-      }
-
-      setCurrentOrderId(String(data.orderId));
-      window.dispatchEvent(new Event('hotzy:cart-updated'));
-      toast.success(getText('Added to cart!', 'Ajouté au panier!'));
+      toast.success(getText('Added to cart!', 'AjoutÃ© au panier!'));
 
       void trackEvent('add_to_cart', {
         item_name: 'Custom Mug',
@@ -701,7 +689,7 @@ const router = useRouter();
     } catch {
       toast.error(getText('Something went wrong', 'Erreur'));
     }
-  }; 
+  };  
 
   const createWrapBlob = async (): Promise<Blob> => {
     const canvas = document.createElement('canvas');
@@ -769,126 +757,15 @@ const router = useRouter();
   const handleOrderNow = async () => {
     if (isOrdering) return;
     setIsOrdering(true);
-    void trackEvent('begin_checkout', {
-      item_name: 'Custom Mug',
-      item_category: 'Mugs',
-    });
-    setOrderNowStatus(getText('Preparing designâ€¦', 'PrÃ©paration du designâ€¦'));
-
     try {
-      const amountForCurrency = Number(
-        (currency === 'USD' ? basePriceCad * CAD_TO_USD : basePriceCad).toFixed(2)
-      );
-      const draftResponse = await fetch('/api/orders/create-draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cupType,
-          currency,
-          amount_cad: currency === 'CAD' ? amountForCurrency : undefined,
-          amount_usd: currency === 'USD' ? amountForCurrency : undefined,
-        }),
-      });
-
-      if (!draftResponse.ok) {
-        setOrderNowStatus(getText('Failed to create order', 'Ã‰chec crÃ©ation'));
-        setIsOrdering(false);
-        return;
-      }
-
-      const draftData = await draftResponse.json();
-      const orderId = draftData.orderId as string;
-      const orderUploadToken = draftData.orderUploadToken as string;
-      setCurrentOrderId(orderId);
-      setCurrentOrderDraft({ sections: sectionImages, cupType });
-
-      setOrderNowStatus(getText('Uploadingâ€¦', 'TÃ©lÃ©versementâ€¦'));
-      const wrapBlob = await createWrapBlob();
-      const formData = new FormData();
-      formData.append('file', wrapBlob, 'wrap.png');
-
-      const uploadResponse = await fetch(`/api/orders/${orderId}/wrap`, {
-        method: 'POST',
-        headers: { 'x-order-upload-token': orderUploadToken },
-        body: formData,
-      });
-
-      if (!uploadResponse.ok) {
-        setOrderNowStatus(getText('Upload failed', 'Ã‰chec tÃ©lÃ©versement'));
-        setIsOrdering(false);
-        return;
-      }
-
-      setOrderNowStatus(getText('Redirectingâ€¦', 'Redirectionâ€¦'));
-      router.push(`/checkout?orderId=${orderId}`);
-      return;
-    } catch (error) {
-      setOrderNowStatus(getText('Something went wrong', 'Erreur'));
+      await handleAddToCart();
+      router.push('/checkout');
     } finally {
       setIsOrdering(false);
     }
-  };
+  }; 
 
-  const showDevTools = process.env.NODE_ENV !== 'production';
-
-  const createTestWrapBlob = (): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1200;
-      canvas.height = 450;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Canvas unavailable'));
-        return;
-      }
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#111111';
-      ctx.font = 'bold 64px Arial';
-      ctx.fillText('TEST WRAP', 80, 140);
-      ctx.font = '32px Arial';
-      ctx.fillText('Hotzy Customizer', 80, 220);
-      ctx.fillStyle = '#76B900';
-      ctx.fillRect(80, 260, 320, 12);
-
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          reject(new Error('Failed to create PNG'));
-          return;
-        }
-        resolve(blob);
-      }, 'image/png');
-    });
-  };
-
-  const handleUploadTestWrap = async () => {
-    if (!testOrderId) {
-      setWrapUploadStatus('Missing order id');
-      return;
-    }
-    setWrapUploadStatus('Uploading...');
-    try {
-      const blob = await createTestWrapBlob();
-      const formData = new FormData();
-      formData.append('file', blob, 'wrap.png');
-
-      const response = await fetch(`/api/orders/${testOrderId}/wrap`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        setWrapUploadStatus('Upload failed');
-        return;
-      }
-
-      const result = await response.json();
-      setWrapUploadStatus(`Uploaded: ${result.wrap_path || 'ok'}`);
-    } catch (error) {
-      setWrapUploadStatus('Upload error');
-    }
-  };
+  
 
 
   return (
@@ -1002,7 +879,7 @@ const router = useRouter();
                       <Grid3x3 className="w-3 h-3 md:w-4 md:h-4 text-primary" />
                     </div>
                     <h3 className="text-sm md:text-lg font-bold text-white">
-                      {getText('Select Section', 'SÃ©lectionner Section')}
+                      {getText('Select Section', 'SÃƒÆ’Ã‚Â©lectionner Section')}
                     </h3>
                   </div>
 
@@ -1112,7 +989,7 @@ const router = useRouter();
                   <p className="text-[9px] md:text-[10px] text-muted-foreground mt-2 text-center">
                     {getText(
                       'Click a section to upload its image',
-                      'Cliquez sur une section pour tÃ©lÃ©charger'
+                      'Cliquez sur une section pour tÃƒÆ’Ã‚Â©lÃƒÆ’Ã‚Â©charger'
                     )}
                   </p>
                 </motion.div>
@@ -1126,11 +1003,11 @@ const router = useRouter();
                 >
                   <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/30 rounded-xl p-3 md:p-4 text-center">
                     <div className="text-xl md:text-2xl font-black text-primary">11oz</div>
-                    <div className="text-[10px] md:text-xs text-muted-foreground">{getText('Capacity', 'CapacitÃ©')}</div>
+                    <div className="text-[10px] md:text-xs text-muted-foreground">{getText('Capacity', 'CapacitÃƒÆ’Ã‚Â©')}</div>
                   </div>
                   <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/30 rounded-xl p-3 md:p-4 text-center">
                     <div className="text-xl md:text-2xl font-black text-primary">4K</div>
-                    <div className="text-[10px] md:text-xs text-muted-foreground">{getText('Print', 'QualitÃ©')}</div>
+                    <div className="text-[10px] md:text-xs text-muted-foreground">{getText('Print', 'QualitÃƒÆ’Ã‚Â©')}</div>
                   </div>
                   <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/30 rounded-xl p-3 md:p-4 text-center">
                     <div className="text-xl md:text-2xl font-black text-primary">24h</div>
@@ -1159,7 +1036,7 @@ const router = useRouter();
                     </div>
                     <div className="text-left">
                       <h3 className="text-base md:text-xl font-bold text-white">
-                        {getText('Upload Design', 'TÃ©lÃ©charger Design')}
+                        {getText('Upload Design', 'TÃƒÆ’Ã‚Â©lÃƒÆ’Ã‚Â©charger Design')}
                       </h3>
                       <span className="text-xs md:text-sm text-primary lg:hidden">
                         ({getText('Section', 'Section')} {activeSection.replace('section', '')})
@@ -1216,13 +1093,13 @@ const router = useRouter();
                             </motion.div>
                             <div>
                               <p className="text-white font-semibold text-sm md:text-base mb-1">
-                                {getText('Drop your design here', 'DÃ©posez votre design ici')}
+                                {getText('Drop your design here', 'DÃƒÆ’Ã‚Â©posez votre design ici')}
                               </p>
                               <p className="text-xs md:text-sm text-muted-foreground">
                                 {getText('or click to browse', 'ou cliquez pour parcourir')}
                               </p>
                               <p className="text-[10px] md:text-xs text-muted-foreground mt-1 md:mt-2">
-                                {getText('JPG, PNG, SVG â€¢ Max 10MB', 'JPG, PNG, SVG â€¢ Max 10MB')}
+                                {getText('JPG, PNG, SVG ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Max 10MB', 'JPG, PNG, SVG ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Max 10MB')}
                               </p>
                             </div>
                           </div>
@@ -1237,7 +1114,7 @@ const router = useRouter();
                         >
                           <div className="flex items-center justify-between p-2 md:p-3 bg-primary/10 border border-primary/30 rounded-lg">
                             <span className="text-xs md:text-sm text-white font-medium">
-                              âœ“ {getText('Design uploaded', 'Design tÃ©lÃ©chargÃ©')}
+                              ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ {getText('Design uploaded', 'Design tÃƒÆ’Ã‚Â©lÃƒÆ’Ã‚Â©chargÃƒÆ’Ã‚Â©')}
                             </span>
                             <button
                               onClick={() => handleRemoveImage(activeSection)}
@@ -1290,7 +1167,7 @@ const router = useRouter();
                         }}
                         className="text-[10px] md:text-xs text-primary hover:text-primary/80 font-semibold"
                       >
-                        {getText('Reset', 'RÃ©initialiser')}
+                        {getText('Reset', 'RÃƒÆ’Ã‚Â©initialiser')}
                       </button>
                       <ChevronDown className={`w-5 h-5 text-primary transition-transform lg:hidden ${expandedSections.position ? 'rotate-180' : ''}`} />
                     </div>
@@ -1306,7 +1183,7 @@ const router = useRouter();
                       >
                         <div>
                           <label className="text-xs text-white font-medium mb-1.5 md:mb-2 block">
-                            {getText('Move Image', 'DÃ©placer')}
+                            {getText('Move Image', 'DÃƒÆ’Ã‚Â©placer')}
                           </label>
                           <div className="flex items-center justify-center gap-1.5">
                             <button
@@ -1337,7 +1214,7 @@ const router = useRouter();
                               <RotateCw className="w-3 h-3 text-primary" />
                               {getText('Rotation', 'Rotation')}
                             </label>
-                            <span className="text-[10px] text-muted-foreground">{imageRotation.toFixed(0)}Â°</span>
+                            <span className="text-[10px] text-muted-foreground">{imageRotation.toFixed(0)}Ãƒâ€šÃ‚Â°</span>
                           </div>
                           <input
                             type="range"
@@ -1367,7 +1244,7 @@ const router = useRouter();
                     </div>
                     <div className="text-left">
                       <h3 className="text-base md:text-xl font-bold text-white">
-                        {getText('Templates', 'ModÃ¨les')}
+                        {getText('Templates', 'ModÃƒÆ’Ã‚Â¨les')}
                       </h3>
                       <p className="text-[10px] md:text-xs text-muted-foreground lg:hidden">
                         {getText('Browse designs', 'Parcourir')}
@@ -1397,7 +1274,7 @@ const router = useRouter();
                             onChange={(e) => setApplyTemplateToAll(e.target.checked)}
                             className="h-3.5 w-3.5 accent-primary"
                           />
-                          <span>{getText('Apply to all sections', 'Appliquer Ã  toutes les sections')}</span>
+                          <span>{getText('Apply to all sections', 'Appliquer ÃƒÆ’Ã‚Â  toutes les sections')}</span>
                         </label>
                       </div>
                       <div className="relative">
@@ -1419,7 +1296,7 @@ const router = useRouter();
                         
                         <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 md:gap-2 px-2 py-1 md:px-4 md:py-2 bg-black/60 backdrop-blur-xl border border-primary/30 rounded-full z-10 pointer-events-none">
                           <span className="text-[9px] md:text-xs font-semibold text-white">
-                            {getText('Drag â€¢ Click', 'Glissez â€¢ Cliquez')}
+                            {getText('Drag ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Click', 'Glissez ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Cliquez')}
                           </span>
                         </div>
                       </div>
@@ -1431,13 +1308,13 @@ const router = useRouter();
                           animate={{ opacity: 1, y: 0 }}
                         >
                           <span className="text-xs md:text-sm text-white font-medium truncate">
-                            âœ“ {
+                            ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ {
                               DESIGN_TEMPLATES.find(t => t.image === currentSectionImage)
                                 ? getText(
                                     DESIGN_TEMPLATES.find(t => t.image === currentSectionImage)!.name,
                                     DESIGN_TEMPLATES.find(t => t.image === currentSectionImage)!.nameFr
                                   )
-                                : getText('Custom', 'PersonnalisÃ©')
+                                : getText('Custom', 'PersonnalisÃƒÆ’Ã‚Â©')
                             }
                           </span>
                         </motion.div>
@@ -1447,37 +1324,7 @@ const router = useRouter();
                 </AnimatePresence>
               </div>
 
-              {showDevTools && (
-                <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl shadow-xl overflow-hidden">
-                  <div className="p-4 md:p-6 space-y-3">
-                    <div className="text-sm md:text-base font-bold text-white">
-                      {getText('Dev: Upload Test Wrap', 'Dev: Upload Test Wrap')}
-                    </div>
-                    <input
-                      type="text"
-                      value={testOrderId}
-                      onChange={(e) => setTestOrderId(e.target.value)}
-                      placeholder={getText('Paste Order ID', 'Coller ID commande')}
-                      className="w-full rounded-lg bg-black/40 border border-primary/30 px-3 py-2 text-xs md:text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-                    />
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={handleUploadTestWrap}
-                        className="px-3 py-2 rounded-lg bg-primary text-black text-xs md:text-sm font-semibold hover:bg-[#9ACD32] transition-colors"
-                      >
-                        {getText('Upload Test Wrap', 'Uploader Wrap Test')}
-                      </button>
-                      {wrapUploadStatus && (
-                        <span className="text-[10px] md:text-xs text-muted-foreground">
-                          {wrapUploadStatus}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
+              
               {/* Pricing - Collapsible */}
               <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl md:rounded-2xl shadow-xl overflow-hidden">
                 <button
@@ -1520,7 +1367,7 @@ const router = useRouter();
                   className="w-full flex items-center justify-between p-4 md:p-6"
                 >
                   <h3 className="text-base md:text-xl font-bold text-white">
-                    {getText('Details & Features', 'DÃ©tails & CaractÃ©ristiques')}
+                    {getText('Details & Features', 'DÃƒÆ’Ã‚Â©tails & CaractÃƒÆ’Ã‚Â©ristiques')}
                   </h3>
                   <ChevronDown className={`w-5 h-5 text-primary transition-transform ${expandedSections.details ? 'rotate-180' : ''}`} />
                 </button>
@@ -1535,11 +1382,11 @@ const router = useRouter();
                     >
                       <div className="space-y-3">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{getText('Material', 'MatÃ©riau')}</span>
-                          <span className="text-white font-medium">{getText('Ceramic', 'CÃ©ramique')}</span>
+                          <span className="text-muted-foreground">{getText('Material', 'MatÃƒÆ’Ã‚Â©riau')}</span>
+                          <span className="text-white font-medium">{getText('Ceramic', 'CÃƒÆ’Ã‚Â©ramique')}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{getText('Capacity', 'CapacitÃ©')}</span>
+                          <span className="text-muted-foreground">{getText('Capacity', 'CapacitÃƒÆ’Ã‚Â©')}</span>
                           <span className="text-white font-medium">11 oz</span>
                         </div>
                       </div>
@@ -1548,7 +1395,7 @@ const router = useRouter();
                         {[
                           { en: 'Dishwasher safe', fr: 'Lave-vaisselle' },
                           { en: 'Microwave safe', fr: 'Micro-ondes' },
-                          { en: 'Lifetime warranty', fr: 'Garantie Ã  vie' }
+                          { en: 'Lifetime warranty', fr: 'Garantie ÃƒÆ’Ã‚Â  vie' }
                         ].map((feature) => (
                           <div key={feature.en} className="flex items-center gap-2 text-light-gray">
                             <Check className="w-4 h-4 text-primary flex-shrink-0" />
@@ -1609,7 +1456,7 @@ const router = useRouter();
                 <Package className="text-primary" size={24} />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-white mb-2">
-                {getText('Premium Quality', 'QualitÃ© Premium')}
+                {getText('Premium Quality', 'QualitÃƒÆ’Ã‚Â© Premium')}
               </h3>
               <p className="text-sm md:text-base text-muted-foreground">
                 {getText('Professional sublimation printing', 'Impression professionnelle')}
@@ -1645,6 +1492,9 @@ const router = useRouter();
     </div>
   );
 }
+
+
+
 
 
 

@@ -6,8 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Globe, Menu, X, ShoppingCart, DollarSign } from 'lucide-react';
 import { usePreferences } from '@/contexts/preferences-context';
 import { trackEvent } from '@/lib/analytics/trackEvent';
-import { toast } from 'sonner';
-import { getCurrentOrderId, setCurrentOrderId } from '@/lib/cart/currentOrder';
+import { getItemCount, subscribeCart } from '@/lib/cart/cart';
 
 const HotzyLogo = () => (
   <svg
@@ -30,36 +29,14 @@ const NavigationHeader = () => {
     const router = useRouter();
 
     useEffect(() => {
-        let isActive = true;
-
-        const updateCount = async () => {
-            try {
-                const res = await fetch('/api/cart/get', { cache: 'no-store' });
-                const data = await res.json().catch(() => null);
-                if (!isActive) return;
-                if (res.ok && data?.ok) {
-                    setCartItemCount(
-                        typeof data.itemCount === 'number' ? data.itemCount : 0
-                    );
-                    if (data.orderId) {
-                        setCurrentOrderId(String(data.orderId));
-                    }
-                    return;
-                }
-            } catch {
-                // Ignore fetch errors.
-            }
-
-            if (isActive) {
-                setCartItemCount(getCurrentOrderId() ? 1 : 0);
-            }
+        const updateCount = () => {
+            setCartItemCount(getItemCount());
         };
 
-        void updateCount();
-        window.addEventListener('hotzy:cart-updated', updateCount);
+        updateCount();
+        const unsubscribe = subscribeCart(updateCount);
         return () => {
-            isActive = false;
-            window.removeEventListener('hotzy:cart-updated', updateCount);
+            unsubscribe();
         };
     }, []);
 
@@ -80,43 +57,8 @@ const NavigationHeader = () => {
         { name: "Shop", href: "/shop" }
     ];
 
-    const handleCartClick = async () => {
-        try {
-            const existing = getCurrentOrderId();
-            if (existing) {
-                router.push(`/checkout?orderId=${existing}`);
-                return;
-            }
-
-            const checkRes = await fetch('/api/cart/get', { cache: 'no-store' });
-            const checkData = await checkRes.json().catch(() => null);
-            if (checkRes.ok && checkData?.ok && checkData?.orderId) {
-                const orderId = String(checkData.orderId);
-                setCurrentOrderId(orderId);
-                router.push(`/checkout?orderId=${orderId}`);
-                return;
-            }
-
-            const currencyCode = currency === 'USD' ? 'USD' : 'CAD';
-            const createRes = await fetch('/api/cart/add', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cupType: 'hotzy', currency: currencyCode }),
-            });
-
-            const createData = await createRes.json().catch(() => null);
-            if (!createRes.ok || !createData?.ok || !createData?.orderId) {
-                toast.error("Couldn’t start checkout. Please try again.");
-                return;
-            }
-
-            const orderId = String(createData.orderId);
-            setCurrentOrderId(orderId);
-            window.dispatchEvent(new Event('hotzy:cart-updated'));
-            router.push(`/checkout?orderId=${orderId}`);
-        } catch {
-            toast.error("Couldn’t start checkout. Please try again.");
-        }
+    const handleCartClick = () => {
+        router.push('/checkout');
     };
 
     return (

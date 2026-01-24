@@ -5,14 +5,7 @@ export const metadata: Metadata = {
   title: "Checkout Cancelled | Hotzy",
 };
 
-export default function CheckoutCancelPage({
-  searchParams,
-}: {
-  searchParams?: { orderId?: string };
-}) {
-  const orderId = searchParams?.orderId;
-  const retryHref = orderId ? `/checkout?orderId=${orderId}` : "/checkout";
-
+export default function CheckoutCancelPage() {
   return (
     <main className="min-h-screen bg-black text-white flex items-center justify-center px-4">
       <div className="max-w-lg w-full text-center">
@@ -20,15 +13,12 @@ export default function CheckoutCancelPage({
           Payment Cancelled
         </h1>
         <p className="text-gray-300 mb-4">
-          Your payment was not completed. You can review your order and try
+          Your payment was not completed. You can review your cart and try
           again.
         </p>
-        {orderId && (
-          <p className="text-xs text-gray-400 mb-4">Order ID: {orderId}</p>
-        )}
         <div className="flex justify-center gap-4">
           <Link
-            href={retryHref}
+            href="/checkout"
             className="rounded-md bg-lime-500 px-4 py-2 text-sm font-semibold text-black hover:bg-lime-400"
           >
             Return to Checkout
