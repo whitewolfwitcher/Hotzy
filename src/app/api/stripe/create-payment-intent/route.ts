@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { supabaseServer } from '@/lib/supabase/server';
 import { getUnitAmount } from '@/lib/pricing';
+import { assertStripeLiveModeEnv } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
+  assertStripeLiveModeEnv();
+  const stripe = getStripe();
+
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== 'object') {
     return NextResponse.json(

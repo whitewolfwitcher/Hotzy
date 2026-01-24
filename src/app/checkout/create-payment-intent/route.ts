@@ -1,6 +1,7 @@
 // src/app/api/checkout/create-payment-intent/route.ts
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
+import { assertStripeLiveModeEnv } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,9 @@ function isValidEmail(email: string | undefined | null): boolean {
 
 export async function POST(request: Request) {
   try {
+    assertStripeLiveModeEnv();
+    const stripe = getStripe();
+
     const body = (await request.json().catch(() => null)) as
       | {
           items?: CartItem[];

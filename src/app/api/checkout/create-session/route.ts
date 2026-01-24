@@ -1,6 +1,7 @@
 // src/app/api/checkout/create-session/route.ts
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
+import { assertStripeLiveModeEnv } from "@/lib/env";
 import Stripe from "stripe";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,9 @@ type ShippingInfo = {
 
 export async function POST(request: Request) {
   try {
+    assertStripeLiveModeEnv();
+    const stripe = getStripe();
+
     const body = await request.json().catch(() => null);
 
     if (!body || typeof body !== "object") {

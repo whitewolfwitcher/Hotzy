@@ -1,12 +1,16 @@
 // src/app/api/stripe/test/route.ts
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
+import { assertStripeLiveModeEnv } from "@/lib/env";
 
 // Force this route to be dynamic (never statically exported)
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    assertStripeLiveModeEnv();
+    const stripe = getStripe();
+
     const account = await stripe.accounts.retrieve();
 
     return NextResponse.json(

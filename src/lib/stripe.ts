@@ -1,14 +1,21 @@
 // src/lib/stripe.ts
 import Stripe from "stripe";
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+let stripeInstance: Stripe | null = null;
 
-if (!stripeSecretKey) {
-  throw new Error(
-    "Missing STRIPE_SECRET_KEY environment variable. Set it in your .env file."
-  );
-}
+export const getStripe = () => {
+  if (stripeInstance) return stripeInstance;
 
-export const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: "2023-10-16",
-});
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) {
+    throw new Error(
+      "Missing STRIPE_SECRET_KEY environment variable. Set it in your .env file."
+    );
+  }
+
+  stripeInstance = new Stripe(stripeSecretKey, {
+    apiVersion: "2023-10-16",
+  });
+
+  return stripeInstance;
+};

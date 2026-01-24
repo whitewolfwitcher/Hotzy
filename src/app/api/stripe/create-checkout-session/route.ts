@@ -1,6 +1,6 @@
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { supabaseServer } from '@/lib/supabase/server';
-import { getSiteUrl } from '@/lib/env';
+import { assertStripeLiveModeEnv, getSiteUrl } from '@/lib/env';
 import { getUnitAmount } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
@@ -36,19 +36,15 @@ function buildSafeErrorMessage(error: unknown) {
 
 export async function POST(req: Request) {
   try {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return Response.json(
-        { ok: false, error: 'Missing STRIPE_SECRET_KEY' },
-        { status: 500 }
-      );
-    }
-
     if (!process.env.NEXT_PUBLIC_SITE_URL) {
       return Response.json(
         { ok: false, error: 'Missing NEXT_PUBLIC_SITE_URL' },
         { status: 500 }
       );
     }
+
+    assertStripeLiveModeEnv();
+    const stripe = getStripe();
 
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== 'object') {
