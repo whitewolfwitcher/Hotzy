@@ -4,9 +4,13 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Globe, Menu, X, ShoppingCart, DollarSign } from 'lucide-react';
-import { useCart } from '@/contexts/cart-context';
 import { usePreferences } from '@/contexts/preferences-context';
 import { trackEvent } from '@/lib/analytics/trackEvent';
+import { toast } from 'sonner';
+import {
+    getCurrentOrderId,
+    getCurrentOrderItemCount,
+} from '@/lib/cart/currentOrder';
 
 const HotzyLogo = () => (
   <svg
@@ -24,10 +28,23 @@ const HotzyLogo = () => (
 
 const NavigationHeader = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { getTotalItems } = useCart();
     const { currency, setCurrency, language, setLanguage } = usePreferences();
-    const cartItemCount = getTotalItems();
+    const [cartItemCount, setCartItemCount] = useState(0);
     const router = useRouter();
+
+    useEffect(() => {
+        const updateCount = () => {
+            setCartItemCount(getCurrentOrderItemCount());
+        };
+
+        updateCount();
+        window.addEventListener('storage', updateCount);
+        window.addEventListener('hotzy:order-updated', updateCount);
+        return () => {
+            window.removeEventListener('storage', updateCount);
+            window.removeEventListener('hotzy:order-updated', updateCount);
+        };
+    }, []);
 
     useEffect(() => {
         document.body.style.overflow = isMenuOpen ? 'hidden' : 'unset';
@@ -47,8 +64,14 @@ const NavigationHeader = () => {
     ];
 
     const handleCartClick = () => {
-        console.log('[cart] clicked');
-        router.push('/checkout');
+        const orderId = getCurrentOrderId();
+        if (!orderId) {
+            toast.error('Your cart is empty');
+            router.push('/customizer');
+            return;
+        }
+
+        router.push(`/checkout?orderId=${orderId}`);
     };
 
     return (
