@@ -7,7 +7,6 @@ import { Globe, Menu, X, ShoppingCart, DollarSign } from 'lucide-react';
 import { useCart } from '@/contexts/cart-context';
 import { usePreferences } from '@/contexts/preferences-context';
 import { trackEvent } from '@/lib/analytics/trackEvent';
-import { getCurrentOrderId } from '@/lib/cart/currentOrder';
 
 const HotzyLogo = () => (
   <svg
@@ -48,12 +47,8 @@ const NavigationHeader = () => {
     ];
 
     const handleCartClick = () => {
-        const orderId = getCurrentOrderId();
-        if (orderId) {
-            router.push(`/checkout?orderId=${orderId}`);
-            return;
-        }
-        router.push('/customizer');
+        console.log('[cart] clicked');
+        router.push('/checkout');
     };
 
     return (
@@ -89,7 +84,7 @@ const NavigationHeader = () => {
                                     type="button"
                                     onClick={handleCartClick}
                                     aria-label="Shopping cart"
-                                    className="hover:text-primary transition-colors relative"
+                                    className="relative z-50 pointer-events-auto hover:text-primary transition-colors"
                                 >
                                     <ShoppingCart size={20} />
                                     {cartItemCount > 0 && (
@@ -140,7 +135,7 @@ const NavigationHeader = () => {
                                 type="button"
                                 onClick={handleCartClick}
                                 aria-label="Shopping cart"
-                                className="hover:text-primary transition-colors relative"
+                                className="relative z-50 pointer-events-auto hover:text-primary transition-colors"
                             >
                                 <ShoppingCart size={22} />
                                 {cartItemCount > 0 && (
