@@ -11,7 +11,7 @@ import Link from "next/link";
 import { Lock, ArrowLeft } from "lucide-react";
 import CheckoutProviders from "./providers";
 import { toast } from "sonner";
-import { getCurrentOrderId } from "@/lib/cart/currentOrder";
+import { setCurrentOrderId } from "@/lib/cart/currentOrder";
 
 function CheckoutForm({ orderId }: { orderId: string }) {
   const stripe = useStripe();
@@ -88,14 +88,25 @@ export default function CheckoutClient() {
 
   useEffect(() => {
     if (!orderId) {
-      const storedOrderId = getCurrentOrderId();
-      if (storedOrderId) {
-        router.replace(`/checkout?orderId=${storedOrderId}`);
-        return;
-      }
+      const resolveOrder = async () => {
+        try {
+          const res = await fetch("/api/cart/get", { cache: "no-store" });
+          const data = await res.json().catch(() => null);
+          if (res.ok && data?.ok && data?.orderId) {
+            const resolvedId = String(data.orderId);
+            setCurrentOrderId(resolvedId);
+            router.replace(`/checkout?orderId=${resolvedId}`);
+            return;
+          }
+        } catch {
+          // Ignore and fall through to empty state.
+        }
 
-      toast.error("Your cart is empty");
-      router.replace("/customizer");
+        toast.error("Your cart is empty");
+        router.replace("/customizer");
+      };
+
+      void resolveOrder();
       return;
     }
 

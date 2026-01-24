@@ -8,8 +8,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useCart } from '@/contexts/cart-context';
 import { usePreferences } from '@/contexts/preferences-context';
+import { setCurrentOrderId } from '@/lib/cart/currentOrder';
 import { getCurrentOrderId } from '@/lib/cart/currentOrder';
 
 interface Product {
@@ -42,7 +42,7 @@ const products: Product[] = [
   description: "Transforms from black to white with heat",
   image: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/premium-black-ceramic-coffee-mug-on-dark-5bf5203d-20251102222418.jpg",
   featuresEn: ["High-quality ceramic", "Heat-activated color change", "Dishwasher safe", "11oz capacity"],
-  featuresFr: ["Céramique de haute qualité", "Changement de couleur activé par la chaleur", "Lavable au lave-vaisselle", "Capacité de 11oz"],
+  featuresFr: ["CÃ©ramique de haute qualitÃ©", "Changement de couleur activÃ© par la chaleur", "Lavable au lave-vaisselle", "CapacitÃ© de 11oz"],
   features: ["High-quality ceramic", "Heat-activated color change", "Dishwasher safe", "11oz capacity"],
   badgeEn: "Best Seller",
   badgeFr: "Meilleure Vente",
@@ -59,7 +59,7 @@ const products: Product[] = [
   description: "Transforms from navy blue to white with heat",
   image: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/premium-black-ceramic-coffee-mug-on-dark-5bf5203d-20251102222418.jpg",
   featuresEn: ["High-quality ceramic", "Heat-activated color change", "Dishwasher safe", "11oz capacity"],
-  featuresFr: ["Céramique de haute qualité", "Changement de couleur activé par la chaleur", "Lavable au lave-vaisselle", "Capacité de 11oz"],
+  featuresFr: ["CÃ©ramique de haute qualitÃ©", "Changement de couleur activÃ© par la chaleur", "Lavable au lave-vaisselle", "CapacitÃ© de 11oz"],
   features: ["High-quality ceramic", "Heat-activated color change", "Dishwasher safe", "11oz capacity"]
 },
 {
@@ -73,21 +73,21 @@ const products: Product[] = [
   description: "Transforms from red to white with heat",
   image: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/premium-black-ceramic-coffee-mug-on-dark-5bf5203d-20251102222418.jpg",
   featuresEn: ["High-quality ceramic", "Heat-activated color change", "Dishwasher safe", "11oz capacity"],
-  featuresFr: ["Céramique de haute qualité", "Changement de couleur activé par la chaleur", "Lavable au lave-vaisselle", "Capacité de 11oz"],
+  featuresFr: ["CÃ©ramique de haute qualitÃ©", "Changement de couleur activÃ© par la chaleur", "Lavable au lave-vaisselle", "CapacitÃ© de 11oz"],
   features: ["High-quality ceramic", "Heat-activated color change", "Dishwasher safe", "11oz capacity"]
 },
 {
   id: "custom-photo",
   nameEn: "Custom Photo Mug",
-  nameFr: "Tasse Photo Personnalisée",
+  nameFr: "Tasse Photo PersonnalisÃ©e",
   name: "Custom Photo Mug",
   price: 18.99,
   descriptionEn: "Upload your favorite memories",
-  descriptionFr: "Téléchargez vos souvenirs préférés",
+  descriptionFr: "TÃ©lÃ©chargez vos souvenirs prÃ©fÃ©rÃ©s",
   description: "Upload your favorite memories",
   image: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/white-ceramic-coffee-mug-with-custom-pho-80ef61e0-20251102222418.jpg",
   featuresEn: ["HD photo print", "Fade resistant", "Same-day processing", "11oz capacity"],
-  featuresFr: ["Impression photo HD", "Résistant à la décoloration", "Traitement le jour même", "Capacité de 11oz"],
+  featuresFr: ["Impression photo HD", "RÃ©sistant Ã  la dÃ©coloration", "Traitement le jour mÃªme", "CapacitÃ© de 11oz"],
   features: ["HD photo print", "Fade resistant", "Same-day processing", "11oz capacity"]
 }];
 
@@ -96,47 +96,73 @@ export default function ShopPage() {
   const [cart, setCart] = useState<string[]>([]);
   const { currency, setCurrency, language, setLanguage, convertPrice, getText } = usePreferences();
   const router = useRouter();
-  const { addItem } = useCart();
-
-  const handleCustomize = (product: Product) => {
+const handleCustomize = (product: Product) => {
     router.push('/customizer');
   };
 
-  const handleAddToCart = (product: Product) => {
-    addItem({
-      id: `${product.id}-${Date.now()}`,
-      title: getText(product.nameEn, product.nameFr),
-      thumbnail: product.image,
-      payload: {
-        productType: product.id,
-        color: product.id
-      },
-      price: currency === 'CAD' ? product.price : parseFloat(convertPrice(product.price))
-    });
-    toast.success(getText("Added to cart!", "Ajouté au panier!"));
+  const handleAddToCart = async (product: Product) => {
+    const price =
+      currency === 'CAD'
+        ? product.price
+        : parseFloat(convertPrice(product.price));
+    const priceCents = Math.round(price * 100);
+
+    try {
+      const res = await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cupType: 'hotzy',
+          currency,
+          priceCents,
+          sectionsFilledCount: 1,
+          templateId: product.id,
+          designMeta: {
+            productId: product.id,
+            name: getText(product.nameEn, product.nameFr),
+          },
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok || !data?.orderId) {
+        toast.error(data?.error || "Couldn't add to cart.");
+        return null;
+      }
+
+      const orderId = String(data.orderId);
+      setCurrentOrderId(orderId);
+      window.dispatchEvent(new Event('hotzy:cart-updated'));
+      toast.success(getText('Added to cart!', 'Ajouté au panier!'));
+      return orderId;
+    } catch {
+      toast.error(getText('Something went wrong', 'Erreur'));
+      return null;
+    }
   };
 
-  const handleOrderNow = (product: Product) => {
-    handleAddToCart(product);
-    const orderId = getCurrentOrderId();
+  const handleOrderNow = async (product: Product) => {
+    const orderId = await handleAddToCart(product);
     if (orderId) {
       router.push(`/checkout?orderId=${orderId}`);
-      return;
     }
-    router.push('/customizer');
   };
 
-  const handleCheckout = () => {
-    if (cart.length === 0) {
-      toast.error("Your cart is empty");
-      return;
+  const handleCheckout = async () => {
+    try {
+      const res = await fetch('/api/cart/get', { cache: 'no-store' });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.ok && data?.orderId) {
+        const orderId = String(data.orderId);
+        setCurrentOrderId(orderId);
+        router.push(`/checkout?orderId=${orderId}`);
+        return;
+      }
+    } catch {
+      // Ignore and fall through to empty cart message.
     }
 
-    const orderId = getCurrentOrderId();
-    if (orderId) {
-      router.push(`/checkout?orderId=${orderId}`);
-      return;
-    }
+    toast.error('Your cart is empty');
     router.push('/customizer');
   };
 
@@ -223,7 +249,7 @@ export default function ShopPage() {
               </motion.div>
 
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-white mb-6">
-                {getText("Shop Custom", "Boutique Personnalisée")}
+                {getText("Shop Custom", "Boutique PersonnalisÃ©e")}
                 <span className="block bg-gradient-to-r from-primary via-[#9ACD32] to-primary bg-clip-text text-transparent">
                   Hotzy Mugs
                 </span>
@@ -232,7 +258,7 @@ export default function ShopPage() {
               <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
                 {getText(
                   "Discover our collection of premium mugs with cutting-edge technology and stunning designs",
-                  "Découvrez notre collection de tasses premium avec une technologie de pointe et des designs époustouflants"
+                  "DÃ©couvrez notre collection de tasses premium avec une technologie de pointe et des designs Ã©poustouflants"
                 )}
               </p>
             </motion.div>
@@ -371,3 +397,4 @@ export default function ShopPage() {
     </div>
   );
 }
+

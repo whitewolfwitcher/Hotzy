@@ -8,10 +8,6 @@ import { usePreferences } from '@/contexts/preferences-context';
 import { trackEvent } from '@/lib/analytics/trackEvent';
 import { toast } from 'sonner';
 import { getCurrentOrderId, setCurrentOrderId } from '@/lib/cart/currentOrder';
-import {
-    getCurrentOrderDraft,
-    getCurrentOrderDraftItemCount,
-} from '@/lib/cart/currentOrderDraft';
 
 const HotzyLogo = () => (
   <svg
@@ -34,18 +30,36 @@ const NavigationHeader = () => {
     const router = useRouter();
 
     useEffect(() => {
-        const updateCount = () => {
-            const draftCount = getCurrentOrderDraftItemCount();
-            const orderId = getCurrentOrderId();
-            setCartItemCount(draftCount > 0 ? draftCount : orderId ? 1 : 0);
+        let isActive = true;
+
+        const updateCount = async () => {
+            try {
+                const res = await fetch('/api/cart/get', { cache: 'no-store' });
+                const data = await res.json().catch(() => null);
+                if (!isActive) return;
+                if (res.ok && data?.ok) {
+                    setCartItemCount(
+                        typeof data.itemCount === 'number' ? data.itemCount : 0
+                    );
+                    if (data.orderId) {
+                        setCurrentOrderId(String(data.orderId));
+                    }
+                    return;
+                }
+            } catch {
+                // Ignore fetch errors.
+            }
+
+            if (isActive) {
+                setCartItemCount(getCurrentOrderId() ? 1 : 0);
+            }
         };
 
-        updateCount();
-        window.addEventListener('storage', updateCount);
-        window.addEventListener('hotzy:order-updated', updateCount);
+        void updateCount();
+        window.addEventListener('hotzy:cart-updated', updateCount);
         return () => {
-            window.removeEventListener('storage', updateCount);
-            window.removeEventListener('hotzy:order-updated', updateCount);
+            isActive = false;
+            window.removeEventListener('hotzy:cart-updated', updateCount);
         };
     }, []);
 
@@ -74,24 +88,32 @@ const NavigationHeader = () => {
                 return;
             }
 
-            const draft = getCurrentOrderDraft();
-            const cupType = draft?.cupType === 'standard' ? 'standard' : 'hotzy';
-            const currencyCode = currency === 'USD' ? 'USD' : 'CAD';
+            const checkRes = await fetch('/api/cart/get', { cache: 'no-store' });
+            const checkData = await checkRes.json().catch(() => null);
+            if (checkRes.ok && checkData?.ok && checkData?.orderId) {
+                const orderId = String(checkData.orderId);
+                setCurrentOrderId(orderId);
+                router.push(`/checkout?orderId=${orderId}`);
+                return;
+            }
 
-            const res = await fetch('/api/orders/create-draft', {
+            const currencyCode = currency === 'USD' ? 'USD' : 'CAD';
+            const createRes = await fetch('/api/cart/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cupType, currency: currencyCode }),
+                body: JSON.stringify({ cupType: 'hotzy', currency: currencyCode }),
             });
 
-            const data = await res.json().catch(() => null);
-            if (!res.ok || !data?.ok || !data?.orderId) {
+            const createData = await createRes.json().catch(() => null);
+            if (!createRes.ok || !createData?.ok || !createData?.orderId) {
                 toast.error("Couldn’t start checkout. Please try again.");
                 return;
             }
 
-            setCurrentOrderId(data.orderId as string);
-            router.push(`/checkout?orderId=${data.orderId}`);
+            const orderId = String(createData.orderId);
+            setCurrentOrderId(orderId);
+            window.dispatchEvent(new Event('hotzy:cart-updated'));
+            router.push(`/checkout?orderId=${orderId}`);
         } catch {
             toast.error("Couldn’t start checkout. Please try again.");
         }

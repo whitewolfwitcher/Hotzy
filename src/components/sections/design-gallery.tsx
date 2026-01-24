@@ -6,18 +6,16 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import designs from '@/data/designs.json';
 import { ShoppingCart } from 'lucide-react';
-import { useCart } from '@/contexts/cart-context';
 import { usePreferences } from '@/contexts/preferences-context';
 import { trackEvent } from '@/lib/analytics/trackEvent';
-import { getCurrentOrderId } from '@/lib/cart/currentOrder';
-
+import { setCurrentOrderId } from '@/lib/cart/currentOrder';
+import { toast } from 'sonner';
 type FilterId = 'all' | 'anime' | 'floral' | 'abstract' | 'outdoors' | 'matte' | 'white';
 type SortId = 'pop' | 'new';
 
 const DesignGallery = () => {
   const router = useRouter();
-  const { addItem } = useCart();
-  const { currency, convertPrice, getText } = usePreferences();
+const { currency, convertPrice, getText } = usePreferences();
   const [activeFilter, setActiveFilter] = useState<FilterId>('all');
   const [activeSort, setActiveSort] = useState<SortId>('pop');
 
@@ -26,14 +24,14 @@ const DesignGallery = () => {
     { id: 'anime' as FilterId, labelEn: 'Anime / Chibi', labelFr: 'Anime / Chibi' },
     { id: 'floral' as FilterId, labelEn: 'Floral / Pattern', labelFr: 'Floral / Motif' },
     { id: 'abstract' as FilterId, labelEn: 'Abstract / Lines', labelFr: 'Abstrait / Lignes' },
-    { id: 'outdoors' as FilterId, labelEn: 'Outdoors / Nature', labelFr: 'Extérieur / Nature' },
+    { id: 'outdoors' as FilterId, labelEn: 'Outdoors / Nature', labelFr: 'ExtÃ©rieur / Nature' },
     { id: 'matte' as FilterId, labelEn: 'Matte Black', labelFr: 'Noir Mat' },
     { id: 'white' as FilterId, labelEn: 'Glossy White', labelFr: 'Blanc Brillant' },
   ];
 
   const sortOptions = [
     { id: 'pop' as SortId, labelEn: 'Most popular', labelFr: 'Plus populaire' },
-    { id: 'new' as SortId, labelEn: 'Newest', labelFr: 'Plus récent' },
+    { id: 'new' as SortId, labelEn: 'Newest', labelFr: 'Plus rÃ©cent' },
   ];
 
   const filteredDesigns = useMemo(() => {
@@ -69,32 +67,51 @@ const DesignGallery = () => {
     return filtered;
   }, [activeFilter, activeSort]);
 
-  const handleOrderNow = (design: typeof designs[0]) => {
-    // Add to cart and redirect to checkout
-    addItem({
-      id: design.id,
-      title: design.title,
-      thumbnail: design.thumbnail,
-      payload: design.payload_to_customizer,
-      price: currency === 'CAD' ? 24.99 : parseFloat(convertPrice(24.99))
-    });
-    const orderId = getCurrentOrderId();
-    if (orderId) {
-      router.push(`/checkout?orderId=${orderId}`);
-      return;
+  const addToCart = async (design: typeof designs[0]) => {
+    const price =
+      currency === 'CAD' ? 24.99 : parseFloat(convertPrice(24.99));
+    const priceCents = Math.round(price * 100);
+
+    try {
+      const res = await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cupType: 'hotzy',
+          currency,
+          priceCents,
+          sectionsFilledCount: 1,
+          templateId: design.id,
+          designMeta: design.payload_to_customizer,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok || !data?.orderId) {
+        toast.error(data?.error || 'Couldn’t add to cart.');
+        return null;
+      }
+
+      const orderId = String(data.orderId);
+      setCurrentOrderId(orderId);
+      window.dispatchEvent(new Event('hotzy:cart-updated'));
+      toast.success(getText('Added to cart!', 'Ajouté au panier!'));
+      return orderId;
+    } catch {
+      toast.error(getText('Something went wrong', 'Erreur'));
+      return null;
     }
-    router.push('/customizer');
   };
 
-  const handleAddToCart = (design: typeof designs[0]) => {
-    // Just add to cart, stay on page
-    addItem({
-      id: design.id,
-      title: design.title,
-      thumbnail: design.thumbnail,
-      payload: design.payload_to_customizer,
-      price: currency === 'CAD' ? 24.99 : parseFloat(convertPrice(24.99))
-    });
+  const handleOrderNow = async (design: typeof designs[0]) => {
+    const orderId = await addToCart(design);
+    if (orderId) {
+      router.push(`/checkout?orderId=${orderId}`);
+    }
+  };
+
+  const handleAddToCart = async (design: typeof designs[0]) => {
+    await addToCart(design);
   };
 
   return (
@@ -117,7 +134,7 @@ const DesignGallery = () => {
           <p className="text-body-large text-muted-foreground max-w-2xl mx-auto">
             {getText(
               'Pick a style and start customizing it in 3D.',
-              'Choisissez un style et commencez à le personnaliser en 3D.'
+              'Choisissez un style et commencez Ã  le personnaliser en 3D.'
             )}
           </p>
         </motion.div>
@@ -259,7 +276,7 @@ const DesignGallery = () => {
             <p className="text-muted-foreground text-lg">
               {getText(
                 'No designs found for this filter. Try selecting a different category.',
-                'Aucun design trouvé pour ce filtre. Essayez de sélectionner une autre catégorie.'
+                'Aucun design trouvÃ© pour ce filtre. Essayez de sÃ©lectionner une autre catÃ©gorie.'
               )}
             </p>
           </motion.div>
@@ -270,3 +287,4 @@ const DesignGallery = () => {
 };
 
 export default DesignGallery;
+

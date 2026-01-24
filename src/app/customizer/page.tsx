@@ -6,7 +6,6 @@ import Footer from '@/components/sections/footer';
 import { Upload, Grid3x3, Check, Sparkles, Zap, Package, Truck, Shield, Move, ArrowLeft, ArrowRight, RotateCw, Image as ImageIcon, X, Copy, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCart } from '@/contexts/cart-context';
 import { useRouter } from 'next/navigation';
 import { usePreferences } from '@/contexts/preferences-context';
 import { CAD_TO_USD, PRICE_CAD } from '@/lib/pricing';
@@ -14,6 +13,7 @@ import { trackEvent } from '@/lib/analytics/trackEvent';
 import { track } from '@/lib/analytics/track';
 import { setCurrentOrderId } from '@/lib/cart/currentOrder';
 import { setCurrentOrderDraft } from '@/lib/cart/currentOrderDraft';
+import { toast } from 'sonner';
 
 // Dynamically import the 3D viewer to avoid SSR issues
 const MugViewer = dynamic(() => import('@/components/3d/mug-viewer'), {
@@ -46,7 +46,7 @@ const DESIGN_TEMPLATES = [
   {
     id: 'geometric',
     name: 'Geometric Pattern',
-    nameFr: 'Motif Géométrique',
+    nameFr: 'Motif GÃ©omÃ©trique',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/minimalist-geometric-pattern-design-with-bc266fca-20251110004625.jpg',
     category: 'minimalist'
   },
@@ -74,14 +74,14 @@ const DESIGN_TEMPLATES = [
   {
     id: 'retro',
     name: 'Retro Groovy',
-    nameFr: 'Rétro Groovy',
+    nameFr: 'RÃ©tro Groovy',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/retro-groovy-geometric-pattern-with-bold-f85a21d2-20251110004626.jpg',
     category: 'artistic'
   },
   {
     id: 'kawaii',
     name: 'Kawaii Coffee',
-    nameFr: 'Café Kawaii',
+    nameFr: 'CafÃ© Kawaii',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cute-kawaii-pattern-with-small-coffee-be-365025da-20251109175917.jpg',
     category: 'minimalist'
   },
@@ -102,7 +102,7 @@ const DESIGN_TEMPLATES = [
   {
     id: 'cyberpunk',
     name: 'Cyberpunk Neon',
-    nameFr: 'Cyberpunk Néon',
+    nameFr: 'Cyberpunk NÃ©on',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cyberpunk-neon-pattern-design-with-elect-2567b26d-20251110010149.jpg',
     category: 'artistic'
   },
@@ -151,28 +151,28 @@ const DESIGN_TEMPLATES = [
   {
     id: 'coffee-beans-minimal',
     name: 'Coffee Beans Minimal',
-    nameFr: 'Grains de Café Minimal',
+    nameFr: 'Grains de CafÃ© Minimal',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/minimalist-repeating-pattern-design-with-485fb06e-20251110010613.jpg',
     category: 'minimalist'
   },
   {
     id: 'coffee-watercolor',
     name: 'Coffee Watercolor',
-    nameFr: 'Café Aquarelle',
+    nameFr: 'CafÃ© Aquarelle',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/artistic-watercolor-illustration-pattern-7772371b-20251110010614.jpg',
     category: 'artistic'
   },
   {
     id: 'coffee-vintage',
     name: 'Vintage Coffee',
-    nameFr: 'Café Vintage',
+    nameFr: 'CafÃ© Vintage',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/vintage-retro-coffee-beans-pattern-desig-a45729cb-20251110010613.jpg',
     category: 'artistic'
   },
   {
     id: 'coffee-geometric',
     name: 'Geometric Coffee',
-    nameFr: 'Café Géométrique',
+    nameFr: 'CafÃ© GÃ©omÃ©trique',
     image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/modern-abstract-geometric-pattern-design-7b2ca45e-20251110010613.jpg',
     category: 'minimalist'
   },
@@ -274,9 +274,7 @@ export default function CustomizerPage() {
     pricing: false,
     details: false,
   });
-
-  const { addItem } = useCart();
-  const router = useRouter();
+const router = useRouter();
   const { currency, getText, language } = usePreferences();
 
   // Check if we're on desktop on mount and window resize
@@ -661,27 +659,49 @@ export default function CustomizerPage() {
   };
 
   const handleAddToCart = async () => {
-    // Generate mug mockup thumbnail
-    const mugThumbnail = await generateMugThumbnail(sectionImages);
-    
-    addItem({
-      id: `custom-mug-${Date.now()}`,
-      title: uploadedImageCount > 0 ? getText('Custom Design Mug', 'Tasse Design Personnalisé') : getText('Premium Black Mug', 'Tasse Noire Premium'),
-      thumbnail: mugThumbnail,
-      payload: {
-        sectionImages: sectionImages,
-        layoutMode: 'triple', // Always use 3-section mode
-        productType: 'custom-mug',
-        imageCount: uploadedImageCount,
-      },
-      price: basePriceCad,
-    });
+    try {
+      const sectionsFilledCount = Object.values(sectionImages).filter(
+        (value) => typeof value === 'string' && value.trim().length > 0
+      ).length;
 
-    void trackEvent('add_to_cart', {
-      item_name: 'Custom Mug',
-      item_category: 'Mugs',
-    });
-  };
+      const price =
+        currency === 'USD' ? basePriceCad * CAD_TO_USD : basePriceCad;
+      const priceCents = Math.round(price * 100);
+
+      const res = await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cupType,
+          currency,
+          priceCents,
+          sectionsFilledCount,
+          designMeta: {
+            imageCount: uploadedImageCount,
+            layoutMode: 'triple',
+            productType: 'custom-mug',
+          },
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok || !data?.orderId) {
+        toast.error(data?.error || 'Couldn’t add to cart.');
+        return;
+      }
+
+      setCurrentOrderId(String(data.orderId));
+      window.dispatchEvent(new Event('hotzy:cart-updated'));
+      toast.success(getText('Added to cart!', 'Ajouté au panier!'));
+
+      void trackEvent('add_to_cart', {
+        item_name: 'Custom Mug',
+        item_category: 'Mugs',
+      });
+    } catch {
+      toast.error(getText('Something went wrong', 'Erreur'));
+    }
+  }; 
 
   const createWrapBlob = async (): Promise<Blob> => {
     const canvas = document.createElement('canvas');
@@ -753,7 +773,7 @@ export default function CustomizerPage() {
       item_name: 'Custom Mug',
       item_category: 'Mugs',
     });
-    setOrderNowStatus(getText('Preparing design…', 'Préparation du design…'));
+    setOrderNowStatus(getText('Preparing designâ€¦', 'PrÃ©paration du designâ€¦'));
 
     try {
       const amountForCurrency = Number(
@@ -771,7 +791,7 @@ export default function CustomizerPage() {
       });
 
       if (!draftResponse.ok) {
-        setOrderNowStatus(getText('Failed to create order', 'Échec création'));
+        setOrderNowStatus(getText('Failed to create order', 'Ã‰chec crÃ©ation'));
         setIsOrdering(false);
         return;
       }
@@ -782,7 +802,7 @@ export default function CustomizerPage() {
       setCurrentOrderId(orderId);
       setCurrentOrderDraft({ sections: sectionImages, cupType });
 
-      setOrderNowStatus(getText('Uploading…', 'Téléversement…'));
+      setOrderNowStatus(getText('Uploadingâ€¦', 'TÃ©lÃ©versementâ€¦'));
       const wrapBlob = await createWrapBlob();
       const formData = new FormData();
       formData.append('file', wrapBlob, 'wrap.png');
@@ -794,12 +814,12 @@ export default function CustomizerPage() {
       });
 
       if (!uploadResponse.ok) {
-        setOrderNowStatus(getText('Upload failed', 'Échec téléversement'));
+        setOrderNowStatus(getText('Upload failed', 'Ã‰chec tÃ©lÃ©versement'));
         setIsOrdering(false);
         return;
       }
 
-      setOrderNowStatus(getText('Redirecting…', 'Redirection…'));
+      setOrderNowStatus(getText('Redirectingâ€¦', 'Redirectionâ€¦'));
       router.push(`/checkout?orderId=${orderId}`);
       return;
     } catch (error) {
@@ -982,7 +1002,7 @@ export default function CustomizerPage() {
                       <Grid3x3 className="w-3 h-3 md:w-4 md:h-4 text-primary" />
                     </div>
                     <h3 className="text-sm md:text-lg font-bold text-white">
-                      {getText('Select Section', 'Sélectionner Section')}
+                      {getText('Select Section', 'SÃ©lectionner Section')}
                     </h3>
                   </div>
 
@@ -1092,7 +1112,7 @@ export default function CustomizerPage() {
                   <p className="text-[9px] md:text-[10px] text-muted-foreground mt-2 text-center">
                     {getText(
                       'Click a section to upload its image',
-                      'Cliquez sur une section pour télécharger'
+                      'Cliquez sur une section pour tÃ©lÃ©charger'
                     )}
                   </p>
                 </motion.div>
@@ -1106,11 +1126,11 @@ export default function CustomizerPage() {
                 >
                   <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/30 rounded-xl p-3 md:p-4 text-center">
                     <div className="text-xl md:text-2xl font-black text-primary">11oz</div>
-                    <div className="text-[10px] md:text-xs text-muted-foreground">{getText('Capacity', 'Capacité')}</div>
+                    <div className="text-[10px] md:text-xs text-muted-foreground">{getText('Capacity', 'CapacitÃ©')}</div>
                   </div>
                   <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/30 rounded-xl p-3 md:p-4 text-center">
                     <div className="text-xl md:text-2xl font-black text-primary">4K</div>
-                    <div className="text-[10px] md:text-xs text-muted-foreground">{getText('Print', 'Qualité')}</div>
+                    <div className="text-[10px] md:text-xs text-muted-foreground">{getText('Print', 'QualitÃ©')}</div>
                   </div>
                   <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/30 rounded-xl p-3 md:p-4 text-center">
                     <div className="text-xl md:text-2xl font-black text-primary">24h</div>
@@ -1139,7 +1159,7 @@ export default function CustomizerPage() {
                     </div>
                     <div className="text-left">
                       <h3 className="text-base md:text-xl font-bold text-white">
-                        {getText('Upload Design', 'Télécharger Design')}
+                        {getText('Upload Design', 'TÃ©lÃ©charger Design')}
                       </h3>
                       <span className="text-xs md:text-sm text-primary lg:hidden">
                         ({getText('Section', 'Section')} {activeSection.replace('section', '')})
@@ -1196,13 +1216,13 @@ export default function CustomizerPage() {
                             </motion.div>
                             <div>
                               <p className="text-white font-semibold text-sm md:text-base mb-1">
-                                {getText('Drop your design here', 'Déposez votre design ici')}
+                                {getText('Drop your design here', 'DÃ©posez votre design ici')}
                               </p>
                               <p className="text-xs md:text-sm text-muted-foreground">
                                 {getText('or click to browse', 'ou cliquez pour parcourir')}
                               </p>
                               <p className="text-[10px] md:text-xs text-muted-foreground mt-1 md:mt-2">
-                                {getText('JPG, PNG, SVG • Max 10MB', 'JPG, PNG, SVG • Max 10MB')}
+                                {getText('JPG, PNG, SVG â€¢ Max 10MB', 'JPG, PNG, SVG â€¢ Max 10MB')}
                               </p>
                             </div>
                           </div>
@@ -1217,7 +1237,7 @@ export default function CustomizerPage() {
                         >
                           <div className="flex items-center justify-between p-2 md:p-3 bg-primary/10 border border-primary/30 rounded-lg">
                             <span className="text-xs md:text-sm text-white font-medium">
-                              ✓ {getText('Design uploaded', 'Design téléchargé')}
+                              âœ“ {getText('Design uploaded', 'Design tÃ©lÃ©chargÃ©')}
                             </span>
                             <button
                               onClick={() => handleRemoveImage(activeSection)}
@@ -1270,7 +1290,7 @@ export default function CustomizerPage() {
                         }}
                         className="text-[10px] md:text-xs text-primary hover:text-primary/80 font-semibold"
                       >
-                        {getText('Reset', 'Réinitialiser')}
+                        {getText('Reset', 'RÃ©initialiser')}
                       </button>
                       <ChevronDown className={`w-5 h-5 text-primary transition-transform lg:hidden ${expandedSections.position ? 'rotate-180' : ''}`} />
                     </div>
@@ -1286,7 +1306,7 @@ export default function CustomizerPage() {
                       >
                         <div>
                           <label className="text-xs text-white font-medium mb-1.5 md:mb-2 block">
-                            {getText('Move Image', 'Déplacer')}
+                            {getText('Move Image', 'DÃ©placer')}
                           </label>
                           <div className="flex items-center justify-center gap-1.5">
                             <button
@@ -1317,7 +1337,7 @@ export default function CustomizerPage() {
                               <RotateCw className="w-3 h-3 text-primary" />
                               {getText('Rotation', 'Rotation')}
                             </label>
-                            <span className="text-[10px] text-muted-foreground">{imageRotation.toFixed(0)}°</span>
+                            <span className="text-[10px] text-muted-foreground">{imageRotation.toFixed(0)}Â°</span>
                           </div>
                           <input
                             type="range"
@@ -1347,7 +1367,7 @@ export default function CustomizerPage() {
                     </div>
                     <div className="text-left">
                       <h3 className="text-base md:text-xl font-bold text-white">
-                        {getText('Templates', 'Modèles')}
+                        {getText('Templates', 'ModÃ¨les')}
                       </h3>
                       <p className="text-[10px] md:text-xs text-muted-foreground lg:hidden">
                         {getText('Browse designs', 'Parcourir')}
@@ -1377,7 +1397,7 @@ export default function CustomizerPage() {
                             onChange={(e) => setApplyTemplateToAll(e.target.checked)}
                             className="h-3.5 w-3.5 accent-primary"
                           />
-                          <span>{getText('Apply to all sections', 'Appliquer à toutes les sections')}</span>
+                          <span>{getText('Apply to all sections', 'Appliquer Ã  toutes les sections')}</span>
                         </label>
                       </div>
                       <div className="relative">
@@ -1399,7 +1419,7 @@ export default function CustomizerPage() {
                         
                         <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 md:gap-2 px-2 py-1 md:px-4 md:py-2 bg-black/60 backdrop-blur-xl border border-primary/30 rounded-full z-10 pointer-events-none">
                           <span className="text-[9px] md:text-xs font-semibold text-white">
-                            {getText('Drag • Click', 'Glissez • Cliquez')}
+                            {getText('Drag â€¢ Click', 'Glissez â€¢ Cliquez')}
                           </span>
                         </div>
                       </div>
@@ -1411,13 +1431,13 @@ export default function CustomizerPage() {
                           animate={{ opacity: 1, y: 0 }}
                         >
                           <span className="text-xs md:text-sm text-white font-medium truncate">
-                            ✓ {
+                            âœ“ {
                               DESIGN_TEMPLATES.find(t => t.image === currentSectionImage)
                                 ? getText(
                                     DESIGN_TEMPLATES.find(t => t.image === currentSectionImage)!.name,
                                     DESIGN_TEMPLATES.find(t => t.image === currentSectionImage)!.nameFr
                                   )
-                                : getText('Custom', 'Personnalisé')
+                                : getText('Custom', 'PersonnalisÃ©')
                             }
                           </span>
                         </motion.div>
@@ -1500,7 +1520,7 @@ export default function CustomizerPage() {
                   className="w-full flex items-center justify-between p-4 md:p-6"
                 >
                   <h3 className="text-base md:text-xl font-bold text-white">
-                    {getText('Details & Features', 'Détails & Caractéristiques')}
+                    {getText('Details & Features', 'DÃ©tails & CaractÃ©ristiques')}
                   </h3>
                   <ChevronDown className={`w-5 h-5 text-primary transition-transform ${expandedSections.details ? 'rotate-180' : ''}`} />
                 </button>
@@ -1515,11 +1535,11 @@ export default function CustomizerPage() {
                     >
                       <div className="space-y-3">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{getText('Material', 'Matériau')}</span>
-                          <span className="text-white font-medium">{getText('Ceramic', 'Céramique')}</span>
+                          <span className="text-muted-foreground">{getText('Material', 'MatÃ©riau')}</span>
+                          <span className="text-white font-medium">{getText('Ceramic', 'CÃ©ramique')}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{getText('Capacity', 'Capacité')}</span>
+                          <span className="text-muted-foreground">{getText('Capacity', 'CapacitÃ©')}</span>
                           <span className="text-white font-medium">11 oz</span>
                         </div>
                       </div>
@@ -1528,7 +1548,7 @@ export default function CustomizerPage() {
                         {[
                           { en: 'Dishwasher safe', fr: 'Lave-vaisselle' },
                           { en: 'Microwave safe', fr: 'Micro-ondes' },
-                          { en: 'Lifetime warranty', fr: 'Garantie à vie' }
+                          { en: 'Lifetime warranty', fr: 'Garantie Ã  vie' }
                         ].map((feature) => (
                           <div key={feature.en} className="flex items-center gap-2 text-light-gray">
                             <Check className="w-4 h-4 text-primary flex-shrink-0" />
@@ -1589,7 +1609,7 @@ export default function CustomizerPage() {
                 <Package className="text-primary" size={24} />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-white mb-2">
-                {getText('Premium Quality', 'Qualité Premium')}
+                {getText('Premium Quality', 'QualitÃ© Premium')}
               </h3>
               <p className="text-sm md:text-base text-muted-foreground">
                 {getText('Professional sublimation printing', 'Impression professionnelle')}
@@ -1625,3 +1645,6 @@ export default function CustomizerPage() {
     </div>
   );
 }
+
+
+
