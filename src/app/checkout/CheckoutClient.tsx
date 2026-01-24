@@ -10,6 +10,8 @@ import {
 import Link from "next/link";
 import { Lock, ArrowLeft } from "lucide-react";
 import CheckoutProviders from "./providers";
+import { toast } from "sonner";
+import { getCurrentOrderId } from "@/lib/cart/currentOrder";
 
 function CheckoutForm({ orderId }: { orderId: string }) {
   const stripe = useStripe();
@@ -86,7 +88,14 @@ export default function CheckoutClient() {
 
   useEffect(() => {
     if (!orderId) {
-      setStatus("Missing orderId.");
+      const storedOrderId = getCurrentOrderId();
+      if (storedOrderId) {
+        router.replace(`/checkout?orderId=${storedOrderId}`);
+        return;
+      }
+
+      toast.error("Your cart is empty");
+      router.replace("/customizer");
       return;
     }
 
@@ -158,8 +167,8 @@ export default function CheckoutClient() {
 
           <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-2xl p-6 md:p-8 shadow-xl">
             {!orderId && (
-              <div className="text-sm text-red-400">
-                Missing orderId in the URL.
+              <div className="text-sm text-muted-foreground">
+                Redirecting to your cart...
               </div>
             )}
 

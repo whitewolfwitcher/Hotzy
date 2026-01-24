@@ -9,6 +9,7 @@ import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/contexts/cart-context';
 import { usePreferences } from '@/contexts/preferences-context';
 import { trackEvent } from '@/lib/analytics/trackEvent';
+import { getCurrentOrderId } from '@/lib/cart/currentOrder';
 
 type FilterId = 'all' | 'anime' | 'floral' | 'abstract' | 'outdoors' | 'matte' | 'white';
 type SortId = 'pop' | 'new';
@@ -77,7 +78,12 @@ const DesignGallery = () => {
       payload: design.payload_to_customizer,
       price: currency === 'CAD' ? 24.99 : parseFloat(convertPrice(24.99))
     });
-    router.push('/checkout');
+    const orderId = getCurrentOrderId();
+    if (orderId) {
+      router.push(`/checkout?orderId=${orderId}`);
+      return;
+    }
+    router.push('/customizer');
   };
 
   const handleAddToCart = (design: typeof designs[0]) => {

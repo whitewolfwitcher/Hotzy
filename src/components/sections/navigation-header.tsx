@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Globe, Menu, X, ShoppingCart, DollarSign } from 'lucide-react';
 import { useCart } from '@/contexts/cart-context';
 import { usePreferences } from '@/contexts/preferences-context';
 import { trackEvent } from '@/lib/analytics/trackEvent';
+import { getCurrentOrderId } from '@/lib/cart/currentOrder';
 
 const HotzyLogo = () => (
   <svg
@@ -26,6 +28,7 @@ const NavigationHeader = () => {
     const { getTotalItems } = useCart();
     const { currency, setCurrency, language, setLanguage } = usePreferences();
     const cartItemCount = getTotalItems();
+    const router = useRouter();
 
     useEffect(() => {
         document.body.style.overflow = isMenuOpen ? 'hidden' : 'unset';
@@ -43,6 +46,15 @@ const NavigationHeader = () => {
     const utilityNavItems = [
         { name: "Shop", href: "/shop" }
     ];
+
+    const handleCartClick = () => {
+        const orderId = getCurrentOrderId();
+        if (orderId) {
+            router.push(`/checkout?orderId=${orderId}`);
+            return;
+        }
+        router.push('/customizer');
+    };
 
     return (
         <>
@@ -73,14 +85,19 @@ const NavigationHeader = () => {
                                 ))}
                             </ul>
                             <div className="flex items-center gap-x-4 ml-6">
-                                <Link href="/checkout" aria-label="Shopping cart" className="hover:text-primary transition-colors relative">
+                                <button
+                                    type="button"
+                                    onClick={handleCartClick}
+                                    aria-label="Shopping cart"
+                                    className="hover:text-primary transition-colors relative"
+                                >
                                     <ShoppingCart size={20} />
                                     {cartItemCount > 0 && (
                                         <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                                             {cartItemCount}
                                         </span>
                                     )}
-                                </Link>
+                                </button>
                                 <button 
                                     onClick={() => {
                                         const next = currency === 'CAD' ? 'USD' : 'CAD';
@@ -119,14 +136,19 @@ const NavigationHeader = () => {
                         </nav>
 
                         <div className="flex items-center gap-x-4 lg:hidden">
-                            <Link href="/checkout" aria-label="Shopping cart" className="hover:text-primary transition-colors relative">
+                            <button
+                                type="button"
+                                onClick={handleCartClick}
+                                aria-label="Shopping cart"
+                                className="hover:text-primary transition-colors relative"
+                            >
                                 <ShoppingCart size={22} />
                                 {cartItemCount > 0 && (
                                     <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                                         {cartItemCount}
                                     </span>
                                 )}
-                            </Link>
+                            </button>
                             <button 
                                 onClick={() => {
                                     const next = currency === 'CAD' ? 'USD' : 'CAD';

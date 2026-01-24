@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/cart-context';
 import { usePreferences } from '@/contexts/preferences-context';
+import { getCurrentOrderId } from '@/lib/cart/currentOrder';
 
 interface Product {
   id: string;
@@ -117,7 +118,12 @@ export default function ShopPage() {
 
   const handleOrderNow = (product: Product) => {
     handleAddToCart(product);
-    router.push('/checkout');
+    const orderId = getCurrentOrderId();
+    if (orderId) {
+      router.push(`/checkout?orderId=${orderId}`);
+      return;
+    }
+    router.push('/customizer');
   };
 
   const handleCheckout = () => {
@@ -126,7 +132,12 @@ export default function ShopPage() {
       return;
     }
 
-    router.push('/checkout');
+    const orderId = getCurrentOrderId();
+    if (orderId) {
+      router.push(`/checkout?orderId=${orderId}`);
+      return;
+    }
+    router.push('/customizer');
   };
 
   return (

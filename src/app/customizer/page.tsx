@@ -12,6 +12,7 @@ import { usePreferences } from '@/contexts/preferences-context';
 import { CAD_TO_USD, PRICE_CAD } from '@/lib/pricing';
 import { trackEvent } from '@/lib/analytics/trackEvent';
 import { track } from '@/lib/analytics/track';
+import { setCurrentOrderId } from '@/lib/cart/currentOrder';
 
 // Dynamically import the 3D viewer to avoid SSR issues
 const MugViewer = dynamic(() => import('@/components/3d/mug-viewer'), {
@@ -777,6 +778,7 @@ export default function CustomizerPage() {
       const draftData = await draftResponse.json();
       const orderId = draftData.orderId as string;
       const orderUploadToken = draftData.orderUploadToken as string;
+      setCurrentOrderId(orderId);
 
       setOrderNowStatus(getText('Uploading…', 'Téléversement…'));
       const wrapBlob = await createWrapBlob();
