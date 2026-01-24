@@ -7,10 +7,11 @@ import { Globe, Menu, X, ShoppingCart, DollarSign } from 'lucide-react';
 import { usePreferences } from '@/contexts/preferences-context';
 import { trackEvent } from '@/lib/analytics/trackEvent';
 import { toast } from 'sonner';
+import { getCurrentOrderId, setCurrentOrderId } from '@/lib/cart/currentOrder';
 import {
-    getCurrentOrderId,
-    getCurrentOrderItemCount,
-} from '@/lib/cart/currentOrder';
+    getCurrentOrderDraft,
+    getCurrentOrderDraftItemCount,
+} from '@/lib/cart/currentOrderDraft';
 
 const HotzyLogo = () => (
   <svg
@@ -34,7 +35,9 @@ const NavigationHeader = () => {
 
     useEffect(() => {
         const updateCount = () => {
-            setCartItemCount(getCurrentOrderItemCount());
+            const draftCount = getCurrentOrderDraftItemCount();
+            const orderId = getCurrentOrderId();
+            setCartItemCount(draftCount > 0 ? draftCount : orderId ? 1 : 0);
         };
 
         updateCount();
@@ -63,15 +66,35 @@ const NavigationHeader = () => {
         { name: "Shop", href: "/shop" }
     ];
 
-    const handleCartClick = () => {
-        const orderId = getCurrentOrderId();
-        if (!orderId) {
-            toast.error('Your cart is empty');
-            router.push('/customizer');
-            return;
-        }
+    const handleCartClick = async () => {
+        try {
+            const existing = getCurrentOrderId();
+            if (existing) {
+                router.push(`/checkout?orderId=${existing}`);
+                return;
+            }
 
-        router.push(`/checkout?orderId=${orderId}`);
+            const draft = getCurrentOrderDraft();
+            const cupType = draft?.cupType === 'standard' ? 'standard' : 'hotzy';
+            const currencyCode = currency === 'USD' ? 'USD' : 'CAD';
+
+            const res = await fetch('/api/orders/create-draft', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cupType, currency: currencyCode }),
+            });
+
+            const data = await res.json().catch(() => null);
+            if (!res.ok || !data?.ok || !data?.orderId) {
+                toast.error("Couldn’t start checkout. Please try again.");
+                return;
+            }
+
+            setCurrentOrderId(data.orderId as string);
+            router.push(`/checkout?orderId=${data.orderId}`);
+        } catch {
+            toast.error("Couldn’t start checkout. Please try again.");
+        }
     };
 
     return (

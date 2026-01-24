@@ -13,6 +13,7 @@ import { CAD_TO_USD, PRICE_CAD } from '@/lib/pricing';
 import { trackEvent } from '@/lib/analytics/trackEvent';
 import { track } from '@/lib/analytics/track';
 import { setCurrentOrderId } from '@/lib/cart/currentOrder';
+import { setCurrentOrderDraft } from '@/lib/cart/currentOrderDraft';
 
 // Dynamically import the 3D viewer to avoid SSR issues
 const MugViewer = dynamic(() => import('@/components/3d/mug-viewer'), {
@@ -779,15 +780,7 @@ export default function CustomizerPage() {
       const orderId = draftData.orderId as string;
       const orderUploadToken = draftData.orderUploadToken as string;
       setCurrentOrderId(orderId);
-      try {
-        window.localStorage.setItem(
-          'hotzy_current_order_draft',
-          JSON.stringify({ sections: sectionImages })
-        );
-        window.dispatchEvent(new Event('hotzy:order-updated'));
-      } catch {
-        // Ignore storage errors.
-      }
+      setCurrentOrderDraft({ sections: sectionImages, cupType });
 
       setOrderNowStatus(getText('Uploading…', 'Téléversement…'));
       const wrapBlob = await createWrapBlob();
