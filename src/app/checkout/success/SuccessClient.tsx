@@ -8,15 +8,21 @@ import { clearCart } from "@/lib/cart/cart";
 export default function SuccessClient() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
+  const orderId = searchParams.get("orderId");
   const [status, setStatus] = useState<
     "loading" | "success" | "error" | "missing"
-  >(sessionId ? "loading" : "missing");
+  >(sessionId ? "loading" : orderId ? "success" : "missing");
   const [summary, setSummary] = useState<
     { amount_total?: number; currency?: string; payment_status?: string } | null
   >(null);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      if (orderId) {
+        clearCart();
+      }
+      return;
+    }
 
     const run = async () => {
       try {
@@ -42,7 +48,7 @@ export default function SuccessClient() {
     };
 
     void run();
-  }, [sessionId]);
+  }, [sessionId, orderId]);
 
   return (
     <main className="min-h-screen bg-black text-white flex items-center justify-center px-4">

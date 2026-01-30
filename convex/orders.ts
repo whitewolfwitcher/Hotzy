@@ -46,6 +46,33 @@ export const attachPdf = mutation({
   },
 });
 
+export const getForPayment = query({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) return null;
+    return {
+      cupType: order.cupType,
+      currency: order.currency,
+      wrapFileId: order.wrapFileId ?? null,
+    };
+  },
+});
+
+export const setPaymentIntent = mutation({
+  args: { orderId: v.id("orders"), stripePaymentIntentId: v.string() },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const order = await ctx.db.get(args.orderId);
+    if (!order) throw new Error("Order not found");
+    await ctx.db.patch(args.orderId, {
+      stripePaymentIntentId: args.stripePaymentIntentId,
+      updatedAt: now,
+    });
+    return { ok: true };
+  },
+});
+
 export const getById = query({
   args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
