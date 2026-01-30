@@ -10,19 +10,29 @@ export async function POST(request: Request) {
     };
 
     if (!orderId) {
-      return new Response(JSON.stringify({ error: "Missing orderId" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return Response.json(
+        { ok: false, error: "Missing orderId" },
+        { status: 400 }
+      );
     }
 
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
     const deployKey = process.env.CONVEX_DEPLOY_KEY;
-    if (!convexUrl || !deployKey) {
-      return new Response(JSON.stringify({ error: "Convex env vars missing" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+    const missing: string[] = [];
+    if (!stripeSecretKey) missing.push("STRIPE_SECRET_KEY");
+    if (!stripeWebhookSecret) missing.push("STRIPE_WEBHOOK_SECRET");
+    if (!siteUrl) missing.push("NEXT_PUBLIC_SITE_URL");
+    if (!convexUrl) missing.push("NEXT_PUBLIC_CONVEX_URL");
+    if (!deployKey) missing.push("CONVEX_DEPLOY_KEY");
+
+    if (missing.length > 0) {
+      return Response.json(
+        { ok: false, error: `Missing env vars: ${missing.join(", ")}` },
+        { status: 500 }
+      );
     }
 
     const convex = new ConvexHttpClient(convexUrl);
@@ -33,17 +43,14 @@ export async function POST(request: Request) {
     });
 
     if (!order) {
-      return new Response(JSON.stringify({ error: "Order not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
+      return Response.json({ ok: false, error: "Order not found" }, { status: 404 });
     }
 
     if (!order.wrapFileId) {
-      return new Response(JSON.stringify({ error: "Wrap file missing" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return Response.json(
+        { ok: false, error: "Wrap file missing" },
+        { status: 400 }
+      );
     }
 
     const unitAmount = getUnitAmount(order.cupType, order.currency);
@@ -58,10 +65,10 @@ export async function POST(request: Request) {
     });
 
     if (!intent.client_secret) {
-      return new Response(JSON.stringify({ error: "Missing client secret" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return Response.json(
+        { ok: false, error: "Missing client secret" },
+        { status: 500 }
+      );
     }
 
     await convex.mutation(api.orders.setPaymentIntent, {
@@ -69,15 +76,13 @@ export async function POST(request: Request) {
       stripePaymentIntentId: intent.id,
     });
 
-    return new Response(JSON.stringify({ clientSecret: intent.client_secret }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return Response.json({ ok: true, clientSecret: intent.client_secret });
   } catch (error) {
-    console.error("Failed to create PaymentIntent", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to create PaymentIntent" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("create-payment-intent error", message);
+    return Response.json(
+      { ok: false, error: message },
+      { status: 500 }
     );
   }
 }
