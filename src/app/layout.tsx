@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { PreferencesProvider } from "@/contexts/preferences-context";
 import GaProvider from "@/components/analytics/GaProvider";
 import ConsentBanner from "@/components/analytics/ConsentBanner";
+import ConvexClientProvider from "./ConvexClientProvider";
 
 export const metadata: Metadata = {
   title: {
@@ -24,14 +25,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <ErrorReporter />
-        <Suspense fallback={null}>
-          <GaProvider />
-        </Suspense>
-        <ConsentBanner />
-        <PreferencesProvider>{children}</PreferencesProvider>
-        <Toaster />
-        <VisualEditsMessenger />
+        <ConvexClientProvider>
+          <ErrorReporter />
+          <Suspense fallback={null}>
+            <GaProvider />
+          </Suspense>
+          <ConsentBanner />
+          <PreferencesProvider>{children}</PreferencesProvider>
+          <Toaster />
+          <VisualEditsMessenger />
+        </ConvexClientProvider>
       </body>
     </html>
   );
