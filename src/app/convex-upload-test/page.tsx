@@ -1,20 +1,24 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 
 export default function ConvexUploadTestPage() {
   const createDraft = useMutation(api.orders.createDraft);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const attachWrap = useMutation(api.orders.attachWrap);
+  const generatePdfForOrder = useAction(api.print.generatePdfForOrder);
 
   const [orderId, setOrderId] = useState<string | null>(null);
   const [wrapFileId, setWrapFileId] = useState<string | null>(null);
+  const [pdfFileId, setPdfFileId] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
   const handleFile = async (file: File) => {
     setError(null);
+    setPdfFileId(null);
     setStatus("Creating draft order...");
     const draft = await createDraft({ cupType: "hotzy", currency: "CAD" });
     setOrderId(draft.orderId as string);
@@ -39,7 +43,23 @@ export default function ConvexUploadTestPage() {
 
     setStatus("Attaching wrap to order...");
     await attachWrap({ orderId: draft.orderId, wrapFileId: storageId });
-    setStatus("Done");
+    setStatus("Upload complete");
+  };
+
+  const handleGeneratePdf = async () => {
+    if (!orderId) return;
+    setError(null);
+    setIsGenerating(true);
+    setStatus("Generating PDF...");
+    try {
+      const result = await generatePdfForOrder({ orderId });
+      setPdfFileId(result.pdfFileId as string);
+      setStatus("PDF ready");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "PDF generation failed");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -59,6 +79,28 @@ export default function ConvexUploadTestPage() {
         <div>Status: {status || "idle"}</div>
         <div>OrderId: {orderId ?? "-"}</div>
         <div>WrapFileId: {wrapFileId ?? "-"}</div>
+        <div>PdfFileId: {pdfFileId ?? "-"}</div>
+        <button
+          type="button"
+          style={{ marginTop: 12 }}
+          disabled={!orderId || !wrapFileId || isGenerating}
+          onClick={() => {
+            handleGeneratePdf();
+          }}
+        >
+          {isGenerating ? "Generating..." : "Generate PDF"}
+        </button>
+        {pdfFileId ? (
+          <div style={{ marginTop: 8 }}>
+            <a
+              href={`/api/convex-file?id=${encodeURIComponent(pdfFileId)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Download PDF
+            </a>
+          </div>
+        ) : null}
         {error ? <pre style={{ color: "crimson" }}>{error}</pre> : null}
       </div>
     </main>

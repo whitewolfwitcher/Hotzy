@@ -8,7 +8,10 @@
  * @module
  */
 
+import type * as files from "../files.js";
 import type * as health from "../health.js";
+import type * as orders from "../orders.js";
+import type * as print from "../print.js";
 
 import type {
   ApiFromModules,
@@ -17,7 +20,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  files: typeof files;
   health: typeof health;
+  orders: typeof orders;
+  print: typeof print;
 }>;
 
 /**
