@@ -13,6 +13,8 @@ import { trackEvent } from '@/lib/analytics/trackEvent';
 import { track } from '@/lib/analytics/track';
 import { addItem as addCartItem } from '@/lib/cart/cart';
 import { toast } from 'sonner';
+import { useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 
 // Dynamically import the 3D viewer to avoid SSR issues
 const MugViewer = dynamic(() => import('@/components/3d/mug-viewer'), {
@@ -273,8 +275,11 @@ export default function CustomizerPage() {
     pricing: false,
     details: false,
   });
-const router = useRouter();
+  const router = useRouter();
   const { currency, getText, language } = usePreferences();
+  const createDraft = useMutation(api.orders.createDraft);
+  const generateUploadUrl = useMutation(api.files.generateUploadUrl);
+  const attachWrap = useMutation(api.orders.attachWrap);
 
   // Check if we're on desktop on mount and window resize
   useEffect(() => {
@@ -758,8 +763,39 @@ const router = useRouter();
     if (isOrdering) return;
     setIsOrdering(true);
     try {
-      await handleAddToCart();
-      router.push('/checkout');
+      setOrderNowStatus(getText('Creating order…', 'Création de la commande…'));
+      const draft = await createDraft({ cupType, currency });
+
+      setOrderNowStatus(getText('Uploading design…', 'Téléversement du design…'));
+      const wrapBlob = await createWrapBlob();
+      const wrapFile = new File([wrapBlob], `wrap-${draft.orderId}.png`, {
+        type: 'image/png',
+      });
+      const uploadUrl = await generateUploadUrl({});
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': wrapFile.type },
+        body: wrapFile,
+      });
+      if (!uploadRes.ok) {
+        throw new Error(`Upload failed: ${uploadRes.status}`);
+      }
+      const uploadJson = (await uploadRes.json()) as {
+        storageId?: string;
+        fileId?: string;
+      };
+      const storageId = uploadJson.storageId ?? uploadJson.fileId;
+      if (!storageId) {
+        throw new Error('No storageId returned from upload');
+      }
+
+      await attachWrap({ orderId: draft.orderId, wrapFileId: storageId });
+      setOrderNowStatus(getText('Redirecting to payment…', 'Redirection vers le paiement…'));
+      router.push(`/checkout?orderId=${encodeURIComponent(draft.orderId)}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : getText('Checkout failed', 'Échec du paiement');
+      setOrderNowStatus(null);
+      toast.error(message);
     } finally {
       setIsOrdering(false);
     }
