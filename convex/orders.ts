@@ -62,11 +62,14 @@ export const getForPayment = query({
   args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
     const order = await ctx.db.get(args.orderId);
-    if (!order) return null;
+    if (!order) throw new Error("Order not found");
     return {
       cupType: order.cupType,
       currency: order.currency,
+      amount: order.amount ?? null,
       wrapFileId: order.wrapFileId ?? null,
+      stripePaymentIntentId: order.stripePaymentIntentId ?? null,
+      status: order.status,
     };
   },
 });
