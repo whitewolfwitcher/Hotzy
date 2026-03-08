@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../../convex/_generated/api';
@@ -8,13 +7,25 @@ import { sendOrderReadyEmail } from '@/lib/email/resendClient';
 
 export const runtime = 'nodejs';
 
+function getErrorMessage(err: unknown) {
+  return err instanceof Error ? err.message : 'Unknown error';
+}
+
+function logConvexCallError(functionName: string, err: unknown) {
+  console.error('webhook error: convex call failed', {
+    functionName,
+    message: getErrorMessage(err),
+  });
+}
+
 export async function POST(req: Request) {
   const body = await req.text();
   const sig = req.headers.get('stripe-signature');
 
   if (!sig) {
-    return NextResponse.json(
-      { error: 'Missing Stripe signature' },
+    console.error('webhook error: missing stripe-signature header');
+    return Response.json(
+      { ok: false, error: 'Webhook signature verification failed' },
       { status: 400 }
     );
   }
@@ -31,12 +42,18 @@ export async function POST(req: Request) {
       getStripeWebhookSecret()
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Invalid signature';
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error(
+      'webhook error: signature verification failed',
+      getErrorMessage(err)
+    );
+    return Response.json(
+      { ok: false, error: 'Webhook signature verification failed' },
+      { status: 400 }
+    );
   }
 
-  try {
-    if (event.type === 'payment_intent.succeeded') {
+  if (event.type === 'payment_intent.succeeded') {
+    try {
       const intent = event.data.object as Stripe.PaymentIntent;
       const paymentIntentId = intent.id;
       const orderId = intent.metadata?.orderId;
@@ -50,10 +67,18 @@ export async function POST(req: Request) {
       const convex = new ConvexHttpClient(convexUrl);
       convex.setAdminAuth(deployKey);
 
-      const fulfillment = await convex.action(api.fulfill.fulfillFromStripe, {
-        paymentIntentId,
-        orderId: orderId ? (orderId as any) : undefined,
-      });
+      const fulfillFromStripeFunction = 'api.fulfill.fulfillFromStripe';
+      const fulfillment = await (async () => {
+        try {
+          return await convex.action(api.fulfill.fulfillFromStripe, {
+            paymentIntentId,
+            orderId: orderId ? (orderId as any) : undefined,
+          });
+        } catch (err) {
+          logConvexCallError(fulfillFromStripeFunction, err);
+          throw err;
+        }
+      })();
 
       if (fulfillment?.pdfFileId && !fulfillment?.emailSent) {
         const siteUrl =
@@ -75,23 +100,37 @@ export async function POST(req: Request) {
         });
 
         if (emailResult.ok) {
-          await convex.mutation(api.orders.markEmailSent, {
-            orderId: fulfillment.orderId as any,
-          });
+          const markEmailSentFunction = 'api.orders.markEmailSent';
+
+          try {
+            await convex.mutation(api.orders.markEmailSent, {
+              orderId: fulfillment.orderId as any,
+            });
+          } catch (err) {
+            logConvexCallError(markEmailSentFunction, err);
+            throw err;
+          }
         } else {
           console.error('Order email failed', emailResult.error);
         }
       }
+    } catch (err) {
+      console.error(
+        'webhook error: fulfillment failed',
+        getErrorMessage(err)
+      );
+      return Response.json(
+        { ok: false, error: 'Webhook fulfillment failed' },
+        { status: 400 }
+      );
     }
-  } catch (err) {
-    console.error('Stripe webhook handler error', err);
   }
 
-  return NextResponse.json({ received: true }, { status: 200 });
+  return Response.json({ ok: true }, { status: 200 });
 }
 
 export async function GET() {
-  return NextResponse.json(
+  return Response.json(
     { error: 'Method Not Allowed' },
     { status: 405 }
   );
