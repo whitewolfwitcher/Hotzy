@@ -2,8 +2,6 @@ import Stripe from 'stripe';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../../convex/_generated/api';
 import { getStripeSecretKey, getStripeWebhookSecret } from '@/lib/env';
-import { getUnitAmount } from '@/lib/pricing';
-import { sendOrderReadyEmail } from '@/lib/email/resendClient';
 
 export const runtime = 'nodejs';
 
@@ -52,11 +50,13 @@ export async function POST(req: Request) {
     );
   }
 
+  console.log('webhook event type', event.type);
+
   if (event.type === 'payment_intent.succeeded') {
     try {
       const intent = event.data.object as Stripe.PaymentIntent;
       const paymentIntentId = intent.id;
-      const orderId = intent.metadata?.orderId;
+      console.log('webhook paymentIntent id', paymentIntentId);
 
       const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
       const deployKey = process.env.CONVEX_DEPLOY_KEY;
@@ -67,53 +67,19 @@ export async function POST(req: Request) {
       const convex = new ConvexHttpClient(convexUrl);
       convex.setAdminAuth(deployKey);
 
-      const fulfillFromStripeFunction = 'api.fulfill.fulfillFromStripe';
-      const fulfillment = await (async () => {
+      const markPaidByPaymentIntentFunction =
+        'api.orders.markPaidByPaymentIntent';
+      const result = await (async () => {
         try {
-          return await convex.action(api.fulfill.fulfillFromStripe, {
-            paymentIntentId,
-            orderId: orderId ? (orderId as any) : undefined,
+          return await convex.mutation(api.orders.markPaidByPaymentIntent, {
+            stripePaymentIntentId: paymentIntentId,
           });
         } catch (err) {
-          logConvexCallError(fulfillFromStripeFunction, err);
+          logConvexCallError(markPaidByPaymentIntentFunction, err);
           throw err;
         }
       })();
-
-      if (fulfillment?.pdfFileId && !fulfillment?.emailSent) {
-        const siteUrl =
-          process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.hotzy.ca';
-        const pdfUrl = `${siteUrl}/api/convex-file?id=${encodeURIComponent(
-          fulfillment.pdfFileId
-        )}`;
-        const amount = getUnitAmount(
-          fulfillment.cupType,
-          fulfillment.currency
-        );
-
-        const emailResult = await sendOrderReadyEmail({
-          orderId: fulfillment.orderId,
-          cupType: fulfillment.cupType,
-          currency: fulfillment.currency,
-          amount,
-          pdfUrl,
-        });
-
-        if (emailResult.ok) {
-          const markEmailSentFunction = 'api.orders.markEmailSent';
-
-          try {
-            await convex.mutation(api.orders.markEmailSent, {
-              orderId: fulfillment.orderId as any,
-            });
-          } catch (err) {
-            logConvexCallError(markEmailSentFunction, err);
-            throw err;
-          }
-        } else {
-          console.error('Order email failed', emailResult.error);
-        }
-      }
+      console.log('webhook order marked paid', result.orderId);
     } catch (err) {
       console.error(
         'webhook error: fulfillment failed',

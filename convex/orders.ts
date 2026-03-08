@@ -105,6 +105,32 @@ export const markPaidFromStripe = mutation({
   },
 });
 
+export const markPaidByPaymentIntent = mutation({
+  args: { stripePaymentIntentId: v.string() },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const order = await ctx.db
+      .query("orders")
+      .withIndex("by_payment_intent", (q) =>
+        q.eq("stripePaymentIntentId", args.stripePaymentIntentId)
+      )
+      .unique();
+
+    if (!order) {
+      throw new Error(
+        `Order not found for stripePaymentIntentId: ${args.stripePaymentIntentId}`
+      );
+    }
+
+    await ctx.db.patch(order._id, {
+      status: "paid",
+      updatedAt: now,
+    });
+
+    return { ok: true, orderId: order._id };
+  },
+});
+
 export const markEmailSent = mutation({
   args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
