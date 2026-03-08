@@ -17,6 +17,7 @@ export default function SuccessClient() {
   >(null);
 
   useEffect(() => {
+    // TODO: Upload paid artwork on checkout success page
     if (!sessionId) {
       if (orderId) {
         clearCart();

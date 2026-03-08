@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getUnitAmount } from "../src/lib/pricing";
 
 export const createDraft = mutation({
   args: {
@@ -8,10 +9,12 @@ export const createDraft = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
+    const amount = getUnitAmount(args.cupType, args.currency);
     const id = await ctx.db.insert("orders", {
       status: "draft",
       cupType: args.cupType,
       currency: args.currency,
+      amount,
       createdAt: now,
       updatedAt: now,
     });
@@ -66,8 +69,7 @@ export const getForPayment = query({
     return {
       cupType: order.cupType,
       currency: order.currency,
-      amount: order.amount ?? null,
-      wrapFileId: order.wrapFileId ?? null,
+      amount: order.amount ?? getUnitAmount(order.cupType, order.currency),
       stripePaymentIntentId: order.stripePaymentIntentId ?? null,
       status: order.status,
     };

@@ -254,8 +254,6 @@ export default function CustomizerPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [applyTemplateToAll, setApplyTemplateToAll] = useState(false);
   const [cupType, setCupType] = useState<'hotzy' | 'standard'>('hotzy');
-  const [testOrderId, setTestOrderId] = useState('');
-  const [wrapUploadStatus, setWrapUploadStatus] = useState<string | null>(null);
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderNowStatus, setOrderNowStatus] = useState<string | null>(null);
   const hasTrackedCustomizerView = useRef(false);
@@ -278,8 +276,6 @@ export default function CustomizerPage() {
   const router = useRouter();
   const { currency, getText, language } = usePreferences();
   const createDraft = useMutation(api.orders.createDraft);
-  const generateUploadUrl = useMutation(api.files.generateUploadUrl);
-  const attachWrap = useMutation(api.orders.attachWrap);
 
   // Check if we're on desktop on mount and window resize
   useEffect(() => {
@@ -696,101 +692,13 @@ export default function CustomizerPage() {
     }
   };  
 
-  const createWrapBlob = async (): Promise<Blob> => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 2400;
-    canvas.height = 800;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new Error('Canvas unavailable');
-    }
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const sections = ['section1', 'section2', 'section3'] as const;
-    const sectionWidth = canvas.width / 3;
-    const sectionHeight = canvas.height;
-
-    const loadImage = (src: string) =>
-      new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = src;
-      });
-
-    for (let i = 0; i < sections.length; i += 1) {
-      const section = sections[i];
-      const imageSrc = sectionImages[section];
-      const x = i * sectionWidth;
-
-      if (imageSrc) {
-        try {
-          const img = await loadImage(imageSrc);
-          const scale = Math.min(sectionWidth / img.width, sectionHeight / img.height);
-          const scaledWidth = img.width * scale;
-          const scaledHeight = img.height * scale;
-          const offsetX = x + (sectionWidth - scaledWidth) / 2;
-          const offsetY = (sectionHeight - scaledHeight) / 2;
-          ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
-        } catch {
-          ctx.fillStyle = '#f2f2f2';
-          ctx.fillRect(x, 0, sectionWidth, sectionHeight);
-        }
-      } else {
-        ctx.fillStyle = '#f2f2f2';
-        ctx.fillRect(x, 0, sectionWidth, sectionHeight);
-        ctx.fillStyle = '#999999';
-        ctx.font = 'bold 32px Arial';
-        ctx.fillText('EMPTY', x + 40, 80);
-      }
-    }
-
-    return new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          reject(new Error('Failed to create PNG'));
-          return;
-        }
-        resolve(blob);
-      }, 'image/png');
-    });
-  };
-
   const handleOrderNow = async () => {
     if (isOrdering) return;
     setIsOrdering(true);
     try {
       setOrderNowStatus(getText('Creating order…', 'Création de la commande…'));
       const draft = await createDraft({ cupType, currency });
-
-      setOrderNowStatus(getText('Uploading design…', 'Téléversement du design…'));
-      const wrapBlob = await createWrapBlob();
-      const wrapFile = new File([wrapBlob], `wrap-${draft.orderId}.png`, {
-        type: 'image/png',
-      });
-      const uploadUrl = await generateUploadUrl({});
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': wrapFile.type },
-        body: wrapFile,
-      });
-      if (!uploadRes.ok) {
-        throw new Error(`Upload failed: ${uploadRes.status}`);
-      }
-      const uploadJson = (await uploadRes.json()) as {
-        storageId?: string;
-        fileId?: string;
-      };
-      const storageId = uploadJson.storageId ?? uploadJson.fileId;
-      if (!storageId) {
-        throw new Error('No storageId returned from upload');
-      }
-
-      await attachWrap({ orderId: draft.orderId, wrapFileId: storageId });
-      setOrderNowStatus(getText('Redirecting to payment…', 'Redirection vers le paiement…'));
+      setOrderNowStatus(getText('Redirecting to payment...', 'Redirection vers le paiement...'));
       router.push(`/checkout?orderId=${encodeURIComponent(draft.orderId)}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : getText('Checkout failed', 'Échec du paiement');

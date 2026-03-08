@@ -46,14 +46,7 @@ export async function POST(request: Request) {
       return Response.json({ ok: false, error: "Order not found" }, { status: 404 });
     }
 
-    if (!order.wrapFileId) {
-      return Response.json(
-        { ok: false, error: "Wrap file missing" },
-        { status: 400 }
-      );
-    }
-
-    const unitAmount = getUnitAmount(order.cupType, order.currency);
+    const unitAmount = order.amount ?? getUnitAmount(order.cupType, order.currency);
     const amountCents = Math.round(unitAmount * 100);
 
     const stripe = getStripe();
