@@ -4,14 +4,34 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import designs from '@/data/designs.json';
 import { ShoppingCart } from 'lucide-react';
 import { usePreferences } from '@/contexts/preferences-context';
 import { trackEvent } from '@/lib/analytics/trackEvent';
 import { addItem as addCartItem } from '@/lib/cart/cart';
+import { galleryDesignTemplates } from '@/lib/design-templates';
+import type { DesignTemplate } from '@/types/design';
 import { toast } from 'sonner';
 type FilterId = 'all' | 'anime' | 'floral' | 'abstract' | 'outdoors' | 'matte' | 'white';
 type SortId = 'pop' | 'new';
+
+const matchesFilter = (design: DesignTemplate, filter: FilterId): boolean => {
+  switch (filter) {
+    case 'anime':
+      return design.style === 'anime';
+    case 'floral':
+      return design.style === 'floral';
+    case 'abstract':
+      return design.style === 'abstract';
+    case 'outdoors':
+      return design.style === 'outdoors';
+    case 'matte':
+      return design.finish === 'matte' || design.baseColor?.startsWith('matte') === true;
+    case 'white':
+      return design.baseColor === 'gloss_white';
+    default:
+      return true;
+  }
+};
 
 const DesignGallery = () => {
   const router = useRouter();
@@ -35,28 +55,11 @@ const { currency, convertPrice, getText } = usePreferences();
   ];
 
   const filteredDesigns = useMemo(() => {
-    let filtered = [...designs];
+    let filtered = [...galleryDesignTemplates];
 
     // Apply filters
     if (activeFilter !== 'all') {
-      filtered = filtered.filter((design) => {
-        switch (activeFilter) {
-          case 'anime':
-            return design.style === 'anime';
-          case 'floral':
-            return design.style === 'floral';
-          case 'abstract':
-            return design.style === 'abstract';
-          case 'outdoors':
-            return design.style === 'outdoors';
-          case 'matte':
-            return design.base_color === 'matte_black';
-          case 'white':
-            return design.base_color === 'gloss_white';
-          default:
-            return true;
-        }
-      });
+      filtered = filtered.filter((design) => matchesFilter(design, activeFilter));
     }
 
     // Apply sorting
@@ -67,7 +70,7 @@ const { currency, convertPrice, getText } = usePreferences();
     return filtered;
   }, [activeFilter, activeSort]);
 
-  const addToCart = async (design: typeof designs[0]) => {
+  const addToCart = async (design: DesignTemplate) => {
     const price =
       currency === 'CAD' ? 24.99 : parseFloat(convertPrice(24.99));
     const priceCents = Math.round(price * 100);
@@ -75,7 +78,7 @@ const { currency, convertPrice, getText } = usePreferences();
     try {
       addCartItem({
         id: `design-${design.id}-${Date.now()}`,
-        name: design.title,
+        name: design.name,
         priceCents,
         currency,
         qty: 1,
@@ -90,14 +93,14 @@ const { currency, convertPrice, getText } = usePreferences();
     }
   };
 
-  const handleOrderNow = async (design: typeof designs[0]) => {
+  const handleOrderNow = async (design: DesignTemplate) => {
     const ok = await addToCart(design);
     if (ok) {
       router.push('/checkout');
     }
   };
 
-  const handleAddToCart = async (design: typeof designs[0]) => {
+  const handleAddToCart = async (design: DesignTemplate) => {
     await addToCart(design);
   };
 
@@ -208,17 +211,17 @@ const { currency, convertPrice, getText } = usePreferences();
             >
               {/* Image Container */}
               <div className="aspect-square relative bg-[#2a2a2a] overflow-hidden">
-                <Image
-                  src={design.thumbnail}
-                  alt={`Mug preview of ${design.title}`}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+                  <Image
+                    src={design.thumbnail}
+                    alt={`Mug preview of ${design.name}`}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
               </div>
 
               {/* Card Content */}
               <div className="p-5">
-                <h3 className="text-lg font-semibold text-white mb-3">{design.title}</h3>
+                <h3 className="text-lg font-semibold text-white mb-3">{design.name}</h3>
                 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2 mb-4">

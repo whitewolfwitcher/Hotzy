@@ -302,5 +302,143 @@
       "base_color_factor": [1, 1, 1, 1],
       "target_material": "PrintMat"
     }
+  },
+  {
+    "id": "starter-geometric-pattern",
+    "title": "Geometric Pattern",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/minimalist-geometric-pattern-design-with-bc266fca-20251110004625.jpg",
+    "style": "abstract",
+    "category": "minimalist",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#111827", "#76B900", "#E5E7EB"],
+    "tags": ["geometric", "minimal", "starter"],
+    "description": "Clean geometric starter artwork for a modern Hotzy mug.",
+    "wrap": "panel",
+    "print_method": "sublimation",
+    "show_in_gallery": false,
+    "featured_in_customizer": true,
+    "payload_to_customizer": {
+      "overlay_image_url": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/minimalist-geometric-pattern-design-with-bc266fca-20251110004625.jpg",
+      "fit": "contain",
+      "area": "safe",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "starter-botanical-nature",
+    "title": "Botanical Nature",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/botanical-nature-illustration-with-delic-3550a964-20251110002742.jpg",
+    "style": "nature",
+    "category": "nature",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#14532D", "#22C55E", "#DCFCE7"],
+    "tags": ["botanical", "nature", "starter"],
+    "description": "Leafy botanical starter artwork with a soft illustrated feel.",
+    "wrap": "full",
+    "print_method": "sublimation",
+    "show_in_gallery": false,
+    "featured_in_customizer": true,
+    "payload_to_customizer": {
+      "overlay_image_url": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/botanical-nature-illustration-with-delic-3550a964-20251110002742.jpg",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "starter-stay-positive",
+    "title": "Stay Positive",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/motivational-typography-design-with-stay-15f1157b-20251110002742.jpg",
+    "style": "quotes",
+    "category": "quotes",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#111827", "#F59E0B", "#FDE68A"],
+    "tags": ["typography", "quote", "starter"],
+    "description": "Bold motivational typography starter artwork for all-day desk energy.",
+    "wrap": "panel",
+    "print_method": "sublimation",
+    "show_in_gallery": false,
+    "featured_in_customizer": true,
+    "payload_to_customizer": {
+      "overlay_image_url": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/motivational-typography-design-with-stay-15f1157b-20251110002742.jpg",
+      "fit": "contain",
+      "area": "safe",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "starter-cosmic-space",
+    "title": "Cosmic Space",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cosmic-space-pattern-design-with-swirlin-6cf1076a-20251110010407.jpg",
+    "style": "cosmic",
+    "category": "artistic",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#1D4ED8", "#7C3AED", "#E0E7FF"],
+    "tags": ["space", "cosmic", "starter"],
+    "description": "High-contrast cosmic starter artwork with a dreamy wraparound look.",
+    "wrap": "full",
+    "print_method": "sublimation",
+    "show_in_gallery": false,
+    "featured_in_customizer": true,
+    "payload_to_customizer": {
+      "overlay_image_url": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cosmic-space-pattern-design-with-swirlin-6cf1076a-20251110010407.jpg",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "starter-japanese-wave",
+    "title": "Japanese Wave",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/elegant-japanese-wave-pattern-design-ins-c3870911-20251110010405.jpg",
+    "style": "minimal",
+    "category": "minimalist",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#0F172A", "#2563EB", "#E0F2FE"],
+    "tags": ["japanese", "wave", "starter"],
+    "description": "Elegant wave-inspired starter artwork with a calm, balanced composition.",
+    "wrap": "panel",
+    "print_method": "sublimation",
+    "show_in_gallery": false,
+    "featured_in_customizer": true,
+    "payload_to_customizer": {
+      "overlay_image_url": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/elegant-japanese-wave-pattern-design-ins-c3870911-20251110010405.jpg",
+      "fit": "contain",
+      "area": "safe",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
+  },
+  {
+    "id": "starter-vintage-coffee",
+    "title": "Vintage Coffee",
+    "thumbnail": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/vintage-retro-coffee-beans-pattern-desig-a45729cb-20251110010613.jpg",
+    "style": "retro",
+    "category": "artistic",
+    "base_color": "gloss_white",
+    "finish": "gloss",
+    "palette": ["#78350F", "#D97706", "#FDE68A"],
+    "tags": ["coffee", "retro", "starter"],
+    "description": "Retro coffee-bean starter artwork built for a cozy cafe-inspired mug.",
+    "wrap": "full",
+    "print_method": "sublimation",
+    "show_in_gallery": false,
+    "featured_in_customizer": true,
+    "payload_to_customizer": {
+      "overlay_image_url": "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/vintage-retro-coffee-beans-pattern-desig-a45729cb-20251110010613.jpg",
+      "fit": "cover",
+      "area": "full",
+      "base_color_factor": [1, 1, 1, 1],
+      "target_material": "PrintMat"
+    }
   }
 ]

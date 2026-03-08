@@ -12,6 +12,10 @@ import { CAD_TO_USD, PRICE_CAD } from '@/lib/pricing';
 import { trackEvent } from '@/lib/analytics/trackEvent';
 import { track } from '@/lib/analytics/track';
 import { addItem as addCartItem } from '@/lib/cart/cart';
+import {
+  customizerDesignTemplates,
+  findDesignTemplateByImage,
+} from '@/lib/design-templates';
 import { toast } from 'sonner';
 import { useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
@@ -42,191 +46,6 @@ const CircularGallery = dynamic(() => import('@/components/3d/CircularGallery'),
   ),
 });
 
-// Design Templates
-const DESIGN_TEMPLATES = [
-  {
-    id: 'geometric',
-    name: 'Geometric Pattern',
-    nameFr: 'Motif GÃƒÆ’Ã‚Â©omÃƒÆ’Ã‚Â©trique',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/minimalist-geometric-pattern-design-with-bc266fca-20251110004625.jpg',
-    category: 'minimalist'
-  },
-  {
-    id: 'watercolor',
-    name: 'Abstract Watercolor',
-    nameFr: 'Aquarelle Abstraite',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/abstract-artistic-watercolor-pattern-wit-7a44e702-20251110002742.jpg',
-    category: 'artistic'
-  },
-  {
-    id: 'botanical',
-    name: 'Botanical Nature',
-    nameFr: 'Nature Botanique',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/botanical-nature-illustration-with-delic-3550a964-20251110002742.jpg',
-    category: 'nature'
-  },
-  {
-    id: 'motivation',
-    name: 'Stay Positive',
-    nameFr: 'Restez Positif',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/motivational-typography-design-with-stay-15f1157b-20251110002742.jpg',
-    category: 'quotes'
-  },
-  {
-    id: 'retro',
-    name: 'Retro Groovy',
-    nameFr: 'RÃƒÆ’Ã‚Â©tro Groovy',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/retro-groovy-geometric-pattern-with-bold-f85a21d2-20251110004626.jpg',
-    category: 'artistic'
-  },
-  {
-    id: 'kawaii',
-    name: 'Kawaii Coffee',
-    nameFr: 'CafÃƒÆ’Ã‚Â© Kawaii',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cute-kawaii-pattern-with-small-coffee-be-365025da-20251109175917.jpg',
-    category: 'minimalist'
-  },
-  {
-    id: 'mountain',
-    name: 'Mountain Landscape',
-    nameFr: 'Paysage Montagne',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/mountain-landscape-silhouette-design-min-44e956c8-20251109175917.jpg',
-    category: 'nature'
-  },
-  {
-    id: 'anime',
-    name: 'Anime Kawaii',
-    nameFr: 'Anime Kawaii',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cute-anime-style-pattern-design-with-kaw-08360faa-20251110010149.jpg',
-    category: 'artistic'
-  },
-  {
-    id: 'cyberpunk',
-    name: 'Cyberpunk Neon',
-    nameFr: 'Cyberpunk NÃƒÆ’Ã‚Â©on',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cyberpunk-neon-pattern-design-with-elect-2567b26d-20251110010149.jpg',
-    category: 'artistic'
-  },
-  {
-    id: 'typography-dream',
-    name: 'Dream Typography',
-    nameFr: 'Typographie Dream',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/minimalist-black-and-white-typography-de-673eaa0e-20251110010404.jpg',
-    category: 'quotes'
-  },
-  {
-    id: 'cosmic',
-    name: 'Cosmic Space',
-    nameFr: 'Espace Cosmique',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cosmic-space-pattern-design-with-swirlin-6cf1076a-20251110010407.jpg',
-    category: 'artistic'
-  },
-  {
-    id: 'japanese-wave',
-    name: 'Japanese Wave',
-    nameFr: 'Vague Japonaise',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/elegant-japanese-wave-pattern-design-ins-c3870911-20251110010405.jpg',
-    category: 'minimalist'
-  },
-  {
-    id: 'gothic',
-    name: 'Gothic Victorian',
-    nameFr: 'Gothique Victorien',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/gothic-dark-pattern-with-ornate-victoria-a1fff3ca-20251110010407.jpg',
-    category: 'artistic'
-  },
-  {
-    id: 'tropical',
-    name: 'Tropical Paradise',
-    nameFr: 'Paradis Tropical',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/tropical-paradise-pattern-with-monstera--99a93a9e-20251110010407.jpg',
-    category: 'nature'
-  },
-  {
-    id: 'memphis',
-    name: 'Memphis 80s',
-    nameFr: 'Memphis 80s',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/memphis-design-pattern-with-bold-geometr-e926e9cc-20251110010408.jpg',
-    category: 'artistic'
-  },
-  {
-    id: 'coffee-beans-minimal',
-    name: 'Coffee Beans Minimal',
-    nameFr: 'Grains de CafÃƒÆ’Ã‚Â© Minimal',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/minimalist-repeating-pattern-design-with-485fb06e-20251110010613.jpg',
-    category: 'minimalist'
-  },
-  {
-    id: 'coffee-watercolor',
-    name: 'Coffee Watercolor',
-    nameFr: 'CafÃƒÆ’Ã‚Â© Aquarelle',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/artistic-watercolor-illustration-pattern-7772371b-20251110010614.jpg',
-    category: 'artistic'
-  },
-  {
-    id: 'coffee-vintage',
-    name: 'Vintage Coffee',
-    nameFr: 'CafÃƒÆ’Ã‚Â© Vintage',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/vintage-retro-coffee-beans-pattern-desig-a45729cb-20251110010613.jpg',
-    category: 'artistic'
-  },
-  {
-    id: 'coffee-geometric',
-    name: 'Geometric Coffee',
-    nameFr: 'CafÃƒÆ’Ã‚Â© GÃƒÆ’Ã‚Â©omÃƒÆ’Ã‚Â©trique',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/modern-abstract-geometric-pattern-design-7b2ca45e-20251110010613.jpg',
-    category: 'minimalist'
-  },
-  {
-    id: 'chibi-ninja',
-    name: 'Chibi Ninja',
-    nameFr: 'Ninja Chibi',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/chibi-ninja-character-pattern-design-for-e5b1af83-20251111020142.jpg',
-    category: 'artistic'
-  },
-  {
-    id: 'botanical-haven',
-    name: 'Botanical Haven',
-    nameFr: 'Havre Botanique',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/botanical-pattern-design-for-mug-printin-518aede2-20251111020142.jpg',
-    category: 'nature'
-  },
-  {
-    id: 'street-art-burst',
-    name: 'Street Art Burst',
-    nameFr: 'Explosion Street Art',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/street-art-graffiti-pattern-design-for-m-6daddf0e-20251111020142.jpg',
-    category: 'artistic'
-  },
-  {
-    id: 'tropical-paradise-explore',
-    name: 'Tropical Paradise',
-    nameFr: 'Paradis Tropical',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/tropical-paradise-pattern-design-for-mug-6d3c0cc3-20251111020142.jpg',
-    category: 'nature'
-  },
-  {
-    id: 'neural-illusion',
-    name: 'Neural Illusion',
-    nameFr: 'Illusion Neuronale',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/neural-network-pattern-design-for-mug-pr-600ccaf7-20251111020142.jpg',
-    category: 'artistic'
-  },
-  {
-    id: 'zen-wave',
-    name: 'Zen Wave',
-    nameFr: 'Vague Zen',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/zen-wave-japanese-pattern-design-for-mug-2de3ea0e-20251111020141.jpg',
-    category: 'minimalist'
-  },
-  {
-    id: 'sunrise-mist',
-    name: 'Sunrise Mist',
-    nameFr: 'Brume du Lever du Soleil',
-    image: 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/sunrise-mist-gradient-pattern-design-for-dbc2aa7a-20251111020142.jpg',
-    category: 'artistic'
-  }
-];
 
 export default function CustomizerPage() {
   const [sectionImages, setSectionImages] = useState<{
@@ -274,7 +93,7 @@ export default function CustomizerPage() {
     details: false,
   });
   const router = useRouter();
-  const { currency, getText, language } = usePreferences();
+  const { currency, getText } = usePreferences();
   const createDraft = useMutation(api.orders.createDraft);
 
   // Check if we're on desktop on mount and window resize
@@ -328,9 +147,7 @@ export default function CustomizerPage() {
     setExpandedSections(prev => {
       const nextValue = !prev[section];
       if (section === 'templates' && nextValue) {
-        const currentTemplate = DESIGN_TEMPLATES.find(
-          (template) => template.image === sectionImages[activeSection]
-        );
+        const currentTemplate = findDesignTemplateByImage(sectionImages[activeSection]);
         void track('template_view', {
           cup_type: cupType,
           template_category: currentTemplate?.category,
@@ -356,6 +173,7 @@ export default function CustomizerPage() {
   // Get current active section image
   const currentSectionImage = sectionImages[activeSection];
   const currentSectionType = imageTypes[activeSection];
+  const currentTemplate = findDesignTemplateByImage(currentSectionImage);
 
   // Helper function to resize image to 800x800
   const resizeImage = (file: File): Promise<string> => {
@@ -594,9 +412,7 @@ export default function CustomizerPage() {
     // Reset position controls when selecting a template
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
-    const selectedTemplate = DESIGN_TEMPLATES.find(
-      (template) => template.image === templateImage
-    );
+    const selectedTemplate = findDesignTemplateByImage(templateImage);
     if (selectedTemplate) {
       void track('template_apply', {
         cup_type: cupType,
@@ -1223,7 +1039,7 @@ export default function CustomizerPage() {
                       </div>
                       <div className="relative">
                         <CircularGallery
-                          items={DESIGN_TEMPLATES.map(template => ({
+                          items={customizerDesignTemplates.map((template) => ({
                             image: template.image,
                             text: getText(template.name, template.nameFr)
                           }))}
@@ -1233,7 +1049,7 @@ export default function CustomizerPage() {
                           font="bold 30px Inter"
                           scrollSpeed={2}
                           scrollEase={0.05}
-                          onItemClick={(image, text) => {
+                          onItemClick={(image) => {
                             handleTemplateSelect(image);
                           }}
                         />
@@ -1253,10 +1069,10 @@ export default function CustomizerPage() {
                         >
                           <span className="text-xs md:text-sm text-white font-medium truncate">
                             ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ {
-                              DESIGN_TEMPLATES.find(t => t.image === currentSectionImage)
+                              currentTemplate
                                 ? getText(
-                                    DESIGN_TEMPLATES.find(t => t.image === currentSectionImage)!.name,
-                                    DESIGN_TEMPLATES.find(t => t.image === currentSectionImage)!.nameFr
+                                    currentTemplate.name,
+                                    currentTemplate.nameFr
                                   )
                                 : getText('Custom', 'PersonnalisÃƒÆ’Ã‚Â©')
                             }
