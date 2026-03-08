@@ -74,6 +74,220 @@ const buildFallbackDescription = (name: string, style: string, tags: string[]): 
   return name ? `${name} starter template for mug customization.` : undefined;
 };
 
+const createCustomizerTemplate = ({
+  id,
+  name,
+  nameFr,
+  image,
+  category,
+}: {
+  id: string;
+  name: string;
+  nameFr?: string;
+  image: string;
+  category: string;
+}): DesignTemplate => ({
+  id,
+  name,
+  nameFr: nameFr ?? name,
+  image,
+  thumbnail: image,
+  category,
+  style: category,
+  tags: [],
+  palette: [],
+  payload_to_customizer: {
+    overlay_image_url: image,
+  },
+  showInGallery: false,
+  featuredInCustomizer: false,
+});
+
+const legacyCustomizerTemplates: DesignTemplate[] = [
+  createCustomizerTemplate({
+    id: 'legacy-geometric',
+    name: 'Geometric Pattern',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/minimalist-geometric-pattern-design-with-bc266fca-20251110004625.jpg',
+    category: 'minimalist',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-watercolor',
+    name: 'Abstract Watercolor',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/abstract-artistic-watercolor-pattern-wit-7a44e702-20251110002742.jpg',
+    category: 'artistic',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-botanical',
+    name: 'Botanical Nature',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/botanical-nature-illustration-with-delic-3550a964-20251110002742.jpg',
+    category: 'nature',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-motivation',
+    name: 'Stay Positive',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/motivational-typography-design-with-stay-15f1157b-20251110002742.jpg',
+    category: 'quotes',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-retro',
+    name: 'Retro Groovy',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/retro-groovy-geometric-pattern-with-bold-f85a21d2-20251110004626.jpg',
+    category: 'artistic',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-kawaii',
+    name: 'Kawaii Coffee',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cute-kawaii-pattern-with-small-coffee-be-365025da-20251109175917.jpg',
+    category: 'minimalist',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-mountain',
+    name: 'Mountain Landscape',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/mountain-landscape-silhouette-design-min-44e956c8-20251109175917.jpg',
+    category: 'nature',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-anime',
+    name: 'Anime Kawaii',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cute-anime-style-pattern-design-with-kaw-08360faa-20251110010149.jpg',
+    category: 'artistic',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-cyberpunk',
+    name: 'Cyberpunk Neon',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cyberpunk-neon-pattern-design-with-elect-2567b26d-20251110010149.jpg',
+    category: 'artistic',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-typography-dream',
+    name: 'Dream Typography',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/minimalist-black-and-white-typography-de-673eaa0e-20251110010404.jpg',
+    category: 'quotes',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-cosmic',
+    name: 'Cosmic Space',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/cosmic-space-pattern-design-with-swirlin-6cf1076a-20251110010407.jpg',
+    category: 'artistic',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-japanese-wave',
+    name: 'Japanese Wave',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/elegant-japanese-wave-pattern-design-ins-c3870911-20251110010405.jpg',
+    category: 'minimalist',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-gothic',
+    name: 'Gothic Victorian',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/gothic-dark-pattern-with-ornate-victoria-a1fff3ca-20251110010407.jpg',
+    category: 'artistic',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-tropical',
+    name: 'Tropical Paradise',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/tropical-paradise-pattern-with-monstera--99a93a9e-20251110010407.jpg',
+    category: 'nature',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-memphis',
+    name: 'Memphis 80s',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/memphis-design-pattern-with-bold-geometr-e926e9cc-20251110010408.jpg',
+    category: 'artistic',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-coffee-beans-minimal',
+    name: 'Coffee Beans Minimal',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/minimalist-repeating-pattern-design-with-485fb06e-20251110010613.jpg',
+    category: 'minimalist',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-coffee-watercolor',
+    name: 'Coffee Watercolor',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/artistic-watercolor-illustration-pattern-7772371b-20251110010614.jpg',
+    category: 'artistic',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-coffee-vintage',
+    name: 'Vintage Coffee',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/vintage-retro-coffee-beans-pattern-desig-a45729cb-20251110010613.jpg',
+    category: 'artistic',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-coffee-geometric',
+    name: 'Geometric Coffee',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/modern-abstract-geometric-pattern-design-7b2ca45e-20251110010613.jpg',
+    category: 'minimalist',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-chibi-ninja',
+    name: 'Chibi Ninja',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/chibi-ninja-character-pattern-design-for-e5b1af83-20251111020142.jpg',
+    category: 'artistic',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-botanical-haven',
+    name: 'Botanical Haven',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/botanical-pattern-design-for-mug-printin-518aede2-20251111020142.jpg',
+    category: 'nature',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-street-art-burst',
+    name: 'Street Art Burst',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/street-art-graffiti-pattern-design-for-m-6daddf0e-20251111020142.jpg',
+    category: 'artistic',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-tropical-paradise-explore',
+    name: 'Tropical Paradise',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/tropical-paradise-pattern-design-for-mug-6d3c0cc3-20251111020142.jpg',
+    category: 'nature',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-neural-illusion',
+    name: 'Neural Illusion',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/neural-network-pattern-design-for-mug-pr-600ccaf7-20251111020142.jpg',
+    category: 'artistic',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-zen-wave',
+    name: 'Zen Wave',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/zen-wave-japanese-pattern-design-for-mug-2de3ea0e-20251111020141.jpg',
+    category: 'minimalist',
+  }),
+  createCustomizerTemplate({
+    id: 'legacy-sunrise-mist',
+    name: 'Sunrise Mist',
+    image:
+      'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/f5f72cb8-da36-4f58-8ea5-e9218193ea09/generated_images/sunrise-mist-gradient-pattern-design-for-dbc2aa7a-20251111020142.jpg',
+    category: 'artistic',
+  }),
+];
+
 const normalizeDesignTemplate = (
   record: DesignTemplateSourceRecord,
   index: number
@@ -117,7 +331,25 @@ export const designTemplates: DesignTemplate[] = rawDesignTemplates
   .map(normalizeDesignTemplate)
   .filter((template): template is DesignTemplate => template !== null);
 
-export const customizerDesignTemplates = designTemplates;
+const isUsableCustomizerImage = (image: string): boolean => !image.startsWith('/designs/');
+
+const mergeUniqueTemplates = (templates: DesignTemplate[]): DesignTemplate[] => {
+  const seenImages = new Set<string>();
+
+  return templates.filter((template) => {
+    if (seenImages.has(template.image)) {
+      return false;
+    }
+
+    seenImages.add(template.image);
+    return true;
+  });
+};
+
+export const customizerDesignTemplates = mergeUniqueTemplates([
+  ...legacyCustomizerTemplates,
+  ...designTemplates.filter((template) => isUsableCustomizerImage(template.image)),
+]);
 
 export const galleryDesignTemplates = designTemplates.filter((template) => template.showInGallery);
 
@@ -126,4 +358,4 @@ export const featuredCustomizerDesignTemplates =
   featuredTemplates.length > 0 ? featuredTemplates : galleryDesignTemplates.slice(0, 4);
 
 export const findDesignTemplateByImage = (image: string | null | undefined) =>
-  image ? designTemplates.find((template) => template.image === image) : undefined;
+  image ? customizerDesignTemplates.find((template) => template.image === image) : undefined;

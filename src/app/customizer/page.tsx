@@ -859,7 +859,7 @@ export default function CustomizerPage() {
                                 {getText('or click to browse', 'ou cliquez pour parcourir')}
                               </p>
                               <p className="text-[10px] md:text-xs text-muted-foreground mt-1 md:mt-2">
-                                {getText('JPG, PNG, SVG ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Max 10MB', 'JPG, PNG, SVG ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Max 10MB')}
+                                {getText('JPG, PNG, SVG - Max 10MB', 'JPG, PNG, SVG - Max 10MB')}
                               </p>
                             </div>
                           </div>
