@@ -46,32 +46,26 @@ const CircularGallery = dynamic(() => import('@/components/3d/CircularGallery'),
   ),
 });
 
+type SectionKey = 'section1' | 'section2' | 'section3';
+type SectionImages = Record<SectionKey, string | null>;
+type SectionImageTypes = Record<SectionKey, 'uploaded' | null>;
 
 export default function CustomizerPage() {
-  const [sectionImages, setSectionImages] = useState<{
-    section1: string | null;
-    section2: string | null;
-    section3: string | null;
-  }>({
+  const [sectionImages, setSectionImages] = useState<SectionImages>({
     section1: null,
     section2: null,
     section3: null,
   });
   
-  // Track which images are uploaded vs template
-  const [imageTypes, setImageTypes] = useState<{
-    section1: 'uploaded' | 'template' | null;
-    section2: 'uploaded' | 'template' | null;
-    section3: 'uploaded' | 'template' | null;
-  }>({
+  const [imageTypes, setImageTypes] = useState<SectionImageTypes>({
     section1: null,
     section2: null,
     section3: null,
   });
   
-  const [activeSection, setActiveSection] = useState<'section1' | 'section2' | 'section3'>('section1');
+  const [selectedFullWrapTemplate, setSelectedFullWrapTemplate] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<SectionKey>('section1');
   const [isDragging, setIsDragging] = useState(false);
-  const [applyTemplateToAll, setApplyTemplateToAll] = useState(false);
   const [cupType, setCupType] = useState<'hotzy' | 'standard'>('hotzy');
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderNowStatus, setOrderNowStatus] = useState<string | null>(null);
@@ -147,7 +141,7 @@ export default function CustomizerPage() {
     setExpandedSections(prev => {
       const nextValue = !prev[section];
       if (section === 'templates' && nextValue) {
-        const currentTemplate = findDesignTemplateByImage(sectionImages[activeSection]);
+        const currentTemplate = findDesignTemplateByImage(selectedFullWrapTemplate);
         void track('template_view', {
           cup_type: cupType,
           template_category: currentTemplate?.category,
@@ -173,7 +167,7 @@ export default function CustomizerPage() {
   // Get current active section image
   const currentSectionImage = sectionImages[activeSection];
   const currentSectionType = imageTypes[activeSection];
-  const currentTemplate = findDesignTemplateByImage(currentSectionImage);
+  const selectedWrapTemplate = findDesignTemplateByImage(selectedFullWrapTemplate);
 
   // Helper function to resize image to 800x800
   const resizeImage = (file: File): Promise<string> => {
@@ -332,10 +326,10 @@ export default function CustomizerPage() {
     if (file) {
       try {
         const resizedImage = await resizeImage(file);
-        applyDesignToSections(resizedImage, 'uploaded');
+        applyDesignToSections(resizedImage);
         void track('design_upload_success', {
           cup_type: cupType,
-          section: applyTemplateToAll ? 'all' : activeSection,
+          section: activeSection,
           file_type: file.type || 'unknown',
           file_size_kb: Math.round(file.size / 1024),
         });
@@ -354,14 +348,14 @@ export default function CustomizerPage() {
       try {
         void track('design_upload_start', {
           cup_type: cupType,
-          section: applyTemplateToAll ? 'all' : activeSection,
+          section: activeSection,
           method: 'drop',
         });
         const resizedImage = await resizeImage(file);
-        applyDesignToSections(resizedImage, 'uploaded');
+        applyDesignToSections(resizedImage);
         void track('design_upload_success', {
           cup_type: cupType,
-          section: applyTemplateToAll ? 'all' : activeSection,
+          section: activeSection,
           file_type: file.type || 'unknown',
           file_size_kb: Math.round(file.size / 1024),
         });
@@ -380,35 +374,20 @@ export default function CustomizerPage() {
     setIsDragging(false);
   };
 
-  const applyDesignToSections = (
-    designImage: string,
-    imageType: 'uploaded' | 'template'
-  ) => {
-    if (applyTemplateToAll) {
-      setSectionImages({
-        section1: designImage,
-        section2: designImage,
-        section3: designImage,
-      });
-      setImageTypes({
-        section1: imageType,
-        section2: imageType,
-        section3: imageType,
-      });
-    } else {
-      setSectionImages(prev => ({
-        ...prev,
-        [activeSection]: designImage
-      }));
-      setImageTypes(prev => ({
-        ...prev,
-        [activeSection]: imageType
-      }));
-    }
+  const applyDesignToSections = (designImage: string) => {
+    setSelectedFullWrapTemplate(null);
+    setSectionImages(prev => ({
+      ...prev,
+      [activeSection]: designImage
+    }));
+    setImageTypes(prev => ({
+      ...prev,
+      [activeSection]: 'uploaded'
+    }));
   };
 
   const handleTemplateSelect = (templateImage: string) => {
-    applyDesignToSections(templateImage, 'template');
+    setSelectedFullWrapTemplate(templateImage);
     // Reset position controls when selecting a template
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
@@ -418,12 +397,16 @@ export default function CustomizerPage() {
         cup_type: cupType,
         template_id: selectedTemplate.id,
         template_name: selectedTemplate.name,
-        section: applyTemplateToAll ? 'all' : activeSection,
+        application_scope: 'full_mug',
       });
     }
   };
 
-  const handleRemoveImage = (section: 'section1' | 'section2' | 'section3') => {
+  const handleClearTemplate = () => {
+    setSelectedFullWrapTemplate(null);
+  };
+
+  const handleRemoveImage = (section: SectionKey) => {
     setSectionImages(prev => ({
       ...prev,
       [section]: null
@@ -479,11 +462,13 @@ export default function CustomizerPage() {
       const price =
         currency === 'USD' ? basePriceCad * CAD_TO_USD : basePriceCad;
       const priceCents = Math.round(price * 100);
+      const hasTemplateWrap = Boolean(selectedFullWrapTemplate);
+      const hasCustomDesign = uploadedImageCount > 0 || hasTemplateWrap;
 
       addCartItem({
         id: `custom-mug-${Date.now()}`,
         name:
-          uploadedImageCount > 0
+          hasCustomDesign
             ? getText('Custom Design Mug', 'Tasse Design PersonnalisÃ©')
             : getText('Premium Black Mug', 'Tasse Noire Premium'),
         priceCents,
@@ -491,9 +476,11 @@ export default function CustomizerPage() {
         qty: 1,
         meta: {
           sectionImages,
-          layoutMode: 'triple',
+          fullWrapTemplate: selectedFullWrapTemplate,
+          selectedTemplateId: selectedWrapTemplate?.id ?? null,
+          layoutMode: hasTemplateWrap ? 'full-wrap' : 'triple',
           productType: 'custom-mug',
-          imageCount: uploadedImageCount,
+          imageCount: hasTemplateWrap ? 1 : uploadedImageCount,
         },
       });
 
@@ -589,8 +576,8 @@ export default function CustomizerPage() {
                   {/* 3D Viewer */}
                   <div className="relative aspect-square p-4 md:p-8">
                     <MugViewer 
-                      customImage={null}
-                      dividedMode={true}
+                      customImage={selectedFullWrapTemplate}
+                      dividedMode={!selectedFullWrapTemplate}
                       cupType={cupType}
                       sectionImages={sectionImages}
                       imagePosition={imagePosition}
@@ -747,10 +734,12 @@ export default function CustomizerPage() {
                   </div>
 
                   <p className="text-[9px] md:text-[10px] text-muted-foreground mt-2 text-center">
-                    {getText(
-                      'Click a section to upload its image',
-                      'Cliquez sur une section pour tÃƒÆ’Ã‚Â©lÃƒÆ’Ã‚Â©charger'
-                    )}
+                    {selectedFullWrapTemplate
+                      ? 'Template is covering the full mug. Sections are only for manual uploads.'
+                      : getText(
+                          'Click a section to upload its image',
+                          'Cliquez sur une section pour tÃƒÆ’Ã‚Â©lÃƒÆ’Ã‚Â©charger'
+                        )}
                   </p>
                 </motion.div>
 
@@ -838,7 +827,7 @@ export default function CustomizerPage() {
                           onClick={() => {
                             void track('design_upload_start', {
                               cup_type: cupType,
-                              section: applyTemplateToAll ? 'all' : activeSection,
+                              section: activeSection,
                               method: 'picker',
                             });
                           }}
@@ -866,7 +855,7 @@ export default function CustomizerPage() {
                         </label>
                       </div>
 
-                      {currentSectionImage && (
+                      {!selectedFullWrapTemplate && currentSectionImage && (
                         <motion.div
                           className="space-y-2 md:space-y-3 mt-3 md:mt-4"
                           initial={{ opacity: 0, y: -10 }}
@@ -905,7 +894,7 @@ export default function CustomizerPage() {
               </div>
 
               {/* Position Controls - Only show when image exists */}
-              {currentSectionImage && (
+              {!selectedFullWrapTemplate && currentSectionImage && (
                 <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl shadow-xl overflow-hidden">
                   <button
                     onClick={() => toggleSection('position')}
@@ -1022,20 +1011,8 @@ export default function CustomizerPage() {
                       exit={{ height: 0, opacity: 0 }}
                       className="px-4 pb-4 md:px-6 md:pb-6"
                     >
-                      <div className="flex items-center justify-end mb-3">
-                        <label
-                          htmlFor="apply-template-all"
-                          className="flex items-center gap-2 text-[11px] md:text-xs text-muted-foreground cursor-pointer"
-                        >
-                          <input
-                            id="apply-template-all"
-                            type="checkbox"
-                            checked={applyTemplateToAll}
-                            onChange={(e) => setApplyTemplateToAll(e.target.checked)}
-                            className="h-3.5 w-3.5 accent-primary"
-                          />
-                          <span>{getText('Apply to all sections', 'Appliquer ÃƒÆ’Ã‚Â  toutes les sections')}</span>
-                        </label>
+                      <div className="mb-3 text-[11px] md:text-xs text-muted-foreground text-center">
+                        Applies to the full mug automatically
                       </div>
                       <div className="relative">
                         <CircularGallery
@@ -1061,22 +1038,44 @@ export default function CustomizerPage() {
                         </div>
                       </div>
 
-                      {currentSectionImage && (
+                      {selectedFullWrapTemplate && (
                         <motion.div
-                          className="flex items-center justify-between p-2 md:p-3 bg-primary/10 border border-primary/30 rounded-lg mt-3 md:mt-4"
+                          className="flex items-center justify-between gap-3 p-2 md:p-3 bg-primary/10 border border-primary/30 rounded-lg mt-3 md:mt-4"
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                         >
-                          <span className="text-xs md:text-sm text-white font-medium truncate">
+                          <div className="hidden">
+                            <span className="text-xs md:text-sm text-white font-medium truncate block">
                             ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ {
-                              currentTemplate
+                              selectedWrapTemplate
                                 ? getText(
-                                    currentTemplate.name,
-                                    currentTemplate.nameFr
+                                    selectedWrapTemplate.name,
+                                    selectedWrapTemplate.nameFr
                                   )
                                 : getText('Custom', 'PersonnalisÃƒÆ’Ã‚Â©')
                             }
                           </span>
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs md:text-sm text-white font-medium truncate block">
+                              {selectedWrapTemplate
+                                ? getText(
+                                    selectedWrapTemplate.name,
+                                    selectedWrapTemplate.nameFr
+                                  )
+                                : 'Full-wrap template'}
+                            </span>
+                            <span className="text-[10px] md:text-xs text-primary/80">
+                              Applied to full mug
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleClearTemplate}
+                            className="text-[10px] md:text-xs text-primary hover:text-primary/80 font-semibold shrink-0"
+                          >
+                            Clear
+                          </button>
                         </motion.div>
                       )}
                     </motion.div>
