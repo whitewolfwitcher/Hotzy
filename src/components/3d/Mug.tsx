@@ -8,6 +8,7 @@ function FallbackMug({
   position, 
   rotation,
   customImage,
+  customImageFit = 'cover',
   dividedMode,
   sectionImages,
   imagePosition = { x: 0, y: 0 },
@@ -19,6 +20,7 @@ function FallbackMug({
   position?: [number, number, number]
   rotation?: [number, number, number]
   customImage?: string | null
+  customImageFit?: 'cover' | 'contain'
   dividedMode?: boolean
   cupType?: 'hotzy' | 'standard'
   sectionImages?: {
@@ -38,6 +40,8 @@ function FallbackMug({
   const HANDLE_THICKNESS = 0.008
   const SEGMENTS_RADIAL = 64
   const SEGMENTS_HEIGHT = 32
+  const WRAP_TEXTURE_WIDTH = 2850
+  const WRAP_TEXTURE_HEIGHT = 1050
 
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const materialRef = useRef<THREE.MeshStandardMaterial>(null)
@@ -116,6 +120,59 @@ function FallbackMug({
     })
   }
 
+  const createWrapTexture = (
+    imageUrl: string,
+    fit: 'cover' | 'contain'
+  ): Promise<THREE.CanvasTexture | null> => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = WRAP_TEXTURE_WIDTH
+        canvas.height = WRAP_TEXTURE_HEIGHT
+        const ctx = canvas.getContext('2d')
+
+        if (!ctx) {
+          resolve(null)
+          return
+        }
+
+        ctx.fillStyle = '#FFFFFF'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        const scale =
+          fit === 'cover'
+            ? Math.max(canvas.width / img.width, canvas.height / img.height)
+            : Math.min(canvas.width / img.width, canvas.height / img.height)
+
+        const drawWidth = img.width * scale
+        const drawHeight = img.height * scale
+        const drawX = (canvas.width - drawWidth) / 2
+        const drawY = (canvas.height - drawHeight) / 2
+
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+
+        const canvasTexture = new THREE.CanvasTexture(canvas)
+        canvasTexture.wrapS = THREE.ClampToEdgeWrapping
+        canvasTexture.wrapT = THREE.ClampToEdgeWrapping
+        canvasTexture.minFilter = THREE.LinearMipMapLinearFilter
+        canvasTexture.magFilter = THREE.LinearFilter
+        canvasTexture.anisotropy = 16
+        canvasTexture.repeat.set(1, 1)
+        canvasTexture.offset.set(0, 0)
+        canvasTexture.center.set(0.5, 0.5)
+        canvasTexture.rotation = 0
+        canvasTexture.needsUpdate = true
+        resolve(canvasTexture)
+      }
+      img.onerror = () => {
+        resolve(null)
+      }
+      img.src = imageUrl
+    })
+  }
+
   // Load custom image as texture with proper async handling
   useEffect(() => {
     // Priority 1: If dividedMode with sectionImages, use combined texture
@@ -141,31 +198,20 @@ function FallbackMug({
       return
     }
     
-    console.log('Loading single texture:', customImage)
-    const loader = new THREE.TextureLoader()
-    
-    loader.load(
-      customImage,
-      (loadedTexture) => {
-        console.log('Texture loaded successfully')
-        loadedTexture.wrapS = THREE.RepeatWrapping
-        loadedTexture.wrapT = THREE.ClampToEdgeWrapping
-        loadedTexture.minFilter = THREE.LinearMipMapLinearFilter
-        loadedTexture.magFilter = THREE.LinearFilter
-        loadedTexture.anisotropy = 16
-        loadedTexture.repeat.set(imageZoom, imageZoom)
-        loadedTexture.offset.set(imagePosition.x, imagePosition.y)
-        loadedTexture.center.set(0.5, 0.5)
-        loadedTexture.rotation = (imageRotation * Math.PI) / 180
-        loadedTexture.needsUpdate = true
-        setTexture(loadedTexture)
-      },
-      undefined,
-      (error) => {
-        console.error('Error loading texture:', error)
+    console.log('Loading wrap texture:', customImage)
+    createWrapTexture(customImage, customImageFit)
+      .then((wrapTexture) => {
+        if (wrapTexture) {
+          console.log('Wrap texture created successfully')
+          setTexture(wrapTexture)
+        } else {
+          setTexture(null)
+        }
+      })
+      .catch((error) => {
+        console.error('Error loading wrap texture:', error)
         setTexture(null)
-      }
-    )
+      })
     
     // Cleanup function
     return () => {
@@ -176,7 +222,7 @@ function FallbackMug({
         return null
       })
     }
-  }, [customImage, dividedMode, sectionImages, imagePosition.x, imagePosition.y, imageZoom, imageRotation])
+  }, [customImage, customImageFit, dividedMode, sectionImages, imagePosition.x, imagePosition.y, imageZoom, imageRotation])
 
   const mugBaseColor = cupType === 'standard' ? '#f5f5f5' : '#1a1a1a'
 
@@ -324,6 +370,7 @@ export default function Mug({
   position, 
   rotation,
   customImage,
+  customImageFit,
   dividedMode,
   sectionImages,
   imagePosition,
@@ -335,6 +382,7 @@ export default function Mug({
   position?: [number, number, number]
   rotation?: [number, number, number]
   customImage?: string | null
+  customImageFit?: 'cover' | 'contain'
   dividedMode?: boolean
   cupType?: 'hotzy' | 'standard'
   sectionImages?: {
@@ -353,6 +401,7 @@ export default function Mug({
       position={position} 
       rotation={rotation} 
       customImage={customImage} 
+      customImageFit={customImageFit}
       dividedMode={dividedMode}
       cupType={cupType}
       sectionImages={sectionImages}

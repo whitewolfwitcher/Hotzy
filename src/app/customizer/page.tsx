@@ -49,6 +49,13 @@ const CircularGallery = dynamic(() => import('@/components/3d/CircularGallery'),
 type SectionKey = 'section1' | 'section2' | 'section3';
 type SectionImages = Record<SectionKey, string | null>;
 type SectionImageTypes = Record<SectionKey, 'uploaded' | null>;
+type WrapArtwork = {
+  image: string;
+  fit: 'cover' | 'contain';
+  source: 'template' | 'upload';
+};
+
+const WRAP_UPLOAD_ASPECT_RATIO = 2;
 
 export default function CustomizerPage() {
   const [sectionImages, setSectionImages] = useState<SectionImages>({
@@ -63,7 +70,7 @@ export default function CustomizerPage() {
     section3: null,
   });
   
-  const [selectedFullWrapTemplate, setSelectedFullWrapTemplate] = useState<string | null>(null);
+  const [selectedWrapArtwork, setSelectedWrapArtwork] = useState<WrapArtwork | null>(null);
   const [activeSection, setActiveSection] = useState<SectionKey>('section1');
   const [isDragging, setIsDragging] = useState(false);
   const [cupType, setCupType] = useState<'hotzy' | 'standard'>('hotzy');
@@ -141,7 +148,10 @@ export default function CustomizerPage() {
     setExpandedSections(prev => {
       const nextValue = !prev[section];
       if (section === 'templates' && nextValue) {
-        const currentTemplate = findDesignTemplateByImage(selectedFullWrapTemplate);
+        const currentTemplate =
+          selectedWrapArtwork?.source === 'template'
+            ? findDesignTemplateByImage(selectedWrapArtwork.image)
+            : undefined;
         void track('template_view', {
           cup_type: cupType,
           template_category: currentTemplate?.category,
@@ -167,55 +177,85 @@ export default function CustomizerPage() {
   // Get current active section image
   const currentSectionImage = sectionImages[activeSection];
   const currentSectionType = imageTypes[activeSection];
-  const selectedWrapTemplate = findDesignTemplateByImage(selectedFullWrapTemplate);
+  const selectedWrapTemplate =
+    selectedWrapArtwork?.source === 'template'
+      ? findDesignTemplateByImage(selectedWrapArtwork.image)
+      : undefined;
+  const hasWrapArtwork = Boolean(selectedWrapArtwork);
+  const hasTemplateWrap = selectedWrapArtwork?.source === 'template';
+  const hasUploadWrap = selectedWrapArtwork?.source === 'upload';
 
-  // Helper function to resize image to 800x800
-  const resizeImage = (file: File): Promise<string> => {
+  const loadImageFromSource = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.crossOrigin = 'anonymous';
+      img.src = src;
+    });
+  };
+
+  const readFileAsDataUrl = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = (e) => {
-        const img = new Image();
-        
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = 800;
-          canvas.height = 800;
-          const ctx = canvas.getContext('2d');
-          
-          if (!ctx) {
-            reject(new Error('Failed to get canvas context'));
-            return;
-          }
-          
-          const scale = Math.min(800 / img.width, 800 / img.height);
-          const scaledWidth = img.width * scale;
-          const scaledHeight = img.height * scale;
-          
-          const x = (800 - scaledWidth) / 2;
-          const y = (800 - scaledHeight) / 2;
-          
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, 800, 800);
-          ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-          
-          resolve(canvas.toDataURL('image/png'));
-        };
-        
-        img.onerror = () => {
-          reject(new Error('Failed to load image'));
-        };
-        
-        img.crossOrigin = "anonymous";
-        img.src = e.target?.result as string;
+        const result = e.target?.result;
+        if (typeof result !== 'string') {
+          reject(new Error('Failed to read file'));
+          return;
+        }
+
+        resolve(result);
       };
-      
-      reader.onerror = () => {
-        reject(new Error('Failed to read file'));
-      };
-      
+
+      reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsDataURL(file);
     });
+  };
+
+  const createSectionUploadImage = (img: HTMLImageElement): string => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 800;
+    canvas.height = 800;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('Failed to get canvas context');
+    }
+
+    const scale = Math.min(800 / img.width, 800 / img.height);
+    const scaledWidth = img.width * scale;
+    const scaledHeight = img.height * scale;
+    const x = (800 - scaledWidth) / 2;
+    const y = (800 - scaledHeight) / 2;
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, 800, 800);
+    ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+
+    return canvas.toDataURL('image/png');
+  };
+
+  const processUploadImage = async (
+    file: File
+  ): Promise<{ image: string; mode: 'section' | 'wrap' }> => {
+    const dataUrl = await readFileAsDataUrl(file);
+    const img = await loadImageFromSource(dataUrl);
+    const aspectRatio = img.width / img.height;
+
+    if (aspectRatio >= WRAP_UPLOAD_ASPECT_RATIO) {
+      return {
+        image: dataUrl,
+        mode: 'wrap',
+      };
+    }
+
+    return {
+      image: createSectionUploadImage(img),
+      mode: 'section',
+    };
   };
 
   // Generate mug mockup thumbnail with the custom design
@@ -325,16 +365,28 @@ export default function CustomizerPage() {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const resizedImage = await resizeImage(file);
-        applyDesignToSections(resizedImage);
+        const processedUpload = await processUploadImage(file);
+
+        if (processedUpload.mode === 'wrap') {
+          setSelectedWrapArtwork({
+            image: processedUpload.image,
+            fit: 'cover',
+            source: 'upload',
+          });
+          setImagePosition({ x: 0, y: 0 });
+          setImageRotation(0);
+        } else {
+          applyDesignToSections(processedUpload.image);
+        }
+
         void track('design_upload_success', {
           cup_type: cupType,
-          section: activeSection,
+          section: processedUpload.mode === 'wrap' ? 'full_wrap' : activeSection,
           file_type: file.type || 'unknown',
           file_size_kb: Math.round(file.size / 1024),
         });
       } catch (error) {
-        console.error('Error resizing image:', error);
+        console.error('Error processing image:', error);
       }
     }
   };
@@ -351,16 +403,28 @@ export default function CustomizerPage() {
           section: activeSection,
           method: 'drop',
         });
-        const resizedImage = await resizeImage(file);
-        applyDesignToSections(resizedImage);
+        const processedUpload = await processUploadImage(file);
+
+        if (processedUpload.mode === 'wrap') {
+          setSelectedWrapArtwork({
+            image: processedUpload.image,
+            fit: 'cover',
+            source: 'upload',
+          });
+          setImagePosition({ x: 0, y: 0 });
+          setImageRotation(0);
+        } else {
+          applyDesignToSections(processedUpload.image);
+        }
+
         void track('design_upload_success', {
           cup_type: cupType,
-          section: activeSection,
+          section: processedUpload.mode === 'wrap' ? 'full_wrap' : activeSection,
           file_type: file.type || 'unknown',
           file_size_kb: Math.round(file.size / 1024),
         });
       } catch (error) {
-        console.error('Error resizing image:', error);
+        console.error('Error processing image:', error);
       }
     }
   };
@@ -375,7 +439,7 @@ export default function CustomizerPage() {
   };
 
   const applyDesignToSections = (designImage: string) => {
-    setSelectedFullWrapTemplate(null);
+    setSelectedWrapArtwork(null);
     setSectionImages(prev => ({
       ...prev,
       [activeSection]: designImage
@@ -387,7 +451,11 @@ export default function CustomizerPage() {
   };
 
   const handleTemplateSelect = (templateImage: string) => {
-    setSelectedFullWrapTemplate(templateImage);
+    setSelectedWrapArtwork({
+      image: templateImage,
+      fit: 'cover',
+      source: 'template',
+    });
     // Reset position controls when selecting a template
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
@@ -402,8 +470,8 @@ export default function CustomizerPage() {
     }
   };
 
-  const handleClearTemplate = () => {
-    setSelectedFullWrapTemplate(null);
+  const handleClearWrapArtwork = () => {
+    setSelectedWrapArtwork(null);
   };
 
   const handleRemoveImage = (section: SectionKey) => {
@@ -462,8 +530,7 @@ export default function CustomizerPage() {
       const price =
         currency === 'USD' ? basePriceCad * CAD_TO_USD : basePriceCad;
       const priceCents = Math.round(price * 100);
-      const hasTemplateWrap = Boolean(selectedFullWrapTemplate);
-      const hasCustomDesign = uploadedImageCount > 0 || hasTemplateWrap;
+      const hasCustomDesign = uploadedImageCount > 0 || hasWrapArtwork;
 
       addCartItem({
         id: `custom-mug-${Date.now()}`,
@@ -476,11 +543,12 @@ export default function CustomizerPage() {
         qty: 1,
         meta: {
           sectionImages,
-          fullWrapTemplate: selectedFullWrapTemplate,
-          selectedTemplateId: selectedWrapTemplate?.id ?? null,
-          layoutMode: hasTemplateWrap ? 'full-wrap' : 'triple',
+          fullWrapArtwork: selectedWrapArtwork,
+          fullWrapTemplate: selectedWrapArtwork?.image ?? null,
+          selectedTemplateId: hasTemplateWrap ? selectedWrapTemplate?.id ?? null : null,
+          layoutMode: hasWrapArtwork ? 'full-wrap' : 'triple',
           productType: 'custom-mug',
-          imageCount: hasTemplateWrap ? 1 : uploadedImageCount,
+          imageCount: hasWrapArtwork ? 1 : uploadedImageCount,
         },
       });
 
@@ -576,8 +644,9 @@ export default function CustomizerPage() {
                   {/* 3D Viewer */}
                   <div className="relative aspect-square p-4 md:p-8">
                     <MugViewer 
-                      customImage={selectedFullWrapTemplate}
-                      dividedMode={!selectedFullWrapTemplate}
+                      customImage={selectedWrapArtwork?.image ?? null}
+                      customImageFit={selectedWrapArtwork?.fit}
+                      dividedMode={!hasWrapArtwork}
                       cupType={cupType}
                       sectionImages={sectionImages}
                       imagePosition={imagePosition}
@@ -734,8 +803,10 @@ export default function CustomizerPage() {
                   </div>
 
                   <p className="text-[9px] md:text-[10px] text-muted-foreground mt-2 text-center">
-                    {selectedFullWrapTemplate
+                    {hasTemplateWrap
                       ? 'Template is covering the full mug. Sections are only for manual uploads.'
+                      : hasUploadWrap
+                        ? 'Panoramic upload is covering the full mug. Sections are only for manual uploads.'
                       : getText(
                           'Click a section to upload its image',
                           'Cliquez sur une section pour tÃƒÆ’Ã‚Â©lÃƒÆ’Ã‚Â©charger'
@@ -855,15 +926,18 @@ export default function CustomizerPage() {
                         </label>
                       </div>
 
-                      {!selectedFullWrapTemplate && currentSectionImage && (
+                      {!hasWrapArtwork && currentSectionImage && (
                         <motion.div
                           className="space-y-2 md:space-y-3 mt-3 md:mt-4"
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                         >
                           <div className="flex items-center justify-between p-2 md:p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                            <span className="hidden">
+                              {getText('Design uploaded', 'Design uploaded')}
+                            </span>
                             <span className="text-xs md:text-sm text-white font-medium">
-                              ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ {getText('Design uploaded', 'Design tÃƒÆ’Ã‚Â©lÃƒÆ’Ã‚Â©chargÃƒÆ’Ã‚Â©')}
+                              Design uploaded
                             </span>
                             <button
                               onClick={() => handleRemoveImage(activeSection)}
@@ -888,13 +962,39 @@ export default function CustomizerPage() {
                           )}
                         </motion.div>
                       )}
+
+                      {hasUploadWrap && (
+                        <motion.div
+                          className="space-y-2 md:space-y-3 mt-3 md:mt-4"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          <div className="flex items-center justify-between gap-3 p-2 md:p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                            <div className="min-w-0">
+                              <span className="text-xs md:text-sm text-white font-medium block">
+                                Wrap uploaded
+                              </span>
+                              <span className="text-[10px] md:text-xs text-primary/80">
+                                Applied to full mug
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleClearWrapArtwork}
+                              className="text-[10px] md:text-xs text-primary hover:text-primary/80 font-semibold shrink-0"
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
               {/* Position Controls - Only show when image exists */}
-              {!selectedFullWrapTemplate && currentSectionImage && (
+              {!hasWrapArtwork && currentSectionImage && (
                 <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl shadow-xl overflow-hidden">
                   <button
                     onClick={() => toggleSection('position')}
@@ -1038,7 +1138,7 @@ export default function CustomizerPage() {
                         </div>
                       </div>
 
-                      {selectedFullWrapTemplate && (
+                      {hasTemplateWrap && (
                         <motion.div
                           className="flex items-center justify-between gap-3 p-2 md:p-3 bg-primary/10 border border-primary/30 rounded-lg mt-3 md:mt-4"
                           initial={{ opacity: 0, y: -10 }}
@@ -1071,7 +1171,7 @@ export default function CustomizerPage() {
                           </div>
                           <button
                             type="button"
-                            onClick={handleClearTemplate}
+                            onClick={handleClearWrapArtwork}
                             className="text-[10px] md:text-xs text-primary hover:text-primary/80 font-semibold shrink-0"
                           >
                             Clear

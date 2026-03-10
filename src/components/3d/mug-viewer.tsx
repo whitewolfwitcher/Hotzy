@@ -6,6 +6,7 @@ import * as THREE from 'three'
 
 interface MugViewerProps {
   customImage?: string | null
+  customImageFit?: 'cover' | 'contain'
   dividedMode?: boolean
   cupType?: 'hotzy' | 'standard'
   sectionImages?: {
@@ -48,6 +49,7 @@ function BalancedStudioFloor({ floorColor }: { floorColor: string }) {
 
 export default function MugViewer({ 
   customImage, 
+  customImageFit = 'cover',
   dividedMode,
   cupType = 'hotzy',
   sectionImages,
@@ -138,6 +140,7 @@ export default function MugViewer({
             <Mug 
               scale={1.5} 
               customImage={customImage} 
+              customImageFit={customImageFit}
               dividedMode={dividedMode}
               cupType={cupType}
               sectionImages={sectionImages}
