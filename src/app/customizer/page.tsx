@@ -1056,7 +1056,7 @@ export default function CustomizerPage() {
                         
                         <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 md:gap-2 px-2 py-1 md:px-4 md:py-2 bg-black/60 backdrop-blur-xl border border-primary/30 rounded-full z-10 pointer-events-none">
                           <span className="text-[9px] md:text-xs font-semibold text-white">
-                            {getText('Drag ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Click', 'Glissez ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Cliquez')}
+                            Drag or Click
                           </span>
                         </div>
                       </div>
