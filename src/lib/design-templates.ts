@@ -303,17 +303,17 @@ const websiteCustomizerTemplates: DesignTemplate[] = [
   }),
   createCustomizerTemplate({
     id: 'website-dark-celestial-moon-garden',
-    name: 'Dark Celestial Moon Garden',
+    name: 'Celestial Bloom Nocturne',
     image: '/templates/dark-celestial-moon-garden.png',
     category: 'mystical',
-    tags: ['mystical', 'celestial', 'night'],
+    tags: ['mystical', 'celestial', 'nocturne'],
   }),
   createCustomizerTemplate({
     id: 'website-gothic-butterfly-night',
-    name: 'Gothic Butterfly Night',
+    name: 'Moonlit Botanical Veil',
     image: '/templates/gothic-butterfly-night.png',
     category: 'floral',
-    tags: ['gothic', 'butterfly', 'night'],
+    tags: ['moonlit', 'botanical', 'veil'],
   }),
   createCustomizerTemplate({
     id: 'website-enchanted-forest-silhouette',
