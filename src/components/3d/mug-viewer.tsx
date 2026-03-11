@@ -18,6 +18,11 @@ interface MugViewerProps {
   imagePosition?: { x: number; y: number }
   imageZoom?: number
   imageRotation?: number
+  focalX?: number
+  focalY?: number
+  wrapOffsetX?: number
+  previewRotation?: number
+  previewResetToken?: number
 }
 
 // Balanced mid-tone studio floor
@@ -57,17 +62,24 @@ export default function MugViewer({
   sectionImages,
   imagePosition = { x: 0, y: 0 },
   imageZoom = 1,
-  imageRotation = 0
+  imageRotation = 0,
+  focalX = 0.5,
+  focalY = 0.5,
+  wrapOffsetX = 0,
+  previewRotation = 0,
+  previewResetToken = 0,
 }: MugViewerProps) {
   const backgroundColor = cupType === 'standard' ? '#F4F4F4' : '#D8D8D8'
   const floorColor = cupType === 'standard' ? '#E6E6E6' : '#D4D4D4'
   const initialCameraPosition: [number, number, number] = [0, 0.06, 0.34]
   const initialTarget: [number, number, number] = [0, 0.05, 0]
-  const previewRotationY = customImage && artworkMode === 'full-wrap' ? 0 : 0.15
+  const previewRotationY =
+    customImage && artworkMode === 'full-wrap' ? previewRotation : 0.15
 
   return (
     <div className="h-[70vh] w-full relative overflow-hidden rounded-lg border border-border" style={{ background: backgroundColor }}>
       <Canvas
+        key={`preview-${previewResetToken}-${customImage ?? 'base'}-${artworkMode}`}
         shadows
         camera={{ 
           position: initialCameraPosition, 
@@ -151,6 +163,9 @@ export default function MugViewer({
               imagePosition={imagePosition}
               imageZoom={imageZoom}
               imageRotation={imageRotation}
+              focalX={focalX}
+              focalY={focalY}
+              wrapOffsetX={wrapOffsetX}
             />
           </group>
         </Suspense>

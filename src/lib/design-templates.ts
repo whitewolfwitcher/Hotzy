@@ -10,6 +10,9 @@ const rawDesignTemplates = rawDesignTemplatesJson as readonly DesignTemplateSour
 const readString = (value: unknown): string | undefined =>
   typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 
+const readNumber = (value: unknown): number | undefined =>
+  typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+
 const readStringArray = (value: unknown): string[] =>
   Array.isArray(value)
     ? value
@@ -81,6 +84,10 @@ const createCustomizerTemplate = ({
   image,
   category,
   tags = [],
+  focalX,
+  focalY,
+  wrapOffsetX,
+  previewRotation,
 }: {
   id: string;
   name: string;
@@ -88,6 +95,10 @@ const createCustomizerTemplate = ({
   image: string;
   category: string;
   tags?: string[];
+  focalX?: number;
+  focalY?: number;
+  wrapOffsetX?: number;
+  previewRotation?: number;
 }): DesignTemplate => ({
   id,
   name,
@@ -104,6 +115,10 @@ const createCustomizerTemplate = ({
     area: 'full',
   },
   wrap: 'full',
+  focalX,
+  focalY,
+  wrapOffsetX,
+  previewRotation,
   showInGallery: false,
   featuredInCustomizer: false,
 });
@@ -300,6 +315,10 @@ const websiteCustomizerTemplates: DesignTemplate[] = [
     image: '/templates/dark-floral-mystical-silhouette.png',
     category: 'mystical',
     tags: ['dark', 'floral', 'mystical', 'silhouette', 'full-wrap'],
+    focalX: 0.5,
+    focalY: 0.44,
+    wrapOffsetX: 0.02,
+    previewRotation: 0,
   }),
 ];
 
@@ -337,6 +356,10 @@ const normalizeDesignTemplate = (
     finish: readString(record.finish),
     wrap: readString(record.wrap),
     printMethod: readString(record.print_method),
+    focalX: readNumber(record.focal_x),
+    focalY: readNumber(record.focal_y),
+    wrapOffsetX: readNumber(record.wrap_offset_x),
+    previewRotation: readNumber(record.preview_rotation),
     showInGallery: readBoolean(record.show_in_gallery, true),
     featuredInCustomizer: readBoolean(record.featured_in_customizer, false),
   };

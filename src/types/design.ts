@@ -23,6 +23,10 @@ export interface DesignTemplate {
   finish?: string;
   wrap?: string;
   printMethod?: string;
+  focalX?: number;
+  focalY?: number;
+  wrapOffsetX?: number;
+  previewRotation?: number;
   showInGallery: boolean;
   featuredInCustomizer: boolean;
 }

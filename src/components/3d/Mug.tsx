@@ -16,6 +16,9 @@ function FallbackMug({
   imagePosition = { x: 0, y: 0 },
   imageZoom = 1,
   imageRotation = 0,
+  focalX = 0.5,
+  focalY = 0.5,
+  wrapOffsetX = 0,
   cupType = 'hotzy'
 }: { 
   scale?: number | [number, number, number]
@@ -34,6 +37,9 @@ function FallbackMug({
   imagePosition?: { x: number; y: number }
   imageZoom?: number
   imageRotation?: number
+  focalX?: number
+  focalY?: number
+  wrapOffsetX?: number
 }) {
   // Exact dimensions from 11 oz sublimation mug (in meters)
   const OUTER_DIAMETER = 0.08 / 2 // 8cm diameter = 0.04m radius
@@ -52,6 +58,7 @@ function FallbackMug({
 
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const materialRef = useRef<THREE.MeshStandardMaterial>(null)
+  const normalizeWrapOffset = (value: number) => ((value % 1) + 1) % 1
 
   // Create combined texture from 3 section images
   const createCombinedTexture = (images: typeof sectionImages): Promise<THREE.CanvasTexture | null> => {
@@ -130,7 +137,8 @@ function FallbackMug({
   const createWrapTexture = (
     imageUrl: string,
     fit: 'cover' | 'contain',
-    mode: ArtworkMode
+    mode: ArtworkMode,
+    focalPoint: { x: number; y: number }
   ): Promise<THREE.CanvasTexture | null> => {
     return new Promise((resolve) => {
       const img = new Image()
@@ -151,6 +159,8 @@ function FallbackMug({
 
         const targetWidth = mode === 'panel' ? PANEL_AREA_WIDTH : canvas.width
         const targetHeight = mode === 'panel' ? PANEL_AREA_HEIGHT : canvas.height
+        const targetX = mode === 'panel' ? PANEL_AREA_X : 0
+        const targetY = mode === 'panel' ? PANEL_AREA_Y : 0
         const scale =
           fit === 'cover'
             ? Math.max(targetWidth / img.width, targetHeight / img.height)
@@ -158,14 +168,16 @@ function FallbackMug({
 
         const drawWidth = img.width * scale
         const drawHeight = img.height * scale
+        const resolvedFocalX = mode === 'full-wrap' ? focalPoint.x : 0.5
+        const resolvedFocalY = mode === 'full-wrap' ? focalPoint.y : 0.5
         const drawX =
-          mode === 'panel'
-            ? PANEL_AREA_X + (PANEL_AREA_WIDTH - drawWidth) / 2
-            : (canvas.width - drawWidth) / 2
+          fit === 'cover'
+            ? targetX + targetWidth / 2 - drawWidth * resolvedFocalX
+            : targetX + (targetWidth - drawWidth) / 2
         const drawY =
-          mode === 'panel'
-            ? PANEL_AREA_Y + (PANEL_AREA_HEIGHT - drawHeight) / 2
-            : (canvas.height - drawHeight) / 2
+          fit === 'cover'
+            ? targetY + targetHeight / 2 - drawHeight * resolvedFocalY
+            : targetY + (targetHeight - drawHeight) / 2
 
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
 
@@ -178,7 +190,10 @@ function FallbackMug({
         canvasTexture.anisotropy = 16
         canvasTexture.colorSpace = THREE.SRGBColorSpace
         canvasTexture.repeat.set(1, 1)
-        canvasTexture.offset.set(mode === 'full-wrap' ? 0.5 : 0, 0)
+        canvasTexture.offset.set(
+          mode === 'full-wrap' ? normalizeWrapOffset(0.5 + wrapOffsetX) : 0,
+          0
+        )
         canvasTexture.center.set(0.5, 0.5)
         canvasTexture.rotation = 0
         canvasTexture.needsUpdate = true
@@ -217,7 +232,7 @@ function FallbackMug({
     }
     
     console.log('Loading wrap texture:', customImage)
-    createWrapTexture(customImage, customImageFit, artworkMode)
+    createWrapTexture(customImage, customImageFit, artworkMode, { x: focalX, y: focalY })
       .then((wrapTexture) => {
         if (wrapTexture) {
           console.log('Wrap texture created successfully')
@@ -240,7 +255,20 @@ function FallbackMug({
         return null
       })
     }
-  }, [artworkMode, customImage, customImageFit, dividedMode, sectionImages, imagePosition.x, imagePosition.y, imageZoom, imageRotation])
+  }, [
+    artworkMode,
+    customImage,
+    customImageFit,
+    dividedMode,
+    focalX,
+    focalY,
+    sectionImages,
+    imagePosition.x,
+    imagePosition.y,
+    imageZoom,
+    imageRotation,
+    wrapOffsetX,
+  ])
 
   const mugBaseColor = cupType === 'standard' ? '#f5f5f5' : '#1a1a1a'
 
@@ -395,6 +423,9 @@ export default function Mug({
   imagePosition,
   imageZoom,
   imageRotation,
+  focalX,
+  focalY,
+  wrapOffsetX,
   cupType = 'hotzy'
 }: { 
   scale?: number | [number, number, number]
@@ -413,6 +444,9 @@ export default function Mug({
   imagePosition?: { x: number; y: number }
   imageZoom?: number
   imageRotation?: number
+  focalX?: number
+  focalY?: number
+  wrapOffsetX?: number
 }) {
   // Use procedural mug with exact 11 oz sublimation mug specifications
   return (
@@ -429,6 +463,9 @@ export default function Mug({
       imagePosition={imagePosition}
       imageZoom={imageZoom}
       imageRotation={imageRotation}
+      focalX={focalX}
+      focalY={focalY}
+      wrapOffsetX={wrapOffsetX}
     />
   )
 }

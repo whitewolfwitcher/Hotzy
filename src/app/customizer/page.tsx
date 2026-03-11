@@ -55,6 +55,10 @@ type WrapArtwork = {
   fit: 'cover' | 'contain';
   mode: ArtworkMode;
   source: 'template' | 'upload';
+  focalX?: number;
+  focalY?: number;
+  wrapOffsetX?: number;
+  previewRotation?: number;
 };
 
 const WRAP_UPLOAD_ASPECT_RATIO = 2;
@@ -73,6 +77,7 @@ export default function CustomizerPage() {
   });
   
   const [selectedWrapArtwork, setSelectedWrapArtwork] = useState<WrapArtwork | null>(null);
+  const [previewResetToken, setPreviewResetToken] = useState(0);
   const [activeSection, setActiveSection] = useState<SectionKey>('section1');
   const [isDragging, setIsDragging] = useState(false);
   const [cupType, setCupType] = useState<'hotzy' | 'standard'>('hotzy');
@@ -376,9 +381,14 @@ export default function CustomizerPage() {
             fit: 'cover',
             mode: 'full-wrap',
             source: 'upload',
+            focalX: 0.5,
+            focalY: 0.5,
+            wrapOffsetX: 0,
+            previewRotation: 0,
           });
           setImagePosition({ x: 0, y: 0 });
           setImageRotation(0);
+          setPreviewResetToken((token) => token + 1);
         } else {
           applyDesignToSections(processedUpload.image);
         }
@@ -415,9 +425,14 @@ export default function CustomizerPage() {
             fit: 'cover',
             mode: 'full-wrap',
             source: 'upload',
+            focalX: 0.5,
+            focalY: 0.5,
+            wrapOffsetX: 0,
+            previewRotation: 0,
           });
           setImagePosition({ x: 0, y: 0 });
           setImageRotation(0);
+          setPreviewResetToken((token) => token + 1);
         } else {
           applyDesignToSections(processedUpload.image);
         }
@@ -467,10 +482,16 @@ export default function CustomizerPage() {
       fit: mode === 'full-wrap' ? 'cover' : templateFit,
       mode,
       source: 'template',
+      focalX: mode === 'full-wrap' ? selectedTemplate?.focalX ?? 0.5 : undefined,
+      focalY: mode === 'full-wrap' ? selectedTemplate?.focalY ?? 0.5 : undefined,
+      wrapOffsetX: mode === 'full-wrap' ? selectedTemplate?.wrapOffsetX ?? 0 : undefined,
+      previewRotation:
+        mode === 'full-wrap' ? selectedTemplate?.previewRotation ?? 0 : undefined,
     });
     // Reset position controls when selecting a template
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
+    setPreviewResetToken((token) => token + 1);
     if (selectedTemplate) {
       void track('template_apply', {
         cup_type: cupType,
@@ -663,6 +684,11 @@ export default function CustomizerPage() {
                       sectionImages={sectionImages}
                       imagePosition={imagePosition}
                       imageRotation={imageRotation}
+                      focalX={selectedWrapArtwork?.focalX}
+                      focalY={selectedWrapArtwork?.focalY}
+                      wrapOffsetX={selectedWrapArtwork?.wrapOffsetX}
+                      previewRotation={selectedWrapArtwork?.previewRotation}
+                      previewResetToken={previewResetToken}
                     />
                   </div>
 
