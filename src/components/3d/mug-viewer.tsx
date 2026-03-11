@@ -63,6 +63,7 @@ export default function MugViewer({
   const floorColor = cupType === 'standard' ? '#E6E6E6' : '#D4D4D4'
   const initialCameraPosition: [number, number, number] = [0, 0.06, 0.34]
   const initialTarget: [number, number, number] = [0, 0.05, 0]
+  const previewRotationY = customImage && artworkMode === 'full-wrap' ? 0 : 0.15
 
   return (
     <div className="h-[70vh] w-full relative overflow-hidden rounded-lg border border-border" style={{ background: backgroundColor }}>
@@ -138,7 +139,7 @@ export default function MugViewer({
           <BalancedStudioFloor floorColor={floorColor} />
 
           {/* Mug with material tuning for balanced look */}
-          <group position={[0, 0, 0]} rotation={[0, 0.15, 0]} scale={[1, 1, 1]}>
+          <group position={[0, 0, 0]} rotation={[0, previewRotationY, 0]} scale={[1, 1, 1]}>
             <Mug 
               scale={1.5} 
               customImage={customImage} 

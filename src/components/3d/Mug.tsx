@@ -170,14 +170,15 @@ function FallbackMug({
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
 
         const canvasTexture = new THREE.CanvasTexture(canvas)
-        canvasTexture.wrapS = THREE.ClampToEdgeWrapping
+        canvasTexture.wrapS =
+          mode === 'full-wrap' ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping
         canvasTexture.wrapT = THREE.ClampToEdgeWrapping
         canvasTexture.minFilter = THREE.LinearMipMapLinearFilter
         canvasTexture.magFilter = THREE.LinearFilter
         canvasTexture.anisotropy = 16
         canvasTexture.colorSpace = THREE.SRGBColorSpace
         canvasTexture.repeat.set(1, 1)
-        canvasTexture.offset.set(0, 0)
+        canvasTexture.offset.set(mode === 'full-wrap' ? 0.5 : 0, 0)
         canvasTexture.center.set(0.5, 0.5)
         canvasTexture.rotation = 0
         canvasTexture.needsUpdate = true
