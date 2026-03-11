@@ -80,12 +80,14 @@ const createCustomizerTemplate = ({
   nameFr,
   image,
   category,
+  tags = [],
 }: {
   id: string;
   name: string;
   nameFr?: string;
   image: string;
   category: string;
+  tags?: string[];
 }): DesignTemplate => ({
   id,
   name,
@@ -94,11 +96,14 @@ const createCustomizerTemplate = ({
   thumbnail: image,
   category,
   style: category,
-  tags: [],
+  tags,
   palette: [],
   payload_to_customizer: {
     overlay_image_url: image,
+    fit: 'cover',
+    area: 'full',
   },
+  wrap: 'full',
   showInGallery: false,
   featuredInCustomizer: false,
 });
@@ -288,6 +293,79 @@ const legacyCustomizerTemplates: DesignTemplate[] = [
   }),
 ];
 
+const websiteCustomizerTemplates: DesignTemplate[] = [
+  createCustomizerTemplate({
+    id: 'website-dark-floral-mystical-silhouette',
+    name: 'Dark Floral Mystical Silhouette',
+    image: '/templates/dark-floral-mystical-silhouette.png',
+    category: 'mystical',
+    tags: ['mystical', 'floral', 'dark'],
+  }),
+  createCustomizerTemplate({
+    id: 'website-dark-celestial-moon-garden',
+    name: 'Dark Celestial Moon Garden',
+    image: '/templates/dark-celestial-moon-garden.png',
+    category: 'mystical',
+    tags: ['mystical', 'celestial', 'night'],
+  }),
+  createCustomizerTemplate({
+    id: 'website-gothic-butterfly-night',
+    name: 'Gothic Butterfly Night',
+    image: '/templates/gothic-butterfly-night.png',
+    category: 'floral',
+    tags: ['gothic', 'butterfly', 'night'],
+  }),
+  createCustomizerTemplate({
+    id: 'website-enchanted-forest-silhouette',
+    name: 'Enchanted Forest Silhouette',
+    image: '/templates/enchanted-forest-silhouette.png',
+    category: 'nature',
+    tags: ['nature', 'forest', 'silhouette'],
+  }),
+  createCustomizerTemplate({
+    id: 'website-abstract-luxury-smoke',
+    name: 'Abstract Luxury Smoke',
+    image: '/templates/abstract-luxury-smoke.png',
+    category: 'abstract',
+    tags: ['abstract', 'luxury', 'smoke'],
+  }),
+  createCustomizerTemplate({
+    id: 'website-cosmic-feminine-aura',
+    name: 'Cosmic Feminine Aura',
+    image: '/templates/cosmic-feminine-aura.png',
+    category: 'abstract',
+    tags: ['cosmic', 'aura', 'abstract'],
+  }),
+  createCustomizerTemplate({
+    id: 'website-geometric-luxury-neon',
+    name: 'Geometric Luxury Neon',
+    image: '/templates/geometric-luxury-neon.png',
+    category: 'geometric',
+    tags: ['geometric', 'luxury', 'neon'],
+  }),
+  createCustomizerTemplate({
+    id: 'website-watercolor-bloom-dream',
+    name: 'Watercolor Bloom Dream',
+    image: '/templates/watercolor-bloom-dream.png',
+    category: 'floral',
+    tags: ['watercolor', 'bloom', 'dream'],
+  }),
+  createCustomizerTemplate({
+    id: 'website-noir-marble-gold',
+    name: 'Noir Marble Gold',
+    image: '/templates/noir-marble-gold.png',
+    category: 'luxury',
+    tags: ['noir', 'marble', 'gold'],
+  }),
+  createCustomizerTemplate({
+    id: 'website-northern-lights-dreamscape',
+    name: 'Northern Lights Dreamscape',
+    image: '/templates/northern-lights-dreamscape.png',
+    category: 'nature',
+    tags: ['nature', 'northern-lights', 'dreamscape'],
+  }),
+];
+
 const normalizeDesignTemplate = (
   record: DesignTemplateSourceRecord,
   index: number
@@ -347,6 +425,7 @@ const mergeUniqueTemplates = (templates: DesignTemplate[]): DesignTemplate[] => 
 };
 
 export const customizerDesignTemplates = mergeUniqueTemplates([
+  ...websiteCustomizerTemplates,
   ...legacyCustomizerTemplates,
   ...designTemplates.filter((template) => isUsableCustomizerImage(template.image)),
 ]);
