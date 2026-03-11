@@ -7,6 +7,7 @@ import * as THREE from 'three'
 interface MugViewerProps {
   customImage?: string | null
   customImageFit?: 'cover' | 'contain'
+  artworkMode?: 'full-wrap' | 'panel'
   dividedMode?: boolean
   cupType?: 'hotzy' | 'standard'
   sectionImages?: {
@@ -50,6 +51,7 @@ function BalancedStudioFloor({ floorColor }: { floorColor: string }) {
 export default function MugViewer({ 
   customImage, 
   customImageFit = 'cover',
+  artworkMode = 'full-wrap',
   dividedMode,
   cupType = 'hotzy',
   sectionImages,
@@ -141,6 +143,7 @@ export default function MugViewer({
               scale={1.5} 
               customImage={customImage} 
               customImageFit={customImageFit}
+              artworkMode={artworkMode}
               dividedMode={dividedMode}
               cupType={cupType}
               sectionImages={sectionImages}
@@ -174,7 +177,7 @@ export default function MugViewer({
 
       {/* Tooltip - updated instructions */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-xl border border-white/20 rounded-full z-10 pointer-events-none">
-        <span className="text-xs font-semibold text-white">Left-Click: Rotate • Right-Click: Move • Scroll: Zoom</span>
+        <span className="text-xs font-semibold text-white">Left-Click: Rotate | Right-Click: Move | Scroll: Zoom</span>
       </div>
     </div>
   )

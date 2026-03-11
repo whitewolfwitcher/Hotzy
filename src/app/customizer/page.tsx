@@ -49,9 +49,11 @@ const CircularGallery = dynamic(() => import('@/components/3d/CircularGallery'),
 type SectionKey = 'section1' | 'section2' | 'section3';
 type SectionImages = Record<SectionKey, string | null>;
 type SectionImageTypes = Record<SectionKey, 'uploaded' | null>;
+type ArtworkMode = 'full-wrap' | 'panel';
 type WrapArtwork = {
   image: string;
   fit: 'cover' | 'contain';
+  mode: ArtworkMode;
   source: 'template' | 'upload';
 };
 
@@ -184,6 +186,7 @@ export default function CustomizerPage() {
   const hasWrapArtwork = Boolean(selectedWrapArtwork);
   const hasTemplateWrap = selectedWrapArtwork?.source === 'template';
   const hasUploadWrap = selectedWrapArtwork?.source === 'upload';
+  const selectedWrapMode = selectedWrapArtwork?.mode ?? 'full-wrap';
 
   const loadImageFromSource = (src: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
@@ -371,6 +374,7 @@ export default function CustomizerPage() {
           setSelectedWrapArtwork({
             image: processedUpload.image,
             fit: 'cover',
+            mode: 'full-wrap',
             source: 'upload',
           });
           setImagePosition({ x: 0, y: 0 });
@@ -409,6 +413,7 @@ export default function CustomizerPage() {
           setSelectedWrapArtwork({
             image: processedUpload.image,
             fit: 'cover',
+            mode: 'full-wrap',
             source: 'upload',
           });
           setImagePosition({ x: 0, y: 0 });
@@ -451,21 +456,27 @@ export default function CustomizerPage() {
   };
 
   const handleTemplateSelect = (templateImage: string) => {
+    const selectedTemplate = findDesignTemplateByImage(templateImage);
+    const templateFit = selectedTemplate?.payload_to_customizer?.fit === 'contain' ? 'contain' : 'cover';
+    const templateArea = selectedTemplate?.payload_to_customizer?.area;
+    const mode: ArtworkMode =
+      templateArea === 'full' || selectedTemplate?.wrap === 'full' ? 'full-wrap' : 'panel';
+
     setSelectedWrapArtwork({
       image: templateImage,
-      fit: 'cover',
+      fit: mode === 'full-wrap' ? 'cover' : templateFit,
+      mode,
       source: 'template',
     });
     // Reset position controls when selecting a template
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
-    const selectedTemplate = findDesignTemplateByImage(templateImage);
     if (selectedTemplate) {
       void track('template_apply', {
         cup_type: cupType,
         template_id: selectedTemplate.id,
         template_name: selectedTemplate.name,
-        application_scope: 'full_mug',
+        application_scope: mode === 'full-wrap' ? 'full_mug' : 'panel',
       });
     }
   };
@@ -536,7 +547,7 @@ export default function CustomizerPage() {
         id: `custom-mug-${Date.now()}`,
         name:
           hasCustomDesign
-            ? getText('Custom Design Mug', 'Tasse Design PersonnalisÃ©')
+            ? getText('Custom Design Mug', 'Tasse design personnalisee')
             : getText('Premium Black Mug', 'Tasse Noire Premium'),
         priceCents,
         currency,
@@ -552,7 +563,7 @@ export default function CustomizerPage() {
         },
       });
 
-      toast.success(getText('Added to cart!', 'AjoutÃ© au panier!'));
+      toast.success(getText('Added to cart!', 'Ajoute au panier!'));
 
       void trackEvent('add_to_cart', {
         item_name: 'Custom Mug',
@@ -567,12 +578,12 @@ export default function CustomizerPage() {
     if (isOrdering) return;
     setIsOrdering(true);
     try {
-      setOrderNowStatus(getText('Creating order…', 'Création de la commande…'));
+      setOrderNowStatus(getText('Creating order...', 'Creation de la commande...'));
       const draft = await createDraft({ cupType, currency });
       setOrderNowStatus(getText('Redirecting to payment...', 'Redirection vers le paiement...'));
       router.push(`/checkout?orderId=${encodeURIComponent(draft.orderId)}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : getText('Checkout failed', 'Échec du paiement');
+      const message = err instanceof Error ? err.message : getText('Checkout failed', 'Echec du paiement');
       setOrderNowStatus(null);
       toast.error(message);
     } finally {
@@ -646,6 +657,7 @@ export default function CustomizerPage() {
                     <MugViewer 
                       customImage={selectedWrapArtwork?.image ?? null}
                       customImageFit={selectedWrapArtwork?.fit}
+                      artworkMode={selectedWrapArtwork?.mode}
                       dividedMode={!hasWrapArtwork}
                       cupType={cupType}
                       sectionImages={sectionImages}
@@ -695,7 +707,7 @@ export default function CustomizerPage() {
                       <Grid3x3 className="w-3 h-3 md:w-4 md:h-4 text-primary" />
                     </div>
                     <h3 className="text-sm md:text-lg font-bold text-white">
-                      {getText('Select Section', 'SÃƒÆ’Ã‚Â©lectionner Section')}
+                      {getText('Select Section', 'Selectionner une section')}
                     </h3>
                   </div>
 
@@ -803,13 +815,15 @@ export default function CustomizerPage() {
                   </div>
 
                   <p className="text-[9px] md:text-[10px] text-muted-foreground mt-2 text-center">
-                    {hasTemplateWrap
-                      ? 'Template is covering the full mug. Sections are only for manual uploads.'
+                    {hasTemplateWrap && selectedWrapMode === 'full-wrap'
+                      ? 'Full-wrap template is covering the mug body. Sections are only for manual uploads.'
+                      : hasTemplateWrap
+                        ? 'Panel template is using the centered print area. Sections are only for manual uploads.'
                       : hasUploadWrap
-                        ? 'Panoramic upload is covering the full mug. Sections are only for manual uploads.'
+                        ? 'Panoramic upload is covering the mug body as a full wrap. Sections are only for manual uploads.'
                       : getText(
                           'Click a section to upload its image',
-                          'Cliquez sur une section pour tÃƒÆ’Ã‚Â©lÃƒÆ’Ã‚Â©charger'
+                          'Cliquez sur une section pour telecharger son image'
                         )}
                   </p>
                 </motion.div>
@@ -856,7 +870,7 @@ export default function CustomizerPage() {
                     </div>
                     <div className="text-left">
                       <h3 className="text-base md:text-xl font-bold text-white">
-                        {getText('Upload Design', 'TÃƒÆ’Ã‚Â©lÃƒÆ’Ã‚Â©charger Design')}
+                        {getText('Upload Design', 'Telecharger un design')}
                       </h3>
                       <span className="text-xs md:text-sm text-primary lg:hidden">
                         ({getText('Section', 'Section')} {activeSection.replace('section', '')})
@@ -975,7 +989,7 @@ export default function CustomizerPage() {
                                 Wrap uploaded
                               </span>
                               <span className="text-[10px] md:text-xs text-primary/80">
-                                Applied to full mug
+                                Applied across the mug body
                               </span>
                             </div>
                             <button
@@ -1093,7 +1107,7 @@ export default function CustomizerPage() {
                     </div>
                     <div className="text-left">
                       <h3 className="text-base md:text-xl font-bold text-white">
-                        {getText('Templates', 'ModÃƒÆ’Ã‚Â¨les')}
+                        {getText('Templates', 'Modeles')}
                       </h3>
                       <p className="text-[10px] md:text-xs text-muted-foreground lg:hidden">
                         {getText('Browse designs', 'Parcourir')}
@@ -1112,7 +1126,7 @@ export default function CustomizerPage() {
                       className="px-4 pb-4 md:px-6 md:pb-6"
                     >
                       <div className="mb-3 text-[11px] md:text-xs text-muted-foreground text-center">
-                        Applies to the full mug automatically
+                        Full-wrap templates wrap automatically. Panel templates stay in the centered print area.
                       </div>
                       <div className="relative">
                         <CircularGallery
@@ -1144,18 +1158,6 @@ export default function CustomizerPage() {
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                         >
-                          <div className="hidden">
-                            <span className="text-xs md:text-sm text-white font-medium truncate block">
-                            ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ {
-                              selectedWrapTemplate
-                                ? getText(
-                                    selectedWrapTemplate.name,
-                                    selectedWrapTemplate.nameFr
-                                  )
-                                : getText('Custom', 'PersonnalisÃƒÆ’Ã‚Â©')
-                            }
-                          </span>
-                          </div>
                           <div className="min-w-0">
                             <span className="text-xs md:text-sm text-white font-medium truncate block">
                               {selectedWrapTemplate
@@ -1163,10 +1165,14 @@ export default function CustomizerPage() {
                                     selectedWrapTemplate.name,
                                     selectedWrapTemplate.nameFr
                                   )
-                                : 'Full-wrap template'}
+                                : selectedWrapMode === 'full-wrap'
+                                  ? 'Full-wrap template'
+                                  : 'Panel template'}
                             </span>
                             <span className="text-[10px] md:text-xs text-primary/80">
-                              Applied to full mug
+                              {selectedWrapMode === 'full-wrap'
+                                ? 'Applied across the mug body'
+                                : 'Applied to the centered print area'}
                             </span>
                           </div>
                           <button

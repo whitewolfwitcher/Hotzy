@@ -1,6 +1,7 @@
-import React, { useMemo, useEffect, useState, useRef } from 'react'
-import { useGLTF, useTexture } from '@react-three/drei'
+import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+
+type ArtworkMode = 'full-wrap' | 'panel'
 
 // 11 OZ Sublimation Mug - Exact specifications from reference images
 function FallbackMug({ 
@@ -9,6 +10,7 @@ function FallbackMug({
   rotation,
   customImage,
   customImageFit = 'cover',
+  artworkMode = 'full-wrap',
   dividedMode,
   sectionImages,
   imagePosition = { x: 0, y: 0 },
@@ -21,6 +23,7 @@ function FallbackMug({
   rotation?: [number, number, number]
   customImage?: string | null
   customImageFit?: 'cover' | 'contain'
+  artworkMode?: ArtworkMode
   dividedMode?: boolean
   cupType?: 'hotzy' | 'standard'
   sectionImages?: {
@@ -42,6 +45,10 @@ function FallbackMug({
   const SEGMENTS_HEIGHT = 32
   const WRAP_TEXTURE_WIDTH = 2850
   const WRAP_TEXTURE_HEIGHT = 1050
+  const PANEL_AREA_WIDTH = WRAP_TEXTURE_WIDTH * 0.38
+  const PANEL_AREA_HEIGHT = WRAP_TEXTURE_HEIGHT * 0.82
+  const PANEL_AREA_X = (WRAP_TEXTURE_WIDTH - PANEL_AREA_WIDTH) / 2
+  const PANEL_AREA_Y = (WRAP_TEXTURE_HEIGHT - PANEL_AREA_HEIGHT) / 2
 
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const materialRef = useRef<THREE.MeshStandardMaterial>(null)
@@ -122,7 +129,8 @@ function FallbackMug({
 
   const createWrapTexture = (
     imageUrl: string,
-    fit: 'cover' | 'contain'
+    fit: 'cover' | 'contain',
+    mode: ArtworkMode
   ): Promise<THREE.CanvasTexture | null> => {
     return new Promise((resolve) => {
       const img = new Image()
@@ -141,15 +149,23 @@ function FallbackMug({
         ctx.fillStyle = '#FFFFFF'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
+        const targetWidth = mode === 'panel' ? PANEL_AREA_WIDTH : canvas.width
+        const targetHeight = mode === 'panel' ? PANEL_AREA_HEIGHT : canvas.height
         const scale =
           fit === 'cover'
-            ? Math.max(canvas.width / img.width, canvas.height / img.height)
-            : Math.min(canvas.width / img.width, canvas.height / img.height)
+            ? Math.max(targetWidth / img.width, targetHeight / img.height)
+            : Math.min(targetWidth / img.width, targetHeight / img.height)
 
         const drawWidth = img.width * scale
         const drawHeight = img.height * scale
-        const drawX = (canvas.width - drawWidth) / 2
-        const drawY = (canvas.height - drawHeight) / 2
+        const drawX =
+          mode === 'panel'
+            ? PANEL_AREA_X + (PANEL_AREA_WIDTH - drawWidth) / 2
+            : (canvas.width - drawWidth) / 2
+        const drawY =
+          mode === 'panel'
+            ? PANEL_AREA_Y + (PANEL_AREA_HEIGHT - drawHeight) / 2
+            : (canvas.height - drawHeight) / 2
 
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
 
@@ -159,6 +175,7 @@ function FallbackMug({
         canvasTexture.minFilter = THREE.LinearMipMapLinearFilter
         canvasTexture.magFilter = THREE.LinearFilter
         canvasTexture.anisotropy = 16
+        canvasTexture.colorSpace = THREE.SRGBColorSpace
         canvasTexture.repeat.set(1, 1)
         canvasTexture.offset.set(0, 0)
         canvasTexture.center.set(0.5, 0.5)
@@ -199,7 +216,7 @@ function FallbackMug({
     }
     
     console.log('Loading wrap texture:', customImage)
-    createWrapTexture(customImage, customImageFit)
+    createWrapTexture(customImage, customImageFit, artworkMode)
       .then((wrapTexture) => {
         if (wrapTexture) {
           console.log('Wrap texture created successfully')
@@ -222,7 +239,7 @@ function FallbackMug({
         return null
       })
     }
-  }, [customImage, customImageFit, dividedMode, sectionImages, imagePosition.x, imagePosition.y, imageZoom, imageRotation])
+  }, [artworkMode, customImage, customImageFit, dividedMode, sectionImages, imagePosition.x, imagePosition.y, imageZoom, imageRotation])
 
   const mugBaseColor = cupType === 'standard' ? '#f5f5f5' : '#1a1a1a'
 
@@ -371,6 +388,7 @@ export default function Mug({
   rotation,
   customImage,
   customImageFit,
+  artworkMode,
   dividedMode,
   sectionImages,
   imagePosition,
@@ -383,6 +401,7 @@ export default function Mug({
   rotation?: [number, number, number]
   customImage?: string | null
   customImageFit?: 'cover' | 'contain'
+  artworkMode?: ArtworkMode
   dividedMode?: boolean
   cupType?: 'hotzy' | 'standard'
   sectionImages?: {
@@ -402,6 +421,7 @@ export default function Mug({
       rotation={rotation} 
       customImage={customImage} 
       customImageFit={customImageFit}
+      artworkMode={artworkMode}
       dividedMode={dividedMode}
       cupType={cupType}
       sectionImages={sectionImages}
