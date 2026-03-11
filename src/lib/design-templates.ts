@@ -295,11 +295,11 @@ const legacyCustomizerTemplates: DesignTemplate[] = [
 
 const websiteCustomizerTemplates: DesignTemplate[] = [
   createCustomizerTemplate({
-    id: 'website-geometric-luxury-neon',
-    name: 'Geometric Luxury Neon',
-    image: '/templates/geometric-luxury-neon.png',
-    category: 'geometric',
-    tags: ['geometric', 'luxury', 'neon', 'full-wrap'],
+    id: 'website-dark-floral-mystical-silhouette',
+    name: 'Dark Floral Mystical Silhouette',
+    image: '/templates/dark-floral-mystical-silhouette.png',
+    category: 'mystical',
+    tags: ['dark', 'floral', 'mystical', 'silhouette', 'full-wrap'],
   }),
 ];
 
