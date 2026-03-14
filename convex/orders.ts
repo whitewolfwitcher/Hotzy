@@ -90,6 +90,46 @@ export const setPaymentIntent = mutation({
   },
 });
 
+export const setCustomerInfo = mutation({
+  args: {
+    orderId: v.id("orders"),
+    customerName: v.string(),
+    customerEmail: v.string(),
+    customerPhone: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) throw new Error("Order not found");
+
+    await ctx.db.patch(args.orderId, {
+      customerName: args.customerName,
+      customerEmail: args.customerEmail,
+      customerPhone: args.customerPhone,
+      updatedAt: Date.now(),
+    });
+
+    return { ok: true };
+  },
+});
+
+export const setCommandNumber = mutation({
+  args: {
+    orderId: v.id("orders"),
+    commandNumber: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) throw new Error("Order not found");
+
+    await ctx.db.patch(args.orderId, {
+      commandNumber: args.commandNumber,
+      updatedAt: Date.now(),
+    });
+
+    return { ok: true };
+  },
+});
+
 export const markPaidFromStripe = mutation({
   args: { orderId: v.id("orders"), stripePaymentIntentId: v.string() },
   handler: async (ctx, args) => {

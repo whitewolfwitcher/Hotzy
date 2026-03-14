@@ -15,6 +15,10 @@ export default defineSchema({
     amount: v.optional(v.number()),
 
     stripePaymentIntentId: v.optional(v.string()),
+    customerName: v.optional(v.string()),
+    customerEmail: v.optional(v.string()),
+    customerPhone: v.optional(v.string()),
+    commandNumber: v.optional(v.string()),
 
     wrapFileId: v.optional(v.id("_storage")),
     pdfFileId: v.optional(v.id("_storage")),
