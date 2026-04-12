@@ -73,19 +73,18 @@ export default function MugViewer({
 }: MugViewerProps) {
   const backgroundColor = cupType === 'standard' ? '#F4F4F4' : '#D8D8D8'
   const floorColor = cupType === 'standard' ? '#E9E9E9' : '#D6D6D6'
-  const initialCameraPosition: [number, number, number] = [0.02, 0.07, 0.4]
-  const initialTarget: [number, number, number] = [0, 0.08, 0]
+  const initialCameraPosition: [number, number, number] = [0.02, 0.14, 0.68]
+  const initialTarget: [number, number, number] = [0, 0.14, 0]
   const previewRotationY =
     customImage && artworkMode === 'full-wrap' ? previewRotation : 0.15
 
   return (
     <div className="h-[70vh] w-full relative overflow-hidden rounded-lg border border-border" style={{ background: backgroundColor }}>
       <Canvas
-        key={`preview-${previewResetToken}-${customImage ?? 'base'}-${artworkMode}`}
         shadows
         camera={{ 
           position: initialCameraPosition, 
-          fov: 35, 
+          fov: 28, 
           near: 0.05, 
           far: 8 
         }}
@@ -197,8 +196,8 @@ export default function MugViewer({
           autoRotate={false}
           enableDamping={true}
           dampingFactor={0.1}
-          minDistance={0.22}
-          maxDistance={1.1}
+          minDistance={0.52}
+          maxDistance={1.45}
           target={initialTarget}
           mouseButtons={{
             LEFT: THREE.MOUSE.ROTATE,

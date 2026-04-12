@@ -307,6 +307,22 @@ function FallbackMug({
 
   const mugBodyColor = cupType === 'standard' ? '#f4f4f4' : '#0f0f12'
   const handleColor = cupType === 'standard' ? '#f1f1f1' : '#111113'
+  const shellMaterial = useMemo(() => {
+    if (!texture) {
+      return null
+    }
+
+    return new THREE.MeshPhysicalMaterial({
+      map: texture,
+      color: new THREE.Color('#ffffff'),
+      roughness: 0.34,
+      metalness: 0,
+      clearcoat: 1,
+      clearcoatRoughness: 0.12,
+      envMapIntensity: 1.05,
+      side: THREE.DoubleSide,
+    })
+  }, [texture])
   const mugScene = useMemo(() => {
     const clonedScene = scene.clone(true)
 
@@ -353,10 +369,10 @@ function FallbackMug({
 
         if (material.name === 'PrintMat') {
           upgradedMaterial.color.set('#ffffff')
-          upgradedMaterial.map = texture
-          upgradedMaterial.roughness = 0.38
-          upgradedMaterial.clearcoat = 0.9
-          upgradedMaterial.clearcoatRoughness = 0.18
+          upgradedMaterial.map = null
+          upgradedMaterial.roughness = 0.28
+          upgradedMaterial.clearcoat = 1
+          upgradedMaterial.clearcoatRoughness = 0.12
           upgradedMaterial.envMapIntensity = 1
         } else if (material.name === 'mug_body.007') {
           upgradedMaterial.color.set(mugBodyColor)
@@ -394,7 +410,17 @@ function FallbackMug({
       rotation={rotation}
       dispose={null}
     >
-      <primitive object={mugScene} scale={[1.15, 1.15, 1.15]} position={[0, 0, 0]} />
+      <group scale={[0.9, 0.9, 0.9]} position={[0, 0.1, 0]}>
+        <primitive object={mugScene} />
+        {shellMaterial ? (
+          <mesh rotation={[0, Math.PI / 2, 0]} renderOrder={2}>
+            <cylinderGeometry
+              args={[OUTER_DIAMETER + 0.0008, OUTER_DIAMETER + 0.0008, HEIGHT - 0.002, 128, 1, true]}
+            />
+            <primitive object={shellMaterial} attach="material" />
+          </mesh>
+        ) : null}
+      </group>
     </group>
   )
 }
