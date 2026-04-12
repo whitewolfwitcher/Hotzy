@@ -318,7 +318,7 @@ const websiteCustomizerTemplates: DesignTemplate[] = [
     focalX: 0.5,
     focalY: 0.44,
     wrapOffsetX: 0.02,
-    previewRotation: 0,
+    previewRotation: -0.55,
   }),
   createCustomizerTemplate({
     id: 'website-cosmic-neon-floral-silhouette',
@@ -329,7 +329,7 @@ const websiteCustomizerTemplates: DesignTemplate[] = [
     focalX: 0.5,
     focalY: 0.48,
     wrapOffsetX: 0,
-    previewRotation: 0,
+    previewRotation: -0.55,
   }),
 ];
 

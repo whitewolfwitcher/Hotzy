@@ -101,7 +101,7 @@ function FallbackMug({
         loadedCount++
         if (loadedCount === totalImages) {
           const canvasTexture = new THREE.CanvasTexture(canvas)
-          canvasTexture.flipY = false
+          canvasTexture.flipY = true
           canvasTexture.wrapS = THREE.RepeatWrapping
           canvasTexture.wrapT = THREE.ClampToEdgeWrapping
           canvasTexture.minFilter = THREE.LinearMipMapLinearFilter
@@ -212,7 +212,7 @@ function FallbackMug({
         }
 
         const canvasTexture = new THREE.CanvasTexture(canvas)
-        canvasTexture.flipY = false
+        canvasTexture.flipY = true
         canvasTexture.wrapS =
           mode === 'full-wrap' ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping
         canvasTexture.wrapT = THREE.ClampToEdgeWrapping
@@ -222,7 +222,7 @@ function FallbackMug({
         canvasTexture.colorSpace = THREE.SRGBColorSpace
         canvasTexture.repeat.set(1, 1)
         canvasTexture.offset.set(
-          mode === 'full-wrap' ? normalizeWrapOffset(0.5 + wrapOffsetX) : 0,
+          mode === 'full-wrap' ? normalizeWrapOffset(wrapOffsetX) : 0,
           0
         )
         canvasTexture.center.set(0.5, 0.5)
@@ -453,7 +453,7 @@ function FallbackMug({
       rotation={rotation}
       dispose={null}
     >
-      <group scale={[0.9, 0.9, 0.9]} position={[0, 0.1, 0]}>
+      <group scale={[1.02, 1.02, 1.02]} position={[0, 0.115, 0]}>
         <primitive object={mugScene} />
         {shellMaterial ? (
           <mesh position={printShellBounds.position} renderOrder={2}>

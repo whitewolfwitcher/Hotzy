@@ -228,7 +228,7 @@ export default function CustomizerPage() {
           focalX: 0.5,
           focalY: 0.5,
           wrapOffsetX: 0,
-          previewRotation: Math.PI,
+          previewRotation: -0.55,
         });
         setImagePosition({ x: 0, y: 0 });
         setImageRotation(0);
@@ -273,7 +273,7 @@ export default function CustomizerPage() {
           focalX: 0.5,
           focalY: 0.5,
           wrapOffsetX: 0,
-          previewRotation: Math.PI,
+          previewRotation: -0.55,
         });
         setImagePosition({ x: 0, y: 0 });
         setImageRotation(0);
@@ -315,7 +315,7 @@ export default function CustomizerPage() {
       wrapOffsetX:
         mode === "full-wrap" ? selectedTemplate?.wrapOffsetX ?? 0 : undefined,
       previewRotation:
-        mode === "full-wrap" ? selectedTemplate?.previewRotation ?? Math.PI : undefined,
+        mode === "full-wrap" ? selectedTemplate?.previewRotation ?? -0.55 : undefined,
     });
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);

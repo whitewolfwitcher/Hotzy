@@ -73,8 +73,8 @@ export default function MugViewer({
 }: MugViewerProps) {
   const backgroundColor = cupType === 'standard' ? '#F4F4F4' : '#D8D8D8'
   const floorColor = cupType === 'standard' ? '#E9E9E9' : '#D6D6D6'
-  const initialCameraPosition: [number, number, number] = [0.02, 0.14, 0.68]
-  const initialTarget: [number, number, number] = [0, 0.14, 0]
+  const initialCameraPosition: [number, number, number] = [0.08, 0.16, 0.52]
+  const initialTarget: [number, number, number] = [0, 0.12, 0]
   const previewRotationY =
     customImage && artworkMode === 'full-wrap' ? previewRotation : 0.15
 
@@ -168,9 +168,9 @@ export default function MugViewer({
           <BalancedStudioFloor floorColor={floorColor} />
 
           {/* Mug with material tuning for balanced look */}
-          <group position={[0, 0, 0]} rotation={[0, previewRotationY, 0]} scale={[1, 1, 1]}>
+          <group position={[0, -0.015, 0]} rotation={[0, previewRotationY, 0]} scale={[1, 1, 1]}>
             <Mug 
-              scale={1.5} 
+              scale={1.82} 
               customImage={customImage} 
               artworkSource={artworkSource}
               customImageFit={customImageFit}
@@ -190,18 +190,19 @@ export default function MugViewer({
 
         {/* Orbit controls - with right-click pan for easier movement */}
         <OrbitControls
-          enablePan={false}
+          enablePan={true}
           enableZoom={true}
           enableRotate={true}
           autoRotate={false}
           enableDamping={true}
           dampingFactor={0.1}
-          minDistance={0.52}
-          maxDistance={1.45}
+          minDistance={0.42}
+          maxDistance={1.3}
           target={initialTarget}
           mouseButtons={{
             LEFT: THREE.MOUSE.ROTATE,
-            RIGHT: THREE.MOUSE.ROTATE
+            MIDDLE: THREE.MOUSE.PAN,
+            RIGHT: THREE.MOUSE.PAN,
           }}
           maxPolarAngle={Math.PI / 1.8}
           minPolarAngle={Math.PI / 6}
@@ -211,7 +212,7 @@ export default function MugViewer({
 
       {/* Tooltip - updated instructions */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-xl border border-white/20 rounded-full z-10 pointer-events-none">
-        <span className="text-xs font-semibold text-white">Drag: Rotate | Scroll: Zoom</span>
+        <span className="text-xs font-semibold text-white">Drag: Rotate | Middle/Right Drag: Move | Scroll: Zoom</span>
       </div>
     </div>
   )
