@@ -343,6 +343,49 @@ function FallbackMug({
 
     return clonedScene
   }, [scene])
+  const printShellBounds = useMemo(() => {
+    let targetMesh: THREE.Mesh | null = null
+
+    mugScene.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) {
+        return
+      }
+
+      const materials = Array.isArray(child.material) ? child.material : [child.material]
+      const materialNames = materials
+        .filter((material): material is THREE.Material => Boolean(material))
+        .map((material) => material.name)
+
+      if (materialNames.includes('mug_body.007') || materialNames.includes('PrintMat')) {
+        targetMesh = child
+      }
+    })
+
+    if (!targetMesh) {
+      return {
+        radiusTop: OUTER_DIAMETER + 0.0008,
+        radiusBottom: OUTER_DIAMETER + 0.0008,
+        height: HEIGHT - 0.002,
+        position: [0, 0, 0] as [number, number, number],
+      }
+    }
+
+    targetMesh.updateWorldMatrix(true, false)
+    const box = new THREE.Box3().setFromObject(targetMesh)
+    const size = new THREE.Vector3()
+    const center = new THREE.Vector3()
+    box.getSize(size)
+    box.getCenter(center)
+
+    const radius = Math.max(size.x, size.z) / 2 + 0.001
+
+    return {
+      radiusTop: radius,
+      radiusBottom: radius,
+      height: Math.max(size.y - 0.002, 0.01),
+      position: [center.x, center.y, center.z] as [number, number, number],
+    }
+  }, [HEIGHT, OUTER_DIAMETER, mugScene])
 
   useEffect(() => {
     mugScene.traverse((child) => {
@@ -413,9 +456,16 @@ function FallbackMug({
       <group scale={[0.9, 0.9, 0.9]} position={[0, 0.1, 0]}>
         <primitive object={mugScene} />
         {shellMaterial ? (
-          <mesh rotation={[0, Math.PI / 2, 0]} renderOrder={2}>
+          <mesh position={printShellBounds.position} renderOrder={2}>
             <cylinderGeometry
-              args={[OUTER_DIAMETER + 0.0008, OUTER_DIAMETER + 0.0008, HEIGHT - 0.002, 128, 1, true]}
+              args={[
+                printShellBounds.radiusTop,
+                printShellBounds.radiusBottom,
+                printShellBounds.height,
+                128,
+                1,
+                true,
+              ]}
             />
             <primitive object={shellMaterial} attach="material" />
           </mesh>
