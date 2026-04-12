@@ -537,7 +537,7 @@ export default function CustomizerPage() {
                     </div>
                   </section>
 
-                  <section id="upload-panel">
+                  <section id="hidden-upload-panel">
                     <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white/55">
                       <ImageIcon className="h-4 w-4 text-primary" />
                       Visual Assets
@@ -774,6 +774,61 @@ export default function CustomizerPage() {
             </section>
 
             <aside className="space-y-5">
+              <div id="upload-panel" className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="rounded-2xl bg-primary/12 p-2.5 text-primary">
+                    <Upload className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary/75">
+                      Visual Assets
+                    </div>
+                    <h2 className="text-xl font-black tracking-[-0.04em] text-white">
+                      Upload Design
+                    </h2>
+                  </div>
+                </div>
+
+                <div
+                  className={`rounded-[24px] border border-dashed p-5 text-center transition ${
+                    isDragging
+                      ? "border-primary bg-primary/10"
+                      : "border-primary/20 bg-black/30"
+                  }`}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                >
+                  <input
+                    type="file"
+                    id="visible-image-upload"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="visible-image-upload"
+                    className="block cursor-pointer"
+                    onClick={() => {
+                      void track("design_upload_start", {
+                        cup_type: cupType,
+                        section: activeSection,
+                        method: "picker",
+                      });
+                    }}
+                  >
+                    <Upload className="mx-auto h-9 w-9 text-primary" />
+                    <div className="mt-3 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
+                      {hasWrapArtwork ? "Replace Wrap" : `Section ${activeSectionNumber}`}
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-white">Upload image</p>
+                    <p className="mt-1 text-xs text-white/45">
+                      Portrait fills a section. Wide artwork wraps the whole mug.
+                    </p>
+                  </label>
+                </div>
+              </div>
+
               <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
                 <div className="mb-4 flex items-center justify-between">
                   <div>

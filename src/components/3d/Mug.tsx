@@ -411,12 +411,12 @@ function FallbackMug({
         })
 
         if (material.name === 'PrintMat') {
-          upgradedMaterial.color.set('#ffffff')
+          upgradedMaterial.color.set(mugBodyColor)
           upgradedMaterial.map = null
-          upgradedMaterial.roughness = 0.28
+          upgradedMaterial.roughness = cupType === 'standard' ? 0.3 : 0.18
           upgradedMaterial.clearcoat = 1
-          upgradedMaterial.clearcoatRoughness = 0.12
-          upgradedMaterial.envMapIntensity = 1
+          upgradedMaterial.clearcoatRoughness = cupType === 'standard' ? 0.1 : 0.06
+          upgradedMaterial.envMapIntensity = 1.1
         } else if (material.name === 'mug_body.007') {
           upgradedMaterial.color.set(mugBodyColor)
           upgradedMaterial.map = null

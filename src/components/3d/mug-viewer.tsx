@@ -1,5 +1,5 @@
-import { Canvas } from '@react-three/fiber'
-import { Suspense } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
+import { Suspense, useEffect, useRef } from 'react'
 import { OrbitControls, ContactShadows } from '@react-three/drei'
 import Mug from './Mug'
 import * as THREE from 'three'
@@ -54,6 +54,55 @@ function BalancedStudioFloor({ floorColor }: { floorColor: string }) {
   )
 }
 
+function ResetCamera({
+  position,
+  target,
+  resetToken,
+}: {
+  position: [number, number, number]
+  target: [number, number, number]
+  resetToken: number
+}) {
+  const { camera } = useThree()
+  const controlsRef = useRef<{
+    target: THREE.Vector3
+    update: () => void
+  } | null>(null)
+
+  useEffect(() => {
+    camera.position.set(position[0], position[1], position[2])
+    camera.lookAt(target[0], target[1], target[2])
+    camera.updateProjectionMatrix()
+  }, [camera, position, target, resetToken])
+
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      enablePan={true}
+      enableZoom={true}
+      enableRotate={true}
+      autoRotate={false}
+      enableDamping={true}
+      dampingFactor={0.1}
+      minDistance={0.5}
+      maxDistance={1.55}
+      target={target}
+      mouseButtons={{
+        LEFT: THREE.MOUSE.ROTATE,
+        MIDDLE: THREE.MOUSE.PAN,
+        RIGHT: THREE.MOUSE.PAN,
+      }}
+      maxPolarAngle={Math.PI / 1.8}
+      minPolarAngle={Math.PI / 6}
+      onChange={(event) => {
+        const controls = event.target as unknown as { target: THREE.Vector3; update: () => void }
+        controlsRef.current = controls
+      }}
+      makeDefault
+    />
+  )
+}
+
 export default function MugViewer({ 
   customImage, 
   artworkSource = 'template',
@@ -73,8 +122,8 @@ export default function MugViewer({
 }: MugViewerProps) {
   const backgroundColor = cupType === 'standard' ? '#F4F4F4' : '#D8D8D8'
   const floorColor = cupType === 'standard' ? '#E9E9E9' : '#D6D6D6'
-  const initialCameraPosition: [number, number, number] = [0.08, 0.16, 0.52]
-  const initialTarget: [number, number, number] = [0, 0.12, 0]
+  const initialCameraPosition: [number, number, number] = [0.12, 0.2, 0.78]
+  const initialTarget: [number, number, number] = [0, 0.14, 0]
   const previewRotationY =
     customImage && artworkMode === 'full-wrap' ? previewRotation : 0.15
 
@@ -168,9 +217,9 @@ export default function MugViewer({
           <BalancedStudioFloor floorColor={floorColor} />
 
           {/* Mug with material tuning for balanced look */}
-          <group position={[0, -0.015, 0]} rotation={[0, previewRotationY, 0]} scale={[1, 1, 1]}>
+          <group position={[0, -0.005, 0]} rotation={[0, previewRotationY, 0]} scale={[1, 1, 1]}>
             <Mug 
-              scale={1.82} 
+              scale={1.34} 
               customImage={customImage} 
               artworkSource={artworkSource}
               customImageFit={customImageFit}
@@ -189,24 +238,10 @@ export default function MugViewer({
         </Suspense>
 
         {/* Orbit controls - with right-click pan for easier movement */}
-        <OrbitControls
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          autoRotate={false}
-          enableDamping={true}
-          dampingFactor={0.1}
-          minDistance={0.42}
-          maxDistance={1.3}
+        <ResetCamera
+          position={initialCameraPosition}
           target={initialTarget}
-          mouseButtons={{
-            LEFT: THREE.MOUSE.ROTATE,
-            MIDDLE: THREE.MOUSE.PAN,
-            RIGHT: THREE.MOUSE.PAN,
-          }}
-          maxPolarAngle={Math.PI / 1.8}
-          minPolarAngle={Math.PI / 6}
-          makeDefault
+          resetToken={previewResetToken}
         />
       </Canvas>
 
