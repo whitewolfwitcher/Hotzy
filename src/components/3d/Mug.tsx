@@ -9,6 +9,7 @@ function FallbackMug({
   position, 
   rotation,
   customImage,
+  artworkSource = 'template',
   customImageFit = 'cover',
   artworkMode = 'full-wrap',
   dividedMode,
@@ -25,6 +26,7 @@ function FallbackMug({
   position?: [number, number, number]
   rotation?: [number, number, number]
   customImage?: string | null
+  artworkSource?: 'template' | 'upload'
   customImageFit?: 'cover' | 'contain'
   artworkMode?: ArtworkMode
   dividedMode?: boolean
@@ -136,6 +138,7 @@ function FallbackMug({
 
   const createWrapTexture = (
     imageUrl: string,
+    artworkSource: 'template' | 'upload',
     fit: 'cover' | 'contain',
     mode: ArtworkMode,
     focalPoint: { x: number; y: number }
@@ -161,25 +164,50 @@ function FallbackMug({
         const targetHeight = mode === 'panel' ? PANEL_AREA_HEIGHT : canvas.height
         const targetX = mode === 'panel' ? PANEL_AREA_X : 0
         const targetY = mode === 'panel' ? PANEL_AREA_Y : 0
-        const scale =
-          fit === 'cover'
-            ? Math.max(targetWidth / img.width, targetHeight / img.height)
-            : Math.min(targetWidth / img.width, targetHeight / img.height)
+        const wrapAspect = targetWidth / targetHeight
+        const imageAspect = img.width / img.height
+        const shouldTileTemplate =
+          mode === 'full-wrap' &&
+          artworkSource === 'template' &&
+          fit === 'cover' &&
+          imageAspect < wrapAspect * 0.92
 
-        const drawWidth = img.width * scale
-        const drawHeight = img.height * scale
-        const resolvedFocalX = mode === 'full-wrap' ? focalPoint.x : 0.5
-        const resolvedFocalY = mode === 'full-wrap' ? focalPoint.y : 0.5
-        const drawX =
-          fit === 'cover'
-            ? targetX + targetWidth / 2 - drawWidth * resolvedFocalX
-            : targetX + (targetWidth - drawWidth) / 2
-        const drawY =
-          fit === 'cover'
-            ? targetY + targetHeight / 2 - drawHeight * resolvedFocalY
-            : targetY + (targetHeight - drawHeight) / 2
+        if (shouldTileTemplate) {
+          const drawHeight = targetHeight
+          const drawWidth = drawHeight * imageAspect
+          const repeatCount = Math.max(3, Math.ceil(targetWidth / drawWidth) + 2)
+          const startX = targetX + (targetWidth - drawWidth * repeatCount) / 2
 
-        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+          for (let index = 0; index < repeatCount; index += 1) {
+            ctx.drawImage(
+              img,
+              startX + drawWidth * index,
+              targetY,
+              drawWidth,
+              drawHeight
+            )
+          }
+        } else {
+          const scale =
+            fit === 'cover'
+              ? Math.max(targetWidth / img.width, targetHeight / img.height)
+              : Math.min(targetWidth / img.width, targetHeight / img.height)
+
+          const drawWidth = img.width * scale
+          const drawHeight = img.height * scale
+          const resolvedFocalX = mode === 'full-wrap' ? focalPoint.x : 0.5
+          const resolvedFocalY = mode === 'full-wrap' ? focalPoint.y : 0.5
+          const drawX =
+            fit === 'cover'
+              ? targetX + targetWidth / 2 - drawWidth * resolvedFocalX
+              : targetX + (targetWidth - drawWidth) / 2
+          const drawY =
+            fit === 'cover'
+              ? targetY + targetHeight / 2 - drawHeight * resolvedFocalY
+              : targetY + (targetHeight - drawHeight) / 2
+
+          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+        }
 
         const canvasTexture = new THREE.CanvasTexture(canvas)
         canvasTexture.wrapS =
@@ -232,7 +260,10 @@ function FallbackMug({
     }
     
     console.log('Loading wrap texture:', customImage)
-    createWrapTexture(customImage, customImageFit, artworkMode, { x: focalX, y: focalY })
+    createWrapTexture(customImage, artworkSource, customImageFit, artworkMode, {
+      x: focalX,
+      y: focalY,
+    })
       .then((wrapTexture) => {
         if (wrapTexture) {
           console.log('Wrap texture created successfully')
@@ -258,6 +289,7 @@ function FallbackMug({
   }, [
     artworkMode,
     customImage,
+    artworkSource,
     customImageFit,
     dividedMode,
     focalX,
@@ -416,6 +448,7 @@ export default function Mug({
   position, 
   rotation,
   customImage,
+  artworkSource,
   customImageFit,
   artworkMode,
   dividedMode,
@@ -432,6 +465,7 @@ export default function Mug({
   position?: [number, number, number]
   rotation?: [number, number, number]
   customImage?: string | null
+  artworkSource?: 'template' | 'upload'
   customImageFit?: 'cover' | 'contain'
   artworkMode?: ArtworkMode
   dividedMode?: boolean
@@ -455,6 +489,7 @@ export default function Mug({
       position={position} 
       rotation={rotation} 
       customImage={customImage} 
+      artworkSource={artworkSource}
       customImageFit={customImageFit}
       artworkMode={artworkMode}
       dividedMode={dividedMode}

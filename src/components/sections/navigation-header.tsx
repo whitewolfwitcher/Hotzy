@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Globe, Menu, X, ShoppingCart, DollarSign } from 'lucide-react';
 import { usePreferences } from '@/contexts/preferences-context';
@@ -9,17 +10,19 @@ import { trackEvent } from '@/lib/analytics/trackEvent';
 import { getItemCount, subscribeCart } from '@/lib/cart/cart';
 
 const HotzyLogo = () => (
-  <svg
-    width="120"
-    height="40"
-    viewBox="0 0 120 40"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-label="Hotzy"
-    role="img"
-  >
-    <text x="0" y="30" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="900" fill="#76B900">HOTZY</text>
-  </svg>
+  <div className="flex items-center gap-3">
+    <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-primary/30 bg-black/60 shadow-[0_0_18px_rgba(118,185,0,0.2)]">
+      <Image
+        src="/branding/hotzy-logo.png"
+        alt="Hotzy logo"
+        fill
+        sizes="40px"
+        className="object-cover"
+        priority
+      />
+    </div>
+    <span className="text-xl font-black tracking-[0.2em] text-primary">HOTZY</span>
+  </div>
 );
 
 const NavigationHeader = () => {

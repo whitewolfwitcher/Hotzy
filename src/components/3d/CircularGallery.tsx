@@ -342,6 +342,8 @@ class App {
   boundOnTouchMove!: any;
   boundOnTouchUp!: any;
   onItemClick?: (image: string, text: string) => void;
+  boundOnCanvasClick!: any;
+  boundOnPointerLeave!: any;
 
   constructor(
     container: HTMLElement,
@@ -462,6 +464,9 @@ class App {
   }
 
   onTouchDown(e: MouseEvent | TouchEvent) {
+    if ('target' in e && e.target instanceof Node && !this.container.contains(e.target)) {
+      return;
+    }
     this.isDown = true;
     this.scroll.position = this.scroll.current;
     this.start = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -475,14 +480,22 @@ class App {
   }
 
   onTouchUp() {
+    if (!this.isDown) return;
     this.isDown = false;
     this.onCheck();
   }
 
   onWheel(e: WheelEvent) {
+    if (e.target instanceof Node && !this.container.contains(e.target)) {
+      return;
+    }
     const delta = e.deltaY || (e as any).wheelDelta || (e as any).detail;
     this.scroll.target += (delta > 0 ? this.scrollSpeed : -this.scrollSpeed) * 0.2;
     this.onCheckDebounce();
+  }
+
+  onPointerLeave() {
+    this.isDown = false;
   }
 
   onCheck() {
@@ -527,30 +540,34 @@ class App {
     this.boundOnTouchDown = this.onTouchDown.bind(this);
     this.boundOnTouchMove = this.onTouchMove.bind(this);
     this.boundOnTouchUp = this.onTouchUp.bind(this);
-    const boundOnCanvasClick = this.onCanvasClick.bind(this);
+    this.boundOnCanvasClick = this.onCanvasClick.bind(this);
+    this.boundOnPointerLeave = this.onPointerLeave.bind(this);
     
     window.addEventListener('resize', this.boundOnResize);
-    window.addEventListener('mousewheel', this.boundOnWheel as any);
-    window.addEventListener('wheel', this.boundOnWheel);
-    window.addEventListener('mousedown', this.boundOnTouchDown as any);
+    this.container.addEventListener('mousewheel', this.boundOnWheel as any, { passive: true });
+    this.container.addEventListener('wheel', this.boundOnWheel, { passive: true });
+    this.container.addEventListener('mousedown', this.boundOnTouchDown as any);
     window.addEventListener('mousemove', this.boundOnTouchMove as any);
     window.addEventListener('mouseup', this.boundOnTouchUp);
-    window.addEventListener('touchstart', this.boundOnTouchDown as any);
-    window.addEventListener('touchmove', this.boundOnTouchMove as any);
+    this.container.addEventListener('touchstart', this.boundOnTouchDown as any, { passive: true });
+    window.addEventListener('touchmove', this.boundOnTouchMove as any, { passive: true });
     window.addEventListener('touchend', this.boundOnTouchUp);
-    this.gl.canvas.addEventListener('click', boundOnCanvasClick);
+    this.container.addEventListener('mouseleave', this.boundOnPointerLeave);
+    this.gl.canvas.addEventListener('click', this.boundOnCanvasClick);
   }
   destroy() {
     window.cancelAnimationFrame(this.raf);
     window.removeEventListener('resize', this.boundOnResize);
-    window.removeEventListener('mousewheel', this.boundOnWheel as any);
-    window.removeEventListener('wheel', this.boundOnWheel);
-    window.removeEventListener('mousedown', this.boundOnTouchDown);
+    this.container.removeEventListener('mousewheel', this.boundOnWheel as any);
+    this.container.removeEventListener('wheel', this.boundOnWheel);
+    this.container.removeEventListener('mousedown', this.boundOnTouchDown);
     window.removeEventListener('mousemove', this.boundOnTouchMove);
     window.removeEventListener('mouseup', this.boundOnTouchUp);
-    window.removeEventListener('touchstart', this.boundOnTouchDown);
+    this.container.removeEventListener('touchstart', this.boundOnTouchDown);
     window.removeEventListener('touchmove', this.boundOnTouchMove);
     window.removeEventListener('touchend', this.boundOnTouchUp);
+    this.container.removeEventListener('mouseleave', this.boundOnPointerLeave);
+    this.gl.canvas.removeEventListener('click', this.boundOnCanvasClick);
     if (this.renderer && this.renderer.gl && this.renderer.gl.canvas.parentNode) {
       this.renderer.gl.canvas.parentNode.removeChild(this.renderer.gl.canvas);
     }

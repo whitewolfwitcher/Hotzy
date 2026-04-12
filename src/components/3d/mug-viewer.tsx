@@ -6,6 +6,7 @@ import * as THREE from 'three'
 
 interface MugViewerProps {
   customImage?: string | null
+  artworkSource?: 'template' | 'upload'
   customImageFit?: 'cover' | 'contain'
   artworkMode?: 'full-wrap' | 'panel'
   dividedMode?: boolean
@@ -55,6 +56,7 @@ function BalancedStudioFloor({ floorColor }: { floorColor: string }) {
 
 export default function MugViewer({ 
   customImage, 
+  artworkSource = 'template',
   customImageFit = 'cover',
   artworkMode = 'full-wrap',
   dividedMode,
@@ -155,6 +157,7 @@ export default function MugViewer({
             <Mug 
               scale={1.5} 
               customImage={customImage} 
+              artworkSource={artworkSource}
               customImageFit={customImageFit}
               artworkMode={artworkMode}
               dividedMode={dividedMode}
@@ -172,7 +175,7 @@ export default function MugViewer({
 
         {/* Orbit controls - with right-click pan for easier movement */}
         <OrbitControls
-          enablePan={true}
+          enablePan={false}
           enableZoom={true}
           enableRotate={true}
           autoRotate={false}
@@ -183,7 +186,7 @@ export default function MugViewer({
           target={initialTarget}
           mouseButtons={{
             LEFT: THREE.MOUSE.ROTATE,
-            RIGHT: THREE.MOUSE.PAN
+            RIGHT: THREE.MOUSE.ROTATE
           }}
           maxPolarAngle={Math.PI / 1.8}
           minPolarAngle={Math.PI / 6}
@@ -193,7 +196,7 @@ export default function MugViewer({
 
       {/* Tooltip - updated instructions */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-xl border border-white/20 rounded-full z-10 pointer-events-none">
-        <span className="text-xs font-semibold text-white">Left-Click: Rotate | Right-Click: Move | Scroll: Zoom</span>
+        <span className="text-xs font-semibold text-white">Drag: Rotate | Scroll: Zoom</span>
       </div>
     </div>
   )

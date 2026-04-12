@@ -50,11 +50,12 @@ type SectionKey = 'section1' | 'section2' | 'section3';
 type SectionImages = Record<SectionKey, string | null>;
 type SectionImageTypes = Record<SectionKey, 'uploaded' | null>;
 type ArtworkMode = 'full-wrap' | 'panel';
+type ArtworkSource = 'template' | 'upload';
 type WrapArtwork = {
   image: string;
   fit: 'cover' | 'contain';
   mode: ArtworkMode;
-  source: 'template' | 'upload';
+  source: ArtworkSource;
   focalX?: number;
   focalY?: number;
   wrapOffsetX?: number;
@@ -62,6 +63,7 @@ type WrapArtwork = {
 };
 
 const WRAP_UPLOAD_ASPECT_RATIO = 2;
+const sectionOrder: SectionKey[] = ['section1', 'section2', 'section3'];
 
 export default function CustomizerPage() {
   const [sectionImages, setSectionImages] = useState<SectionImages>({
@@ -192,6 +194,7 @@ export default function CustomizerPage() {
   const hasTemplateWrap = selectedWrapArtwork?.source === 'template';
   const hasUploadWrap = selectedWrapArtwork?.source === 'upload';
   const selectedWrapMode = selectedWrapArtwork?.mode ?? 'full-wrap';
+  const activeSectionNumber = activeSection.replace('section', '');
 
   const loadImageFromSource = (src: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
@@ -401,6 +404,8 @@ export default function CustomizerPage() {
         });
       } catch (error) {
         console.error('Error processing image:', error);
+      } finally {
+        e.target.value = '';
       }
     }
   };
@@ -677,6 +682,7 @@ export default function CustomizerPage() {
                   <div className="relative aspect-square p-4 md:p-8">
                     <MugViewer 
                       customImage={selectedWrapArtwork?.image ?? null}
+                      artworkSource={selectedWrapArtwork?.source}
                       customImageFit={selectedWrapArtwork?.fit}
                       artworkMode={selectedWrapArtwork?.mode}
                       dividedMode={!hasWrapArtwork}
@@ -735,6 +741,11 @@ export default function CustomizerPage() {
                     <h3 className="text-sm md:text-lg font-bold text-white">
                       {getText('Select Section', 'Selectionner une section')}
                     </h3>
+                    {!hasWrapArtwork && (
+                      <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                        {getText('Active', 'Active')} {activeSectionNumber}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between gap-3 mb-3">
@@ -794,7 +805,7 @@ export default function CustomizerPage() {
                   </div>
 
                   <div className="grid grid-cols-3 gap-2">
-                    {(['section1', 'section2', 'section3'] as const).map((section, index) => (
+                    {sectionOrder.map((section, index) => (
                       <button
                         key={section}
                         onClick={() => setActiveSection(section)}
@@ -848,8 +859,8 @@ export default function CustomizerPage() {
                       : hasUploadWrap
                         ? 'Panoramic upload is covering the mug body as a full wrap. Sections are only for manual uploads.'
                       : getText(
-                          'Click a section to upload its image',
-                          'Cliquez sur une section pour telecharger son image'
+                          'Pick a section, then upload. Wide artwork wraps automatically around the mug.',
+                          'Choisissez une section, puis telechargez. Les designs larges enveloppent automatiquement la tasse.'
                         )}
                   </p>
                 </motion.div>
@@ -899,7 +910,7 @@ export default function CustomizerPage() {
                         {getText('Upload Design', 'Telecharger un design')}
                       </h3>
                       <span className="text-xs md:text-sm text-primary lg:hidden">
-                        ({getText('Section', 'Section')} {activeSection.replace('section', '')})
+                        ({getText('Section', 'Section')} {activeSectionNumber})
                       </span>
                     </div>
                   </div>
@@ -944,6 +955,11 @@ export default function CustomizerPage() {
                           }}
                         >
                           <div className="flex flex-col items-center gap-2 md:gap-3">
+                            <div className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
+                              {hasWrapArtwork
+                                ? getText('Replace Wrap', 'Remplacer le wrap')
+                                : `${getText('Section', 'Section')} ${activeSectionNumber}`}
+                            </div>
                             <motion.div
                               className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary to-[#9ACD32] rounded-full flex items-center justify-center"
                               whileHover={{ scale: 1.1, rotate: 5 }}
@@ -960,6 +976,12 @@ export default function CustomizerPage() {
                               </p>
                               <p className="text-[10px] md:text-xs text-muted-foreground mt-1 md:mt-2">
                                 {getText('JPG, PNG, SVG - Max 10MB', 'JPG, PNG, SVG - Max 10MB')}
+                              </p>
+                              <p className="mt-1 text-[10px] md:text-xs text-primary/80">
+                                {getText(
+                                  'Portrait images fill the selected section. Wide images become a full wrap.',
+                                  'Les images verticales remplissent la section active. Les images larges deviennent un wrap complet.'
+                                )}
                               </p>
                             </div>
                           </div>
