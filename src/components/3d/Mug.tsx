@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 
 type ArtworkMode = 'full-wrap' | 'panel'
@@ -59,7 +60,7 @@ function FallbackMug({
   const PANEL_AREA_Y = (WRAP_TEXTURE_HEIGHT - PANEL_AREA_HEIGHT) / 2
 
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
-  const materialRef = useRef<THREE.MeshStandardMaterial>(null)
+  const { scene } = useGLTF('/3d/Mug_AR_Rebuild.glb')
   const normalizeWrapOffset = (value: number) => ((value % 1) + 1) % 1
 
   // Create combined texture from 3 section images
@@ -302,143 +303,96 @@ function FallbackMug({
     wrapOffsetX,
   ])
 
-  const mugBaseColor = cupType === 'standard' ? '#f5f5f5' : '#1a1a1a'
+  const mugBodyColor = cupType === 'standard' ? '#f4f4f4' : '#0f0f12'
+  const handleColor = cupType === 'standard' ? '#f1f1f1' : '#111113'
+  const mugScene = useMemo(() => {
+    const clonedScene = scene.clone(true)
 
-  // Update material when texture or cup type changes
+    clonedScene.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) {
+        return
+      }
+
+      child.castShadow = true
+      child.receiveShadow = true
+
+      if (Array.isArray(child.material)) {
+        child.material = child.material.map((material) => material.clone())
+      } else if (child.material) {
+        child.material = child.material.clone()
+      }
+    })
+
+    return clonedScene
+  }, [scene])
+
   useEffect(() => {
-    if (materialRef.current) {
-      materialRef.current.map = texture
-      materialRef.current.color.set(texture ? "#ffffff" : mugBaseColor)
-      materialRef.current.needsUpdate = true
-      console.log('Material updated with texture:', !!texture)
-    }
-  }, [texture, mugBaseColor])
+    mugScene.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) {
+        return
+      }
+
+      const materials = Array.isArray(child.material) ? child.material : [child.material]
+
+      materials.forEach((material) => {
+        if (!(material instanceof THREE.MeshStandardMaterial)) {
+          return
+        }
+
+        const upgradedMaterial = new THREE.MeshPhysicalMaterial({
+          color: material.color?.clone() ?? new THREE.Color('#ffffff'),
+          map: material.map ?? null,
+          roughness: material.roughness ?? 0.45,
+          metalness: 0,
+          clearcoat: 1,
+          clearcoatRoughness: 0.12,
+          envMapIntensity: 0.8,
+        })
+
+        if (material.name === 'PrintMat') {
+          upgradedMaterial.color.set('#ffffff')
+          upgradedMaterial.map = texture
+          upgradedMaterial.roughness = 0.38
+          upgradedMaterial.clearcoat = 0.9
+          upgradedMaterial.clearcoatRoughness = 0.18
+          upgradedMaterial.envMapIntensity = 1
+        } else if (material.name === 'mug_body.007') {
+          upgradedMaterial.color.set(mugBodyColor)
+          upgradedMaterial.map = null
+          upgradedMaterial.roughness = cupType === 'standard' ? 0.32 : 0.22
+          upgradedMaterial.clearcoatRoughness = 0.08
+          upgradedMaterial.envMapIntensity = 1.1
+        } else if (material.name === 'HandleMat' || material.name === 'BaseMat') {
+          upgradedMaterial.color.set(handleColor)
+          upgradedMaterial.map = null
+          upgradedMaterial.roughness = cupType === 'standard' ? 0.28 : 0.2
+          upgradedMaterial.clearcoatRoughness = 0.06
+          upgradedMaterial.envMapIntensity = 1.15
+        }
+
+        upgradedMaterial.needsUpdate = true
+        material.dispose()
+
+        if (Array.isArray(child.material)) {
+          const materialIndex = child.material.findIndex((entry) => entry.uuid === material.uuid)
+          if (materialIndex >= 0) {
+            child.material[materialIndex] = upgradedMaterial
+          }
+        } else {
+          child.material = upgradedMaterial
+        }
+      })
+    })
+  }, [cupType, handleColor, mugBodyColor, mugScene, texture])
 
   return (
-    <group scale={scale} position={position} rotation={rotation}>
-      {/* Main cylindrical body - Black matte ceramic with optional custom texture */}
-      <mesh castShadow receiveShadow position={[0, HEIGHT / 2, 0]}>
-        <cylinderGeometry 
-          args={[
-            OUTER_DIAMETER,
-            OUTER_DIAMETER,
-            HEIGHT, 
-            SEGMENTS_RADIAL,
-            SEGMENTS_HEIGHT
-          ]} 
-        />
-        <meshStandardMaterial 
-          ref={materialRef}
-          color={texture ? "#ffffff" : mugBaseColor}
-          map={texture}
-          roughness={cupType === 'standard' ? 0.7 : 0.8} 
-          metalness={0.0}
-          side={THREE.FrontSide}
-        />
-      </mesh>
-
-      {/* Inner cavity - white interior */}
-      <mesh position={[0, HEIGHT / 2 + 0.002, 0]}>
-        <cylinderGeometry 
-          args={[
-            OUTER_DIAMETER - WALL_THICKNESS,
-            OUTER_DIAMETER - WALL_THICKNESS,
-            HEIGHT - 0.006,
-            SEGMENTS_RADIAL,
-            SEGMENTS_HEIGHT
-          ]} 
-        />
-        <meshStandardMaterial 
-          color="#ffffff" 
-          roughness={0.4} 
-          metalness={0.0}
-          side={THREE.BackSide}
-        />
-      </mesh>
-
-      {/* Rim - white inner lip */}
-      <mesh position={[0, HEIGHT, 0]}>
-        <cylinderGeometry 
-          args={[
-            OUTER_DIAMETER - 0.001,
-            OUTER_DIAMETER - 0.001,
-            0.002,
-            SEGMENTS_RADIAL
-          ]} 
-        />
-        <meshStandardMaterial 
-          color="#ffffff" 
-          roughness={0.4} 
-          metalness={0.0}
-        />
-      </mesh>
-
-      {/* D-loop Handle - Black matte */}
-      <group position={[OUTER_DIAMETER + HANDLE_RADIUS * 0.5, HEIGHT / 2, 0]}>
-        <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
-          <torusGeometry 
-            args={[
-              HANDLE_RADIUS * 3.5,
-              HANDLE_THICKNESS / 2,
-              16,
-              32
-            ]} 
-          />
-          <meshStandardMaterial 
-            color={mugBaseColor} 
-            roughness={cupType === 'standard' ? 0.7 : 0.8} 
-            metalness={0.0}
-          />
-        </mesh>
-        
-        {/* Handle connection to body (smooth blend) */}
-        <mesh 
-          castShadow 
-          position={[-HANDLE_RADIUS * 2, HANDLE_RADIUS * 2, 0]}
-          rotation={[0, 0, Math.PI / 4]}
-        >
-          <cylinderGeometry 
-            args={[HANDLE_THICKNESS / 2, HANDLE_THICKNESS / 2, HANDLE_RADIUS * 2, 8]} 
-          />
-          <meshStandardMaterial 
-            color={mugBaseColor} 
-            roughness={cupType === 'standard' ? 0.7 : 0.8} 
-            metalness={0.0}
-          />
-        </mesh>
-        
-        <mesh 
-          castShadow 
-          position={[-HANDLE_RADIUS * 2, -HANDLE_RADIUS * 2, 0]}
-          rotation={[0, 0, -Math.PI / 4]}
-        >
-          <cylinderGeometry 
-            args={[HANDLE_THICKNESS / 2, HANDLE_THICKNESS / 2, HANDLE_RADIUS * 2, 8]} 
-          />
-          <meshStandardMaterial 
-            color={mugBaseColor} 
-            roughness={cupType === 'standard' ? 0.7 : 0.8} 
-            metalness={0.0}
-          />
-        </mesh>
-      </group>
-
-      {/* Bottom base with foot ring - Black matte */}
-      <mesh castShadow receiveShadow position={[0, 0.002, 0]}>
-        <cylinderGeometry 
-          args={[
-            OUTER_DIAMETER * 0.85,
-            OUTER_DIAMETER * 0.85,
-            0.004,
-            SEGMENTS_RADIAL
-          ]} 
-        />
-        <meshStandardMaterial 
-          color={mugBaseColor} 
-          roughness={cupType === 'standard' ? 0.7 : 0.8} 
-          metalness={0.0}
-        />
-      </mesh>
+    <group
+      scale={scale}
+      position={position}
+      rotation={rotation}
+      dispose={null}
+    >
+      <primitive object={mugScene} scale={[1.15, 1.15, 1.15]} position={[0, 0, 0]} />
     </group>
   )
 }
@@ -504,3 +458,5 @@ export default function Mug({
     />
   )
 }
+
+useGLTF.preload('/3d/Mug_AR_Rebuild.glb')

@@ -72,9 +72,9 @@ export default function MugViewer({
   previewResetToken = 0,
 }: MugViewerProps) {
   const backgroundColor = cupType === 'standard' ? '#F4F4F4' : '#D8D8D8'
-  const floorColor = cupType === 'standard' ? '#E6E6E6' : '#D4D4D4'
-  const initialCameraPosition: [number, number, number] = [0, 0.06, 0.34]
-  const initialTarget: [number, number, number] = [0, 0.05, 0]
+  const floorColor = cupType === 'standard' ? '#E9E9E9' : '#D6D6D6'
+  const initialCameraPosition: [number, number, number] = [0.02, 0.07, 0.4]
+  const initialTarget: [number, number, number] = [0, 0.08, 0]
   const previewRotationY =
     customImage && artworkMode === 'full-wrap' ? previewRotation : 0.15
 
@@ -114,19 +114,19 @@ export default function MugViewer({
         {/* Balanced studio lighting - performance optimized */}
         
         {/* Ambient light - reduced for balanced look */}
-        <ambientLight intensity={0.5} color="#FFFFFF" />
+        <ambientLight intensity={0.45} color="#FFFFFF" />
         
         {/* Hemisphere light - mid-tone sky/ground */}
         <hemisphereLight 
-          color="#E5E5E5"
-          groundColor="#D1D1D1"
-          intensity={0.6}
+          color="#F1F1F1"
+          groundColor="#CFCFCF"
+          intensity={0.72}
         />
         
         {/* Main directional light - soft shadows with 1024 map */}
         <directionalLight
-          position={[2.5, 3.0, 2.0]}
-          intensity={2.1}
+          position={[2.8, 3.4, 2.6]}
+          intensity={2.35}
           color="#FFFFFF"
           castShadow
           shadow-mapSize-width={1024}
@@ -142,10 +142,26 @@ export default function MugViewer({
         
         {/* Fill directional light - no shadows for performance */}
         <directionalLight 
-          position={[-2.0, 1.5, -1.5]} 
-          intensity={0.9} 
-          color="#DADADA"
+          position={[-2.4, 1.9, -1.8]} 
+          intensity={1.05} 
+          color="#E7E7E7"
           castShadow={false}
+        />
+
+        <spotLight
+          position={[-1.6, 1.3, 2.2]}
+          angle={0.45}
+          penumbra={0.9}
+          intensity={0.75}
+          color="#ffffff"
+          castShadow={false}
+        />
+
+        <pointLight
+          position={[0.65, 0.22, 0.85]}
+          intensity={0.35}
+          distance={2}
+          color="#ffffff"
         />
 
         <Suspense fallback={null}>

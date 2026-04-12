@@ -1,59 +1,75 @@
 "use client";
 
-import dynamic from 'next/dynamic';
-import NavigationHeader from '@/components/sections/navigation-header';
-import Footer from '@/components/sections/footer';
-import { Upload, Grid3x3, Check, Sparkles, Zap, Package, Truck, Shield, Move, ArrowLeft, ArrowRight, RotateCw, Image as ImageIcon, X, Copy, ChevronDown } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import { usePreferences } from '@/contexts/preferences-context';
-import { CAD_TO_USD, PRICE_CAD } from '@/lib/pricing';
-import { trackEvent } from '@/lib/analytics/trackEvent';
-import { track } from '@/lib/analytics/track';
-import { addItem as addCartItem } from '@/lib/cart/cart';
+import dynamic from "next/dynamic";
+import {
+  Upload,
+  Grid3x3,
+  Sparkles,
+  Package,
+  Move,
+  ArrowLeft,
+  ArrowRight,
+  RotateCw,
+  Image as ImageIcon,
+  X,
+  Copy,
+  Menu,
+  ShoppingCart,
+  Home,
+  LayoutGrid,
+  Palette,
+  Type,
+  Pipette,
+  CheckCircle2,
+} from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { usePreferences } from "@/contexts/preferences-context";
+import { CAD_TO_USD, PRICE_CAD } from "@/lib/pricing";
+import { trackEvent } from "@/lib/analytics/trackEvent";
+import { track } from "@/lib/analytics/track";
+import { addItem as addCartItem } from "@/lib/cart/cart";
 import {
   customizerDesignTemplates,
   findDesignTemplateByImage,
-} from '@/lib/design-templates';
-import { toast } from 'sonner';
-import { useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
+} from "@/lib/design-templates";
+import { toast } from "sonner";
+import { useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
-// Dynamically import the 3D viewer to avoid SSR issues
-const MugViewer = dynamic(() => import('@/components/3d/mug-viewer'), {
+const MugViewer = dynamic(() => import("@/components/3d/mug-viewer"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center">
+    <div className="flex h-full min-h-[520px] items-center justify-center rounded-[28px] border border-primary/10 bg-[#0d0f0d]">
       <div className="text-center">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Loading 3D Viewer...</p>
+        <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <p className="text-sm text-white/55">Loading 3D Viewer...</p>
       </div>
     </div>
   ),
 });
 
-// Dynamically import CircularGallery to avoid SSR issues
-const CircularGallery = dynamic(() => import('@/components/3d/CircularGallery'), {
+const CircularGallery = dynamic(() => import("@/components/3d/CircularGallery"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center">
+    <div className="flex h-[360px] items-center justify-center rounded-[24px] border border-primary/10 bg-[#0d0f0d]">
       <div className="text-center">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Loading Gallery...</p>
+        <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <p className="text-sm text-white/55">Loading Gallery...</p>
       </div>
     </div>
   ),
 });
 
-type SectionKey = 'section1' | 'section2' | 'section3';
+type SectionKey = "section1" | "section2" | "section3";
 type SectionImages = Record<SectionKey, string | null>;
-type SectionImageTypes = Record<SectionKey, 'uploaded' | null>;
-type ArtworkMode = 'full-wrap' | 'panel';
-type ArtworkSource = 'template' | 'upload';
+type SectionImageTypes = Record<SectionKey, "uploaded" | null>;
+type ArtworkMode = "full-wrap" | "panel";
+type ArtworkSource = "template" | "upload";
+
 type WrapArtwork = {
   image: string;
-  fit: 'cover' | 'contain';
+  fit: "cover" | "contain";
   mode: ArtworkMode;
   source: ArtworkSource;
   focalX?: number;
@@ -63,7 +79,7 @@ type WrapArtwork = {
 };
 
 const WRAP_UPLOAD_ASPECT_RATIO = 2;
-const sectionOrder: SectionKey[] = ['section1', 'section2', 'section3'];
+const sectionOrder: SectionKey[] = ["section1", "section2", "section3"];
 
 export default function CustomizerPage() {
   const [sectionImages, setSectionImages] = useState<SectionImages>({
@@ -71,170 +87,102 @@ export default function CustomizerPage() {
     section2: null,
     section3: null,
   });
-  
   const [imageTypes, setImageTypes] = useState<SectionImageTypes>({
     section1: null,
     section2: null,
     section3: null,
   });
-  
   const [selectedWrapArtwork, setSelectedWrapArtwork] = useState<WrapArtwork | null>(null);
   const [previewResetToken, setPreviewResetToken] = useState(0);
-  const [activeSection, setActiveSection] = useState<SectionKey>('section1');
+  const [activeSection, setActiveSection] = useState<SectionKey>("section1");
   const [isDragging, setIsDragging] = useState(false);
-  const [cupType, setCupType] = useState<'hotzy' | 'standard'>('hotzy');
+  const [cupType, setCupType] = useState<"hotzy" | "standard">("hotzy");
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderNowStatus, setOrderNowStatus] = useState<string | null>(null);
-  const hasTrackedCustomizerView = useRef(false);
-  
-  // Image position controls
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [imageRotation, setImageRotation] = useState(0);
-  
-  // Track if we're on desktop (for auto-expand sections)
-  const [isDesktop, setIsDesktop] = useState(false);
-  
-  // NEW: Mobile section collapse states
-  const [expandedSections, setExpandedSections] = useState({
-    upload: true,
-    position: false,
-    templates: false,
-    pricing: false,
-    details: false,
-  });
+  const hasTrackedCustomizerView = useRef(false);
+
   const router = useRouter();
   const { currency, getText } = usePreferences();
   const createDraft = useMutation(api.orders.createDraft);
-
-  // Check if we're on desktop on mount and window resize
-  useEffect(() => {
-    const checkDesktop = () => {
-      setIsDesktop(window.innerWidth >= 1024);
-    };
-    
-    checkDesktop();
-    window.addEventListener('resize', checkDesktop);
-    
-    return () => window.removeEventListener('resize', checkDesktop);
-  }, []);
 
   useEffect(() => {
     try {
       if (hasTrackedCustomizerView.current) return;
       hasTrackedCustomizerView.current = true;
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[ga] customizer_view');
-      }
-      void trackEvent('customizer_view', {
-        page_context: 'customizer',
+      void trackEvent("customizer_view", {
+        page_context: "customizer",
         cup_type: cupType,
       });
-    } catch (err) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn('[analytics] suppressed error', err);
-      }
-    }
+    } catch {}
   }, [cupType]);
 
   useEffect(() => {
     try {
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`[ga] view_item variant=${cupType}`);
-      }
-      void trackEvent('view_item', {
-        item_name: 'Custom Mug',
-        item_category: 'Mugs',
+      void trackEvent("view_item", {
+        item_name: "Custom Mug",
+        item_category: "Mugs",
         item_variant: cupType,
       });
-    } catch (err) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn('[analytics] suppressed error', err);
-      }
-    }
-  }, []);
+    } catch {}
+  }, [cupType]);
 
-  const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => {
-      const nextValue = !prev[section];
-      if (section === 'templates' && nextValue) {
-        const currentTemplate =
-          selectedWrapArtwork?.source === 'template'
-            ? findDesignTemplateByImage(selectedWrapArtwork.image)
-            : undefined;
-        void track('template_view', {
-          cup_type: cupType,
-          template_category: currentTemplate?.category,
-        });
-      }
-      return {
-        ...prev,
-        [section]: nextValue
-      };
-    });
-  };
-
-  // Calculate number of uploaded images (not templates)
-  const uploadedImageCount = Object.values(imageTypes).filter(type => type === 'uploaded').length;
+  const uploadedImageCount = Object.values(imageTypes).filter(
+    (type) => type === "uploaded"
+  ).length;
 
   const basePriceCad = PRICE_CAD[cupType];
-  const displayPriceAmount = currency === 'USD' ? basePriceCad * CAD_TO_USD : basePriceCad;
-  const displayPrice = `$${new Intl.NumberFormat('en-CA', {
+  const displayPriceAmount =
+    currency === "USD" ? basePriceCad * CAD_TO_USD : basePriceCad;
+  const displayPrice = `$${new Intl.NumberFormat("en-CA", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(displayPriceAmount)} ${currency}`;
 
-  // Get current active section image
   const currentSectionImage = sectionImages[activeSection];
   const currentSectionType = imageTypes[activeSection];
   const selectedWrapTemplate =
-    selectedWrapArtwork?.source === 'template'
+    selectedWrapArtwork?.source === "template"
       ? findDesignTemplateByImage(selectedWrapArtwork.image)
       : undefined;
   const hasWrapArtwork = Boolean(selectedWrapArtwork);
-  const hasTemplateWrap = selectedWrapArtwork?.source === 'template';
-  const hasUploadWrap = selectedWrapArtwork?.source === 'upload';
-  const selectedWrapMode = selectedWrapArtwork?.mode ?? 'full-wrap';
-  const activeSectionNumber = activeSection.replace('section', '');
+  const hasTemplateWrap = selectedWrapArtwork?.source === "template";
+  const hasUploadWrap = selectedWrapArtwork?.source === "upload";
+  const selectedWrapMode = selectedWrapArtwork?.mode ?? "full-wrap";
+  const activeSectionNumber = activeSection.replace("section", "");
 
-  const loadImageFromSource = (src: string): Promise<HTMLImageElement> => {
-    return new Promise((resolve, reject) => {
+  const loadImageFromSource = (src: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
       const img = new Image();
-
       img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.crossOrigin = 'anonymous';
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.crossOrigin = "anonymous";
       img.src = src;
     });
-  };
 
-  const readFileAsDataUrl = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
       const reader = new FileReader();
-
       reader.onload = (e) => {
         const result = e.target?.result;
-        if (typeof result !== 'string') {
-          reject(new Error('Failed to read file'));
+        if (typeof result !== "string") {
+          reject(new Error("Failed to read file"));
           return;
         }
-
         resolve(result);
       };
-
-      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.onerror = () => reject(new Error("Failed to read file"));
       reader.readAsDataURL(file);
     });
-  };
 
   const createSectionUploadImage = (img: HTMLImageElement): string => {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = 800;
     canvas.height = 800;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
 
-    if (!ctx) {
-      throw new Error('Failed to get canvas context');
-    }
+    if (!ctx) throw new Error("Failed to get canvas context");
 
     const scale = Math.min(800 / img.width, 800 / img.height);
     const scaledWidth = img.width * scale;
@@ -242,215 +190,99 @@ export default function CustomizerPage() {
     const x = (800 - scaledWidth) / 2;
     const y = (800 - scaledHeight) / 2;
 
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, 800, 800);
     ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-
-    return canvas.toDataURL('image/png');
+    return canvas.toDataURL("image/png");
   };
 
   const processUploadImage = async (
     file: File
-  ): Promise<{ image: string; mode: 'section' | 'wrap' }> => {
+  ): Promise<{ image: string; mode: "section" | "wrap" }> => {
     const dataUrl = await readFileAsDataUrl(file);
     const img = await loadImageFromSource(dataUrl);
-    const aspectRatio = img.width / img.height;
-
-    if (aspectRatio >= WRAP_UPLOAD_ASPECT_RATIO) {
-      return {
-        image: dataUrl,
-        mode: 'wrap',
-      };
+    if (img.width / img.height >= WRAP_UPLOAD_ASPECT_RATIO) {
+      return { image: dataUrl, mode: "wrap" };
     }
-
-    return {
-      image: createSectionUploadImage(img),
-      mode: 'section',
-    };
+    return { image: createSectionUploadImage(img), mode: "section" };
   };
 
-  // Generate mug mockup thumbnail with the custom design
-  const generateMugThumbnail = (designImages: typeof sectionImages): Promise<string> => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 400;
-      canvas.height = 400;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        resolve('/placeholder-mug.png');
-        return;
-      }
-
-      // Fill background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 400, 400);
-
-      // Draw mug body (simplified black mug shape)
-      ctx.fillStyle = '#1a1a1a';
-      
-      // Mug body - rounded rectangle
-      const mugX = 100;
-      const mugY = 80;
-      const mugWidth = 200;
-      const mugHeight = 240;
-      const radius = 20;
-      
-      ctx.beginPath();
-      ctx.moveTo(mugX + radius, mugY);
-      ctx.lineTo(mugX + mugWidth - radius, mugY);
-      ctx.quadraticCurveTo(mugX + mugWidth, mugY, mugX + mugWidth, mugY + radius);
-      ctx.lineTo(mugX + mugWidth, mugY + mugHeight - radius);
-      ctx.quadraticCurveTo(mugX + mugWidth, mugY + mugHeight, mugX + mugWidth - radius, mugY + mugHeight);
-      ctx.lineTo(mugX + radius, mugY + mugHeight);
-      ctx.quadraticCurveTo(mugX, mugY + mugHeight, mugX, mugY + mugHeight - radius);
-      ctx.lineTo(mugX, mugY + radius);
-      ctx.quadraticCurveTo(mugX, mugY, mugX + radius, mugY);
-      ctx.closePath();
-      ctx.fill();
-
-      // Draw handle
-      ctx.strokeStyle = '#1a1a1a';
-      ctx.lineWidth = 20;
-      ctx.beginPath();
-      ctx.arc(320, 180, 40, -Math.PI / 2, Math.PI / 2, false);
-      ctx.stroke();
-
-      if (designImages) {
-        // Load and draw the custom design
-        const img = new Image();
-        img.onload = () => {
-          // Draw design on mug with perspective effect
-          const designX = mugX + 30;
-          const designY = mugY + 60;
-          const designWidth = mugWidth - 60;
-          const designHeight = 120;
-          
-          ctx.save();
-          
-          // Clip to mug area
-          ctx.beginPath();
-          ctx.rect(mugX + 20, mugY + 40, mugWidth - 40, mugHeight - 80);
-          ctx.clip();
-          
-          // Draw the design
-          ctx.drawImage(img, designX, designY, designWidth, designHeight);
-          
-          ctx.restore();
-          
-          // Add subtle highlights for realism
-          const gradient = ctx.createLinearGradient(mugX, mugY, mugX + mugWidth, mugY);
-          gradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
-          gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
-          gradient.addColorStop(1, 'rgba(0, 0, 0, 0.2)');
-          
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.moveTo(mugX + radius, mugY);
-          ctx.lineTo(mugX + mugWidth - radius, mugY);
-          ctx.quadraticCurveTo(mugX + mugWidth, mugY, mugX + mugWidth, mugY + radius);
-          ctx.lineTo(mugX + mugWidth, mugY + mugHeight - radius);
-          ctx.quadraticCurveTo(mugX + mugWidth, mugY + mugHeight, mugX + mugWidth - radius, mugY + mugHeight);
-          ctx.lineTo(mugX + radius, mugY + mugHeight);
-          ctx.quadraticCurveTo(mugX, mugY + mugHeight, mugX, mugY + mugHeight - radius);
-          ctx.lineTo(mugX, mugY + radius);
-          ctx.quadraticCurveTo(mugX, mugY, mugX + radius, mugY);
-          ctx.closePath();
-          ctx.fill();
-          
-          resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = () => {
-          resolve(canvas.toDataURL('image/png'));
-        };
-        img.crossOrigin = "anonymous";
-        img.src = designImages[activeSection] || '';
-      } else {
-        // Just return the plain mug
-        resolve(canvas.toDataURL('image/png'));
-      }
-    });
+  const applyDesignToSections = (designImage: string) => {
+    setSelectedWrapArtwork(null);
+    setSectionImages((prev) => ({ ...prev, [activeSection]: designImage }));
+    setImageTypes((prev) => ({ ...prev, [activeSection]: "uploaded" }));
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      try {
-        const processedUpload = await processUploadImage(file);
+    if (!file) return;
 
-        if (processedUpload.mode === 'wrap') {
-          setSelectedWrapArtwork({
-            image: processedUpload.image,
-            fit: 'cover',
-            mode: 'full-wrap',
-            source: 'upload',
-            focalX: 0.5,
-            focalY: 0.5,
-            wrapOffsetX: 0,
-            previewRotation: 0,
-          });
-          setImagePosition({ x: 0, y: 0 });
-          setImageRotation(0);
-          setPreviewResetToken((token) => token + 1);
-        } else {
-          applyDesignToSections(processedUpload.image);
-        }
-
-        void track('design_upload_success', {
-          cup_type: cupType,
-          section: processedUpload.mode === 'wrap' ? 'full_wrap' : activeSection,
-          file_type: file.type || 'unknown',
-          file_size_kb: Math.round(file.size / 1024),
+    try {
+      const processedUpload = await processUploadImage(file);
+      if (processedUpload.mode === "wrap") {
+        setSelectedWrapArtwork({
+          image: processedUpload.image,
+          fit: "cover",
+          mode: "full-wrap",
+          source: "upload",
+          focalX: 0.5,
+          focalY: 0.5,
+          wrapOffsetX: 0,
+          previewRotation: 0,
         });
-      } catch (error) {
-        console.error('Error processing image:', error);
-      } finally {
-        e.target.value = '';
+        setImagePosition({ x: 0, y: 0 });
+        setImageRotation(0);
+        setPreviewResetToken((token) => token + 1);
+      } else {
+        applyDesignToSections(processedUpload.image);
       }
+
+      void track("design_upload_success", {
+        cup_type: cupType,
+        section: processedUpload.mode === "wrap" ? "full_wrap" : activeSection,
+        file_type: file.type || "unknown",
+        file_size_kb: Math.round(file.size / 1024),
+      });
+    } catch (error) {
+      console.error("Error processing image:", error);
+    } finally {
+      e.target.value = "";
     }
   };
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      try {
-        void track('design_upload_start', {
-          cup_type: cupType,
-          section: activeSection,
-          method: 'drop',
-        });
-        const processedUpload = await processUploadImage(file);
+    if (!file || !file.type.startsWith("image/")) return;
 
-        if (processedUpload.mode === 'wrap') {
-          setSelectedWrapArtwork({
-            image: processedUpload.image,
-            fit: 'cover',
-            mode: 'full-wrap',
-            source: 'upload',
-            focalX: 0.5,
-            focalY: 0.5,
-            wrapOffsetX: 0,
-            previewRotation: 0,
-          });
-          setImagePosition({ x: 0, y: 0 });
-          setImageRotation(0);
-          setPreviewResetToken((token) => token + 1);
-        } else {
-          applyDesignToSections(processedUpload.image);
-        }
+    try {
+      void track("design_upload_start", {
+        cup_type: cupType,
+        section: activeSection,
+        method: "drop",
+      });
 
-        void track('design_upload_success', {
-          cup_type: cupType,
-          section: processedUpload.mode === 'wrap' ? 'full_wrap' : activeSection,
-          file_type: file.type || 'unknown',
-          file_size_kb: Math.round(file.size / 1024),
+      const processedUpload = await processUploadImage(file);
+      if (processedUpload.mode === "wrap") {
+        setSelectedWrapArtwork({
+          image: processedUpload.image,
+          fit: "cover",
+          mode: "full-wrap",
+          source: "upload",
+          focalX: 0.5,
+          focalY: 0.5,
+          wrapOffsetX: 0,
+          previewRotation: 0,
         });
-      } catch (error) {
-        console.error('Error processing image:', error);
+        setImagePosition({ x: 0, y: 0 });
+        setImageRotation(0);
+        setPreviewResetToken((token) => token + 1);
+      } else {
+        applyDesignToSections(processedUpload.image);
       }
+    } catch (error) {
+      console.error("Error processing image:", error);
     }
   };
 
@@ -463,69 +295,51 @@ export default function CustomizerPage() {
     setIsDragging(false);
   };
 
-  const applyDesignToSections = (designImage: string) => {
-    setSelectedWrapArtwork(null);
-    setSectionImages(prev => ({
-      ...prev,
-      [activeSection]: designImage
-    }));
-    setImageTypes(prev => ({
-      ...prev,
-      [activeSection]: 'uploaded'
-    }));
-  };
-
   const handleTemplateSelect = (templateImage: string) => {
     const selectedTemplate = findDesignTemplateByImage(templateImage);
-    const templateFit = selectedTemplate?.payload_to_customizer?.fit === 'contain' ? 'contain' : 'cover';
+    const templateFit =
+      selectedTemplate?.payload_to_customizer?.fit === "contain" ? "contain" : "cover";
     const templateArea = selectedTemplate?.payload_to_customizer?.area;
     const mode: ArtworkMode =
-      templateArea === 'full' || selectedTemplate?.wrap === 'full' ? 'full-wrap' : 'panel';
+      templateArea === "full" || selectedTemplate?.wrap === "full"
+        ? "full-wrap"
+        : "panel";
 
     setSelectedWrapArtwork({
       image: templateImage,
-      fit: mode === 'full-wrap' ? 'cover' : templateFit,
+      fit: mode === "full-wrap" ? "cover" : templateFit,
       mode,
-      source: 'template',
-      focalX: mode === 'full-wrap' ? selectedTemplate?.focalX ?? 0.5 : undefined,
-      focalY: mode === 'full-wrap' ? selectedTemplate?.focalY ?? 0.5 : undefined,
-      wrapOffsetX: mode === 'full-wrap' ? selectedTemplate?.wrapOffsetX ?? 0 : undefined,
+      source: "template",
+      focalX: mode === "full-wrap" ? selectedTemplate?.focalX ?? 0.5 : undefined,
+      focalY: mode === "full-wrap" ? selectedTemplate?.focalY ?? 0.5 : undefined,
+      wrapOffsetX:
+        mode === "full-wrap" ? selectedTemplate?.wrapOffsetX ?? 0 : undefined,
       previewRotation:
-        mode === 'full-wrap' ? selectedTemplate?.previewRotation ?? 0 : undefined,
+        mode === "full-wrap" ? selectedTemplate?.previewRotation ?? 0 : undefined,
     });
-    // Reset position controls when selecting a template
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
     setPreviewResetToken((token) => token + 1);
+
     if (selectedTemplate) {
-      void track('template_apply', {
+      void track("template_apply", {
         cup_type: cupType,
         template_id: selectedTemplate.id,
         template_name: selectedTemplate.name,
-        application_scope: mode === 'full-wrap' ? 'full_mug' : 'panel',
+        application_scope: mode === "full-wrap" ? "full_mug" : "panel",
       });
     }
   };
 
-  const handleClearWrapArtwork = () => {
-    setSelectedWrapArtwork(null);
-  };
+  const handleClearWrapArtwork = () => setSelectedWrapArtwork(null);
 
   const handleRemoveImage = (section: SectionKey) => {
-    setSectionImages(prev => ({
-      ...prev,
-      [section]: null
-    }));
-    setImageTypes(prev => ({
-      ...prev,
-      [section]: null
-    }));
+    setSectionImages((prev) => ({ ...prev, [section]: null }));
+    setImageTypes((prev) => ({ ...prev, [section]: null }));
   };
 
-  // NEW: Duplicate current image to all sections
   const handleDuplicateToAll = () => {
     if (!currentSectionImage) return;
-    
     setSectionImages({
       section1: currentSectionImage,
       section2: currentSectionImage,
@@ -543,18 +357,17 @@ export default function CustomizerPage() {
     setImageRotation(0);
   };
 
-  // New button-based position controls
-  const moveImage = (direction: 'up' | 'down' | 'left' | 'right') => {
+  const moveImage = (direction: "up" | "down" | "left" | "right") => {
     const step = 0.05;
-    setImagePosition(prev => {
+    setImagePosition((prev) => {
       switch (direction) {
-        case 'up':
+        case "up":
           return { ...prev, y: Math.max(prev.y - step, -0.5) };
-        case 'down':
+        case "down":
           return { ...prev, y: Math.min(prev.y + step, 0.5) };
-        case 'left':
+        case "left":
           return { ...prev, x: Math.min(prev.x + step, 0.5) };
-        case 'right':
+        case "right":
           return { ...prev, x: Math.max(prev.x - step, -0.5) };
         default:
           return prev;
@@ -565,16 +378,15 @@ export default function CustomizerPage() {
   const handleAddToCart = async () => {
     try {
       const price =
-        currency === 'USD' ? basePriceCad * CAD_TO_USD : basePriceCad;
+        currency === "USD" ? basePriceCad * CAD_TO_USD : basePriceCad;
       const priceCents = Math.round(price * 100);
       const hasCustomDesign = uploadedImageCount > 0 || hasWrapArtwork;
 
       addCartItem({
         id: `custom-mug-${Date.now()}`,
-        name:
-          hasCustomDesign
-            ? getText('Custom Design Mug', 'Tasse design personnalisee')
-            : getText('Premium Black Mug', 'Tasse Noire Premium'),
+        name: hasCustomDesign
+          ? getText("Custom Design Mug", "Tasse design personnalisee")
+          : getText("Premium Black Mug", "Tasse Noire Premium"),
         priceCents,
         currency,
         qty: 1,
@@ -583,104 +395,307 @@ export default function CustomizerPage() {
           fullWrapArtwork: selectedWrapArtwork,
           fullWrapTemplate: selectedWrapArtwork?.image ?? null,
           selectedTemplateId: hasTemplateWrap ? selectedWrapTemplate?.id ?? null : null,
-          layoutMode: hasWrapArtwork ? 'full-wrap' : 'triple',
-          productType: 'custom-mug',
+          layoutMode: hasWrapArtwork ? "full-wrap" : "triple",
+          productType: "custom-mug",
           imageCount: hasWrapArtwork ? 1 : uploadedImageCount,
         },
       });
 
-      toast.success(getText('Added to cart!', 'Ajoute au panier!'));
-
-      void trackEvent('add_to_cart', {
-        item_name: 'Custom Mug',
-        item_category: 'Mugs',
+      toast.success(getText("Added to cart!", "Ajoute au panier!"));
+      void trackEvent("add_to_cart", {
+        item_name: "Custom Mug",
+        item_category: "Mugs",
       });
     } catch {
-      toast.error(getText('Something went wrong', 'Erreur'));
+      toast.error(getText("Something went wrong", "Erreur"));
     }
-  };  
+  };
 
   const handleOrderNow = async () => {
     if (isOrdering) return;
     setIsOrdering(true);
     try {
-      setOrderNowStatus(getText('Creating order...', 'Creation de la commande...'));
+      setOrderNowStatus(getText("Creating order...", "Creation de la commande..."));
       const draft = await createDraft({ cupType, currency });
-      setOrderNowStatus(getText('Redirecting to payment...', 'Redirection vers le paiement...'));
+      setOrderNowStatus(
+        getText("Redirecting to payment...", "Redirection vers le paiement...")
+      );
       router.push(`/checkout?orderId=${encodeURIComponent(draft.orderId)}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : getText('Checkout failed', 'Echec du paiement');
+      const message =
+        err instanceof Error
+          ? err.message
+          : getText("Checkout failed", "Echec du paiement");
       setOrderNowStatus(null);
       toast.error(message);
     } finally {
       setIsOrdering(false);
     }
-  }; 
-
-  
-
+  };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Clear background with subtle grid and glow */}
-      <div className="absolute inset-0 bg-black" />
-      
-      {/* Subtle grid overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(118,185,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(118,185,0,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
-      
-      {/* Radial glow effects */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px]" />
+    <div className="min-h-screen bg-[#070807] text-white">
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(118,185,0,0.08),transparent_40%),linear-gradient(180deg,#0b0d0b_0%,#050505_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(118,185,0,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(118,185,0,0.035)_1px,transparent_1px)] bg-[size:44px_44px]" />
+      </div>
 
       <div className="relative z-10">
-        <NavigationHeader />
-      
-        <main className="container py-8 md:py-12 lg:py-20">
-          {/* Header */}
-          <motion.div
-            className="text-center mb-8 md:mb-12 lg:mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black text-white mb-4 md:mb-6 leading-tight px-4 lg:whitespace-nowrap">
-              {getText('Design Your', 'Concevez Votre')}{' '}
-              <span className="bg-gradient-to-r from-primary via-[#9ACD32] to-primary bg-clip-text text-transparent">
-                {getText('Perfect Mug', 'Tasse Parfaite')}
-              </span>
-            </h1>
-          </motion.div>
+        <header className="fixed inset-x-0 top-0 z-50 border-b border-primary/10 bg-[#090b09]/80 backdrop-blur-xl">
+          <div className="flex h-16 items-center justify-between px-4 md:px-6">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                className="rounded-xl border border-primary/15 bg-white/[0.03] p-2 text-primary"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className="text-3xl font-black tracking-[-0.06em] text-primary"
+              >
+                HOTZY
+              </button>
+            </div>
 
-          {/* Main Content Grid */}
-          <div className="grid lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 max-w-7xl mx-auto mb-12 md:mb-20">
-            {/* 3D Viewer - Always First on Mobile */}
-            <motion.div
-              className="order-1"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+            <nav className="hidden items-center gap-8 text-[11px] font-bold uppercase tracking-[0.28em] text-white/55 md:flex">
+              <button type="button" onClick={() => router.push("/")} className="hover:text-primary">
+                Home
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/shop")}
+                className="hover:text-primary"
+              >
+                Catalog
+              </button>
+              <span className="text-primary">Design</span>
+              <button
+                type="button"
+                onClick={() => router.push("/checkout")}
+                className="hover:text-primary"
+              >
+                Cart
+              </button>
+            </nav>
+
+            <button
+              type="button"
+              onClick={() => router.push("/checkout")}
+              className="rounded-xl border border-primary/15 bg-white/[0.03] p-2 text-primary"
             >
-              <div className="relative">
-                {/* Main viewer container */}
-                <div
-                  className={`relative border-2 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl ${
-                    cupType === 'standard'
-                      ? 'bg-gradient-to-br from-[#F2F2F2] via-[#E2E2E2] to-[#D5D5D5] border-white/60'
-                      : 'bg-gradient-to-br from-[#1A1A1A] via-[#0d0d0d] to-black border-primary/30'
-                  }`}
-                >
-                  {/* Corner accents - hidden on small mobile */}
-                  <div className="hidden sm:block absolute top-0 left-0 w-12 h-12 md:w-20 md:h-20 border-t-2 border-l-2 border-primary rounded-tl-2xl md:rounded-tl-3xl z-10" />
-                  <div className="hidden sm:block absolute top-0 right-0 w-12 h-12 md:w-20 md:h-20 border-t-2 border-r-2 border-primary rounded-tr-2xl md:rounded-tr-3xl z-10" />
-                  <div className="hidden sm:block absolute bottom-0 left-0 w-12 h-12 md:w-20 md:h-20 border-b-2 border-l-2 border-primary rounded-bl-2xl md:rounded-bl-3xl z-10" />
-                  <div className="hidden sm:block absolute bottom-0 right-0 w-12 h-12 md:w-20 md:h-20 border-b-2 border-r-2 border-primary rounded-br-2xl md:rounded-br-3xl z-10" />
+              <ShoppingCart className="h-5 w-5" />
+            </button>
+          </div>
+        </header>
 
-                  {/* Glow effects */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5 pointer-events-none" />
-                  
-                  {/* 3D Viewer */}
-                  <div className="relative aspect-square p-4 md:p-8">
-                    <MugViewer 
+        <main className="px-4 pb-28 pt-20 md:px-6 md:pb-10">
+          <div className="mx-auto grid max-w-[1700px] gap-6 xl:grid-cols-[320px_minmax(0,1fr)_360px]">
+            <aside className="hidden xl:flex xl:flex-col xl:gap-5">
+              <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+                <div className="mb-8">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.28em] text-primary/80">
+                    Customization Lab
+                  </div>
+                  <h1 className="mt-2 text-3xl font-black tracking-[-0.05em] text-white">
+                    Craft Your Mug
+                  </h1>
+                </div>
+
+                <div className="space-y-6">
+                  <section>
+                    <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white/55">
+                      <Palette className="h-4 w-4 text-primary" />
+                      Base Color
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setCupType("hotzy")}
+                        className={`rounded-2xl border px-4 py-3 text-left transition ${
+                          cupType === "hotzy"
+                            ? "border-primary bg-primary/14 text-primary"
+                            : "border-white/8 bg-white/[0.03] text-white/70"
+                        }`}
+                      >
+                        <div className="text-xs font-bold uppercase tracking-[0.18em]">Black</div>
+                        <div className="mt-1 text-xs text-white/45">Signature body</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCupType("standard")}
+                        className={`rounded-2xl border px-4 py-3 text-left transition ${
+                          cupType === "standard"
+                            ? "border-primary bg-primary/14 text-primary"
+                            : "border-white/8 bg-white/[0.03] text-white/70"
+                        }`}
+                      >
+                        <div className="text-xs font-bold uppercase tracking-[0.18em]">White</div>
+                        <div className="mt-1 text-xs text-white/45">Bright print base</div>
+                      </button>
+                    </div>
+                  </section>
+
+                  <section id="upload-panel">
+                    <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white/55">
+                      <ImageIcon className="h-4 w-4 text-primary" />
+                      Visual Assets
+                    </div>
+                    <div
+                      className={`rounded-[24px] border border-dashed p-5 text-center transition ${
+                        isDragging
+                          ? "border-primary bg-primary/10"
+                          : "border-primary/20 bg-black/30"
+                      }`}
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                    >
+                      <input
+                        type="file"
+                        id="image-upload"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="image-upload"
+                        className="block cursor-pointer"
+                        onClick={() => {
+                          void track("design_upload_start", {
+                            cup_type: cupType,
+                            section: activeSection,
+                            method: "picker",
+                          });
+                        }}
+                      >
+                        <Upload className="mx-auto h-9 w-9 text-primary" />
+                        <div className="mt-3 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
+                          {hasWrapArtwork ? "Replace Wrap" : `Section ${activeSectionNumber}`}
+                        </div>
+                        <p className="mt-3 text-sm font-semibold text-white">Upload image</p>
+                        <p className="mt-1 text-xs text-white/45">
+                          Portrait fills section, wide image wraps full mug.
+                        </p>
+                      </label>
+                    </div>
+                  </section>
+
+                  {!hasWrapArtwork && currentSectionImage && (
+                    <section>
+                      <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white/55">
+                        <Move className="h-4 w-4 text-primary" />
+                        Placement
+                      </div>
+                      <div className="rounded-[24px] border border-white/8 bg-black/25 p-4">
+                        <div className="mb-4 flex items-center justify-between text-xs text-white/65">
+                          <span>Move Image</span>
+                          <button
+                            type="button"
+                            onClick={resetPositionControls}
+                            className="font-semibold text-primary"
+                          >
+                            Reset
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => moveImage("left")}
+                            className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-primary"
+                          >
+                            <ArrowLeft className="h-4 w-4" />
+                          </button>
+                          <div className="min-w-16 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-center text-[11px] text-white/55">
+                            {imagePosition.x.toFixed(2)}
+                            <br />
+                            {imagePosition.y.toFixed(2)}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => moveImage("right")}
+                            className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-primary"
+                          >
+                            <ArrowRight className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="mt-4">
+                          <div className="mb-2 flex items-center justify-between text-xs text-white/65">
+                            <span className="flex items-center gap-2">
+                              <RotateCw className="h-3.5 w-3.5 text-primary" />
+                              Rotation
+                            </span>
+                            <span>{imageRotation.toFixed(0)}°</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="-45"
+                            max="45"
+                            step="1"
+                            value={imageRotation}
+                            onChange={(e) => setImageRotation(parseFloat(e.target.value))}
+                            className="w-full accent-primary"
+                          />
+                        </div>
+                      </div>
+                    </section>
+                  )}
+                </div>
+
+                <div className="mt-8 space-y-3">
+                  <button
+                    type="button"
+                    onClick={handleOrderNow}
+                    disabled={isOrdering}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-primary to-[#a5ec32] px-4 py-4 text-sm font-black uppercase tracking-[0.24em] text-black shadow-[0_0_26px_rgba(148,218,50,0.25)] disabled:opacity-70"
+                  >
+                    Finish Design
+                    <Sparkles className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-primary"
+                  >
+                    <Package className="h-4 w-4" />
+                    Add To Cart
+                  </button>
+                </div>
+              </div>
+            </aside>
+
+            <section className="relative overflow-hidden rounded-[30px] border border-primary/10 bg-[#080908] shadow-[0_32px_120px_rgba(0,0,0,0.45)]">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(148,218,50,0.12),transparent_40%)]" />
+              <div className="absolute inset-x-0 bottom-0 h-[36%] bg-[linear-gradient(rgba(118,185,0,0.16)_2px,transparent_2px),linear-gradient(90deg,rgba(118,185,0,0.16)_2px,transparent_2px)] bg-[size:84px_84px] [mask-image:linear-gradient(to_top,black_20%,transparent_90%)]" />
+
+              <div className="relative z-10 flex min-h-[820px] flex-col">
+                <div className="flex items-center justify-between px-5 py-5 md:px-8">
+                  <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.26em]">
+                    <div className="flex items-center gap-2 text-white/65">
+                      <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_10px_rgba(118,185,0,0.9)]" />
+                      Live
+                    </div>
+                    <div className="h-4 w-px bg-white/10" />
+                    <div className="text-primary">4K Kinetic</div>
+                  </div>
+
+                  <div className="hidden items-center gap-3 md:flex">
+                    <div className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
+                      {hasWrapArtwork ? "Wrap Active" : `Section ${activeSectionNumber}`}
+                    </div>
+                    <div className="rounded-full border border-white/8 bg-white/[0.03] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-white/65">
+                      {displayPrice}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative flex-1 px-4 pb-4 md:px-8 md:pb-8">
+                  <div className="pointer-events-none absolute inset-x-10 bottom-16 top-24 hidden rounded-full border border-primary/8 md:block" />
+                  <div className="pointer-events-none absolute inset-x-20 bottom-6 top-32 hidden rounded-full border border-primary/5 md:block" />
+
+                  <div className="relative mx-auto h-full max-w-5xl pt-12 md:pt-8">
+                    <MugViewer
                       customImage={selectedWrapArtwork?.image ?? null}
                       artworkSource={selectedWrapArtwork?.source}
                       customImageFit={selectedWrapArtwork?.fit}
@@ -696,718 +711,448 @@ export default function CustomizerPage() {
                       previewRotation={selectedWrapArtwork?.previewRotation}
                       previewResetToken={previewResetToken}
                     />
-                  </div>
 
-                  {/* Status badge */}
-                  {uploadedImageCount > 0 && (
-                    <motion.div
-                      className="absolute top-3 right-3 md:top-6 md:right-6 flex items-center gap-1.5 md:gap-2 px-2 py-1 md:px-4 md:py-2 bg-primary/20 backdrop-blur-xl border border-primary/50 rounded-full z-10"
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: "spring", duration: 0.6 }}
-                    >
-                      <Check className="w-3 h-3 md:w-4 md:h-4 text-primary" />
-                      <span className="text-[10px] md:text-sm font-bold text-primary">
-                        {uploadedImageCount} {getText('Image(s)', 'Image(s)')}
-                      </span>
-                    </motion.div>
-                  )}
-
-                  {/* 360 indicator */}
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 md:gap-2 px-2 py-1 md:px-4 md:py-2 bg-black/60 backdrop-blur-xl border border-primary/30 rounded-full z-10">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                    >
-                      <Zap className="w-3 h-3 md:w-4 md:h-4 text-primary" />
-                    </motion.div>
-                    <span className="text-[10px] md:text-xs font-semibold text-white hidden sm:inline">
-                      {getText('Drag to Rotate', 'Glissez pour Pivoter')}
-                    </span>
+                    <div className="pointer-events-none absolute inset-x-0 bottom-5 flex justify-center">
+                      <div className="flex items-center gap-3 rounded-full border border-primary/30 bg-black/55 px-4 py-2 backdrop-blur-md">
+                        <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                        <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
+                          360° Active
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Section Selector - Compact on Mobile */}
-                <motion.div
-                  className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl p-3 md:p-4 shadow-xl mt-4 md:mt-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <div className="flex items-center gap-2 mb-2 md:mb-3">
-                    <div className="w-6 h-6 md:w-8 md:h-8 bg-primary/20 rounded-lg flex items-center justify-center">
-                      <Grid3x3 className="w-3 h-3 md:w-4 md:h-4 text-primary" />
-                    </div>
-                    <h3 className="text-sm md:text-lg font-bold text-white">
-                      {getText('Select Section', 'Selectionner une section')}
-                    </h3>
-                    {!hasWrapArtwork && (
-                      <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                        {getText('Active', 'Active')} {activeSectionNumber}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3 mb-3">
-                    <span className="text-xs md:text-sm text-muted-foreground">
-                      {getText('Cup Type', 'Type de Tasse')}
-                    </span>
-                    <div className="flex items-center gap-2 bg-black/40 border border-primary/30 rounded-full p-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (cupType === 'hotzy') return;
-                          setCupType('hotzy');
-                          if (process.env.NODE_ENV !== 'production') {
-                            console.log(`[ga] filter_change cup_type=hotzy`);
-                          }
-                          void trackEvent('filter_change', {
-                            page_context: 'customizer',
-                            filter_name: 'cup_type',
-                            filter_value: 'hotzy',
-                            filter_action: 'set',
-                            ui_component: 'cup_type_toggle',
-                          });
-                        }}
-                        className={`px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold transition-all ${
-                          cupType === 'hotzy'
-                            ? 'bg-primary text-black'
-                            : 'text-white/80 hover:text-white'
-                        }`}
-                      >
-                        Hotzy
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (cupType === 'standard') return;
-                          setCupType('standard');
-                          if (process.env.NODE_ENV !== 'production') {
-                            console.log(`[ga] filter_change cup_type=standard`);
-                          }
-                          void trackEvent('filter_change', {
-                            page_context: 'customizer',
-                            filter_name: 'cup_type',
-                            filter_value: 'standard',
-                            filter_action: 'set',
-                            ui_component: 'cup_type_toggle',
-                          });
-                        }}
-                        className={`px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold transition-all ${
-                          cupType === 'standard'
-                            ? 'bg-primary text-black'
-                            : 'text-white/80 hover:text-white'
-                        }`}
-                      >
-                        Standard
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    {sectionOrder.map((section, index) => (
-                      <button
-                        key={section}
-                        onClick={() => setActiveSection(section)}
-                        className={`relative aspect-square rounded-lg border-2 transition-all overflow-hidden ${
-                          activeSection === section
-                            ? 'border-primary shadow-[0_0_20px_rgba(118,185,0,0.3)]'
-                            : 'border-primary/20 hover:border-primary/60'
-                        }`}
-                      >
-                        {sectionImages[section] ? (
-                          <>
-                            <img 
-                              src={sectionImages[section]!} 
-                              alt={`Section ${index + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveImage(section);
-                              }}
-                              className="absolute top-0.5 right-0.5 w-4 h-4 md:w-5 md:h-5 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                            >
-                              <X className="w-2 h-2 md:w-3 md:h-3 text-white" />
-                            </button>
-                          </>
-                        ) : (
-                          <div className="w-full h-full bg-black/40 flex flex-col items-center justify-center">
-                            <span className="text-white font-bold text-sm md:text-base">{index + 1}</span>
-                            <span className="text-[8px] md:text-[10px] text-muted-foreground mt-0.5">
-                              {getText('Empty', 'Vide')}
-                            </span>
-                          </div>
-                        )}
-                        
-                        {activeSection === section && (
-                          <motion.div 
-                            className="absolute bottom-0 left-0 right-0 h-1 bg-primary"
-                            layoutId="activeSection"
-                          />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-
-                  <p className="text-[9px] md:text-[10px] text-muted-foreground mt-2 text-center">
-                    {hasTemplateWrap && selectedWrapMode === 'full-wrap'
-                      ? 'Full-wrap template is covering the mug body. Sections are only for manual uploads.'
-                      : hasTemplateWrap
-                        ? 'Panel template is using the centered print area. Sections are only for manual uploads.'
-                      : hasUploadWrap
-                        ? 'Panoramic upload is covering the mug body as a full wrap. Sections are only for manual uploads.'
-                      : getText(
-                          'Pick a section, then upload. Wide artwork wraps automatically around the mug.',
-                          'Choisissez une section, puis telechargez. Les designs larges enveloppent automatiquement la tasse.'
-                        )}
-                  </p>
-                </motion.div>
-
-                {/* Quick stats - Hidden on small mobile */}
-                <motion.div
-                  className="hidden sm:grid grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                >
-                  <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/30 rounded-xl p-3 md:p-4 text-center">
-                    <div className="text-xl md:text-2xl font-black text-primary">11oz</div>
-                    <div className="text-[10px] md:text-xs text-muted-foreground">{getText('Capacity', 'CapacitÃƒÆ’Ã‚Â©')}</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/30 rounded-xl p-3 md:p-4 text-center">
-                    <div className="text-xl md:text-2xl font-black text-primary">4K</div>
-                    <div className="text-[10px] md:text-xs text-muted-foreground">{getText('Print', 'QualitÃƒÆ’Ã‚Â©')}</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/30 rounded-xl p-3 md:p-4 text-center">
-                    <div className="text-xl md:text-2xl font-black text-primary">24h</div>
-                    <div className="text-[10px] md:text-xs text-muted-foreground">{getText('Production', 'Production')}</div>
-                  </div>
-                </motion.div>
-              </div>
-            </motion.div>
-
-            {/* Controls - Collapsible on Mobile */}
-            <motion.div
-              className="order-2 space-y-4 md:space-y-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              {/* Upload Section - Collapsible */}
-              <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl md:rounded-2xl shadow-xl overflow-hidden">
-                <button
-                  onClick={() => toggleSection('upload')}
-                  className="w-full flex items-center justify-between p-4 md:p-6 lg:cursor-default"
-                >
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                      <Upload className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-base md:text-xl font-bold text-white">
-                        {getText('Upload Design', 'Telecharger un design')}
-                      </h3>
-                      <span className="text-xs md:text-sm text-primary lg:hidden">
-                        ({getText('Section', 'Section')} {activeSectionNumber})
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronDown className={`w-5 h-5 text-primary transition-transform lg:hidden ${expandedSections.upload ? 'rotate-180' : ''}`} />
-                </button>
-
-                <AnimatePresence>
-                  {(expandedSections.upload || isDesktop) && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="px-4 pb-4 md:px-6 md:pb-6"
+                <div className="hidden border-t border-primary/10 bg-[#0b0d0b]/80 px-8 py-5 backdrop-blur-xl md:block xl:hidden">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setCupType("hotzy")}
+                      className={`h-10 w-10 rounded-full border-2 ${
+                        cupType === "hotzy" ? "border-primary ring-4 ring-primary/20" : "border-white/20"
+                      } bg-[#0d0d0f]`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCupType("standard")}
+                      className={`h-10 w-10 rounded-full border-2 ${
+                        cupType === "standard" ? "border-primary ring-4 ring-primary/20" : "border-white/20"
+                      } bg-[#efefef]`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        document
+                          .getElementById("upload-panel")
+                          ?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+                      }
+                      className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary"
                     >
-                      <div
-                        className={`relative border-2 border-dashed rounded-xl p-4 md:p-6 text-center max-h-[240px] md:max-h-[260px] transition-all duration-300 ${
-                          isDragging
-                            ? 'border-primary bg-primary/10 scale-[1.02]'
-                            : 'border-primary/30 bg-black/40 hover:border-primary/60 hover:bg-black/60'
-                        }`}
-                        onDrop={handleDrop}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                      >
-                        <input
-                          type="file"
-                          id="image-upload"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="hidden"
-                        />
-                        <label
-                          htmlFor="image-upload"
-                          className="cursor-pointer"
-                          onClick={() => {
-                            void track('design_upload_start', {
-                              cup_type: cupType,
-                              section: activeSection,
-                              method: 'picker',
-                            });
-                          }}
-                        >
-                          <div className="flex flex-col items-center gap-2 md:gap-3">
-                            <div className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
-                              {hasWrapArtwork
-                                ? getText('Replace Wrap', 'Remplacer le wrap')
-                                : `${getText('Section', 'Section')} ${activeSectionNumber}`}
-                            </div>
-                            <motion.div
-                              className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary to-[#9ACD32] rounded-full flex items-center justify-center"
-                              whileHover={{ scale: 1.1, rotate: 5 }}
-                              transition={{ type: "spring" }}
-                            >
-                              <Upload className="w-5 h-5 md:w-6 md:h-6 text-black" />
-                            </motion.div>
-                            <div>
-                              <p className="text-white font-semibold text-sm md:text-base mb-1">
-                                {getText('Drop your design here', 'DÃƒÆ’Ã‚Â©posez votre design ici')}
-                              </p>
-                              <p className="text-xs md:text-sm text-muted-foreground">
-                                {getText('or click to browse', 'ou cliquez pour parcourir')}
-                              </p>
-                              <p className="text-[10px] md:text-xs text-muted-foreground mt-1 md:mt-2">
-                                {getText('JPG, PNG, SVG - Max 10MB', 'JPG, PNG, SVG - Max 10MB')}
-                              </p>
-                              <p className="mt-1 text-[10px] md:text-xs text-primary/80">
-                                {getText(
-                                  'Portrait images fill the selected section. Wide images become a full wrap.',
-                                  'Les images verticales remplissent la section active. Les images larges deviennent un wrap complet.'
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </label>
-                      </div>
-
-                      {!hasWrapArtwork && currentSectionImage && (
-                        <motion.div
-                          className="space-y-2 md:space-y-3 mt-3 md:mt-4"
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
-                          <div className="flex items-center justify-between p-2 md:p-3 bg-primary/10 border border-primary/30 rounded-lg">
-                            <span className="hidden">
-                              {getText('Design uploaded', 'Design uploaded')}
-                            </span>
-                            <span className="text-xs md:text-sm text-white font-medium">
-                              Design uploaded
-                            </span>
-                            <button
-                              onClick={() => handleRemoveImage(activeSection)}
-                              className="text-[10px] md:text-xs text-primary hover:text-primary/80 font-semibold"
-                            >
-                              {getText('Remove', 'Supprimer')}
-                            </button>
-                          </div>
-                          
-                          {currentSectionType === 'uploaded' && (
-                            <motion.button
-                              onClick={handleDuplicateToAll}
-                              className="w-full flex items-center justify-center gap-2 p-2 md:p-3 bg-primary/20 hover:bg-primary/30 border border-primary/40 rounded-lg transition-colors"
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <Copy className="w-3 h-3 md:w-4 md:h-4 text-primary" />
-                              <span className="text-xs md:text-sm text-primary font-semibold">
-                                {getText('Duplicate to All', 'Dupliquer Tout')}
-                              </span>
-                            </motion.button>
-                          )}
-                        </motion.div>
-                      )}
-
-                      {hasUploadWrap && (
-                        <motion.div
-                          className="space-y-2 md:space-y-3 mt-3 md:mt-4"
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
-                          <div className="flex items-center justify-between gap-3 p-2 md:p-3 bg-primary/10 border border-primary/30 rounded-lg">
-                            <div className="min-w-0">
-                              <span className="text-xs md:text-sm text-white font-medium block">
-                                Wrap uploaded
-                              </span>
-                              <span className="text-[10px] md:text-xs text-primary/80">
-                                Applied across the mug body
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={handleClearWrapArtwork}
-                              className="text-[10px] md:text-xs text-primary hover:text-primary/80 font-semibold shrink-0"
-                            >
-                              Clear
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Position Controls - Only show when image exists */}
-              {!hasWrapArtwork && currentSectionImage && (
-                <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl shadow-xl overflow-hidden">
-                  <button
-                    onClick={() => toggleSection('position')}
-                    className="w-full flex items-center justify-between p-3 md:p-4 lg:cursor-default"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 md:w-8 md:h-8 bg-primary/20 rounded-lg flex items-center justify-center">
-                        <Move className="w-3 h-3 md:w-4 md:h-4 text-primary" />
-                      </div>
-                      <h3 className="text-sm md:text-lg font-bold text-white">
-                        {getText('Position', 'Position')}
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          resetPositionControls();
-                        }}
-                        className="text-[10px] md:text-xs text-primary hover:text-primary/80 font-semibold"
-                      >
-                        {getText('Reset', 'RÃƒÆ’Ã‚Â©initialiser')}
-                      </button>
-                      <ChevronDown className={`w-5 h-5 text-primary transition-transform lg:hidden ${expandedSections.position ? 'rotate-180' : ''}`} />
-                    </div>
-                  </button>
-
-                  <AnimatePresence>
-                    {(expandedSections.position || isDesktop) && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="px-3 pb-3 md:px-4 md:pb-4 space-y-3 md:space-y-4"
-                      >
-                        <div>
-                          <label className="text-xs text-white font-medium mb-1.5 md:mb-2 block">
-                            {getText('Move Image', 'DÃƒÆ’Ã‚Â©placer')}
-                          </label>
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => moveImage('left')}
-                              className="w-9 h-9 md:w-10 md:h-10 bg-primary/20 hover:bg-primary/30 border border-primary/40 rounded-lg flex items-center justify-center transition-colors"
-                            >
-                              <ArrowLeft className="w-4 h-4 text-primary" />
-                            </button>
-                            
-                            <div className="w-9 h-9 md:w-10 md:h-10 bg-black/40 border border-primary/20 rounded-lg flex items-center justify-center">
-                              <span className="text-[8px] md:text-[9px] text-muted-foreground text-center leading-tight">
-                                {imagePosition.x.toFixed(2)}<br/>{imagePosition.y.toFixed(2)}
-                              </span>
-                            </div>
-                            
-                            <button
-                              onClick={() => moveImage('right')}
-                              className="w-9 h-9 md:w-10 md:h-10 bg-primary/20 hover:bg-primary/30 border border-primary/40 rounded-lg flex items-center justify-center transition-colors"
-                            >
-                              <ArrowRight className="w-4 h-4 text-primary" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <label className="text-xs text-white font-medium flex items-center gap-1.5">
-                              <RotateCw className="w-3 h-3 text-primary" />
-                              {getText('Rotation', 'Rotation')}
-                            </label>
-                            <span className="text-[10px] text-muted-foreground">{imageRotation.toFixed(0)}Ãƒâ€šÃ‚Â°</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="-45"
-                            max="45"
-                            step="1"
-                            value={imageRotation}
-                            onChange={(e) => setImageRotation(parseFloat(e.target.value))}
-                            className="w-full h-1.5 bg-primary/20 rounded-lg appearance-none cursor-pointer accent-primary"
-                          />
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      Upload
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        document
+                          .getElementById("templates-panel")
+                          ?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+                      }
+                      className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/65"
+                    >
+                      Templates
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleOrderNow}
+                      className="ml-auto rounded-full bg-primary px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-black"
+                    >
+                      Finish
+                    </button>
+                  </div>
                 </div>
-              )}
+              </div>
+            </section>
 
-              {/* Design Templates - Collapsible */}
-              <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl md:rounded-2xl shadow-xl overflow-hidden">
-                <button
-                  onClick={() => toggleSection('templates')}
-                  className="w-full flex items-center justify-between p-4 md:p-6 lg:cursor-default"
-                >
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                      <ImageIcon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+            <aside className="space-y-5">
+              <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary/75">
+                      Mug Sections
                     </div>
-                    <div className="text-left">
-                      <h3 className="text-base md:text-xl font-bold text-white">
-                        {getText('Templates', 'Modeles')}
-                      </h3>
-                      <p className="text-[10px] md:text-xs text-muted-foreground lg:hidden">
-                        {getText('Browse designs', 'Parcourir')}
-                      </p>
-                    </div>
+                    <h2 className="mt-1 text-xl font-black tracking-[-0.04em] text-white">
+                      Placement Grid
+                    </h2>
                   </div>
-                  <ChevronDown className={`w-5 h-5 text-primary transition-transform lg:hidden ${expandedSections.templates ? 'rotate-180' : ''}`} />
-                </button>
+                  {!hasWrapArtwork && (
+                    <div className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                      Active {activeSectionNumber}
+                    </div>
+                  )}
+                </div>
 
-                <AnimatePresence>
-                  {(expandedSections.templates || isDesktop) && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="px-4 pb-4 md:px-6 md:pb-6"
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="text-xs text-white/50">Cup Type</span>
+                  <div className="flex items-center gap-2 rounded-full border border-primary/15 bg-black/35 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setCupType("hotzy")}
+                      className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${
+                        cupType === "hotzy" ? "bg-primary text-black" : "text-white/65"
+                      }`}
                     >
-                      <div className="mb-3 text-[11px] md:text-xs text-muted-foreground text-center">
-                        Full-wrap templates wrap automatically. Panel templates stay in the centered print area.
-                      </div>
-                      <div className="relative">
-                        <CircularGallery
-                          items={customizerDesignTemplates.map((template) => ({
-                            image: template.image,
-                            text: getText(template.name, template.nameFr)
-                          }))}
-                          bend={3}
-                          textColor="#76B900"
-                          borderRadius={0.05}
-                          font="bold 30px Inter"
-                          scrollSpeed={2}
-                          scrollEase={0.05}
-                          onItemClick={(image) => {
-                            handleTemplateSelect(image);
-                          }}
-                        />
-                        
-                        <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 md:gap-2 px-2 py-1 md:px-4 md:py-2 bg-black/60 backdrop-blur-xl border border-primary/30 rounded-full z-10 pointer-events-none">
-                          <span className="text-[9px] md:text-xs font-semibold text-white">
-                            Drag or Click
-                          </span>
-                        </div>
-                      </div>
+                      Hotzy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCupType("standard")}
+                      className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${
+                        cupType === "standard" ? "bg-primary text-black" : "text-white/65"
+                      }`}
+                    >
+                      Standard
+                    </button>
+                  </div>
+                </div>
 
-                      {hasTemplateWrap && (
-                        <motion.div
-                          className="flex items-center justify-between gap-3 p-2 md:p-3 bg-primary/10 border border-primary/30 rounded-lg mt-3 md:mt-4"
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
-                          <div className="min-w-0">
-                            <span className="text-xs md:text-sm text-white font-medium truncate block">
-                              {selectedWrapTemplate
-                                ? getText(
-                                    selectedWrapTemplate.name,
-                                    selectedWrapTemplate.nameFr
-                                  )
-                                : selectedWrapMode === 'full-wrap'
-                                  ? 'Full-wrap template'
-                                  : 'Panel template'}
-                            </span>
-                            <span className="text-[10px] md:text-xs text-primary/80">
-                              {selectedWrapMode === 'full-wrap'
-                                ? 'Applied across the mug body'
-                                : 'Applied to the centered print area'}
-                            </span>
-                          </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {sectionOrder.map((section, index) => (
+                    <button
+                      key={section}
+                      type="button"
+                      onClick={() => setActiveSection(section)}
+                      className={`relative aspect-square overflow-hidden rounded-[20px] border transition ${
+                        activeSection === section
+                          ? "border-primary bg-primary/8"
+                          : "border-white/10 bg-black/30"
+                      }`}
+                    >
+                      {sectionImages[section] ? (
+                        <>
+                          <img
+                            src={sectionImages[section]!}
+                            alt={`Section ${index + 1}`}
+                            className="h-full w-full object-cover"
+                          />
                           <button
                             type="button"
-                            onClick={handleClearWrapArtwork}
-                            className="text-[10px] md:text-xs text-primary hover:text-primary/80 font-semibold shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveImage(section);
+                            }}
+                            className="absolute right-2 top-2 rounded-full bg-black/70 p-1 text-white"
                           >
-                            Clear
+                            <X className="h-3 w-3" />
                           </button>
-                        </motion.div>
+                        </>
+                      ) : (
+                        <div className="flex h-full flex-col items-center justify-center">
+                          <span className="text-xl font-black text-white">{index + 1}</span>
+                          <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.2em] text-white/35">
+                            Empty
+                          </span>
+                        </div>
                       )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                    </button>
+                  ))}
+                </div>
 
-              
-              {/* Pricing - Collapsible */}
-              <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl md:rounded-2xl shadow-xl overflow-hidden">
-                <button
-                  onClick={() => toggleSection('pricing')}
-                  className="w-full flex items-center justify-between p-4 md:p-6"
-                >
-                  <h3 className="text-base md:text-xl font-bold text-white">
-                    {getText('Pricing', 'Prix')}
-                  </h3>
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <span className="text-lg md:text-2xl font-black text-primary">{displayPrice}</span>
-                    <ChevronDown className={`w-5 h-5 text-primary transition-transform ${expandedSections.pricing ? 'rotate-180' : ''}`} />
-                  </div>
-                </button>
+                <p className="mt-4 text-xs text-white/45">
+                  {hasTemplateWrap && selectedWrapMode === "full-wrap"
+                    ? "Full-wrap template is covering the mug body. Manual sections stay available for upload work."
+                    : hasUploadWrap
+                      ? "Wide upload is active as a full-wrap layout."
+                      : "Choose a section for focused uploads, or use a wide image to cover the whole mug."}
+                </p>
 
-                <AnimatePresence>
-                  {expandedSections.pricing && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="px-4 pb-4 md:px-6 md:pb-6 space-y-2 md:space-y-3"
-                    >
-                      <div className="flex justify-between items-center text-xs md:text-sm">
-                        <span className="text-muted-foreground">{getText('Per Mug', 'Par Tasse')}</span>
-                        <span className="text-white font-semibold">{displayPrice}</span>
-                      </div>
-                      <div className="border-t border-primary/20 pt-2 md:pt-3 text-[10px] md:text-xs text-muted-foreground">
-                        {getText('Price depends on cup type', 'Le prix depend du type de tasse')}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Details - Collapsible */}
-              <div className="bg-gradient-to-br from-[#1A1A1A] to-black border border-primary/20 rounded-xl md:rounded-2xl shadow-xl overflow-hidden hidden md:block">
-                <button
-                  onClick={() => toggleSection('details')}
-                  className="w-full flex items-center justify-between p-4 md:p-6"
-                >
-                  <h3 className="text-base md:text-xl font-bold text-white">
-                    {getText('Details & Features', 'DÃƒÆ’Ã‚Â©tails & CaractÃƒÆ’Ã‚Â©ristiques')}
-                  </h3>
-                  <ChevronDown className={`w-5 h-5 text-primary transition-transform ${expandedSections.details ? 'rotate-180' : ''}`} />
-                </button>
-
-                <AnimatePresence>
-                  {expandedSections.details && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="px-4 pb-4 md:px-6 md:pb-6 space-y-4"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{getText('Material', 'MatÃƒÆ’Ã‚Â©riau')}</span>
-                          <span className="text-white font-medium">{getText('Ceramic', 'CÃƒÆ’Ã‚Â©ramique')}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{getText('Capacity', 'CapacitÃƒÆ’Ã‚Â©')}</span>
-                          <span className="text-white font-medium">11 oz</span>
-                        </div>
-                      </div>
-                      
-                      <div className="border-t border-primary/20 pt-4 space-y-2">
-                        {[
-                          { en: 'Dishwasher safe', fr: 'Lave-vaisselle' },
-                          { en: 'Microwave safe', fr: 'Micro-ondes' },
-                          { en: 'Lifetime warranty', fr: 'Garantie ÃƒÆ’Ã‚Â  vie' }
-                        ].map((feature) => (
-                          <div key={feature.en} className="flex items-center gap-2 text-light-gray">
-                            <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                            <span className="text-sm">{getText(feature.en, feature.fr)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* CTA Buttons - Always visible, sticky on mobile */}
-              <div className="space-y-3 sticky bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl p-4 -mx-4 border-t border-primary/20 md:static md:bg-transparent md:backdrop-blur-none md:p-0 md:border-none z-20">
-                <motion.button
-                  onClick={handleOrderNow}
-                  disabled={isOrdering}
-                  className={`w-full bg-gradient-to-r from-primary via-[#9ACD32] to-primary text-black font-black text-base md:text-lg py-4 md:py-5 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 md:gap-3 ${
-                    isOrdering
-                      ? 'opacity-70 cursor-not-allowed'
-                      : 'hover:shadow-[0_0_30px_rgba(118,185,0,0.5)]'
-                  }`}
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
-                  {getText('Order Now', 'Commander')} - {displayPrice}
-                  <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
-                </motion.button>
-                {orderNowStatus && (
-                  <div className="text-[10px] md:text-xs text-muted-foreground text-center">
-                    {orderNowStatus}
-                  </div>
+                {!hasWrapArtwork && currentSectionType === "uploaded" && (
+                  <button
+                    type="button"
+                    onClick={handleDuplicateToAll}
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.2em] text-primary"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Duplicate To All
+                  </button>
                 )}
 
-                <motion.button
-                  onClick={handleAddToCart}
-                  className="w-full bg-transparent border-2 border-primary text-primary font-bold text-base md:text-lg py-4 md:py-5 rounded-xl hover:bg-primary/10 transition-all duration-300 flex items-center justify-center gap-2 md:gap-3"
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Package className="w-4 h-4 md:w-5 md:h-5" />
-                  {getText('Add to Cart', 'Ajouter')}
-                </motion.button>
+                {!hasWrapArtwork && currentSectionImage && (
+                  <div className="mt-4 rounded-2xl border border-white/8 bg-black/25 p-4">
+                    <div className="mb-3 flex items-center justify-between text-xs text-white/60">
+                      <span className="flex items-center gap-2">
+                        <RotateCw className="h-3.5 w-3.5 text-primary" />
+                        Rotation
+                      </span>
+                      <button
+                        type="button"
+                        onClick={resetPositionControls}
+                        className="font-semibold text-primary"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                    <input
+                      type="range"
+                      min="-45"
+                      max="45"
+                      step="1"
+                      value={imageRotation}
+                      onChange={(e) => setImageRotation(parseFloat(e.target.value))}
+                      className="w-full accent-primary"
+                    />
+                    <div className="mt-3 flex items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => moveImage("left")}
+                        className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-primary"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                      </button>
+                      <div className="min-w-16 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-center text-[11px] text-white/55">
+                        {imagePosition.x.toFixed(2)}
+                        <br />
+                        {imagePosition.y.toFixed(2)}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => moveImage("right")}
+                        className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-primary"
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </motion.div>
-          </div>
+            </aside>
 
-          {/* Bottom Features - Simplified on mobile */}
-          <motion.div
-            className="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-          >
-            <div className="text-center">
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-3 md:mb-4">
-                <Package className="text-primary" size={24} />
+            <div id="templates-panel" className="space-y-5">
+              <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="rounded-2xl bg-primary/12 p-2.5 text-primary">
+                    <ImageIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary/75">
+                      Template Bank
+                    </div>
+                    <h3 className="text-xl font-black tracking-[-0.04em] text-white">
+                      Graphic Carousel
+                    </h3>
+                  </div>
+                </div>
+
+                <p className="mb-4 text-xs text-white/45">
+                  Full-wrap templates wrap automatically. Click a card to apply it to the live mug preview.
+                </p>
+
+                <div className="relative">
+                  <CircularGallery
+                    items={customizerDesignTemplates.map((template) => ({
+                      image: template.image,
+                      text: getText(template.name, template.nameFr),
+                    }))}
+                    bend={3}
+                    textColor="#76B900"
+                    borderRadius={0.05}
+                    font="bold 28px Inter"
+                    scrollSpeed={2}
+                    scrollEase={0.05}
+                    onItemClick={(image) => {
+                      handleTemplateSelect(image);
+                    }}
+                  />
+
+                  <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-primary/20 bg-black/55 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-white/70 backdrop-blur-md">
+                    Drag Or Click
+                  </div>
+                </div>
+
+                {(hasTemplateWrap || hasUploadWrap) && (
+                  <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/10 p-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-white">
+                        {hasTemplateWrap
+                          ? getText(
+                              selectedWrapTemplate?.name ?? "Template Applied",
+                              selectedWrapTemplate?.nameFr ?? "Template Applied"
+                            )
+                          : "Custom Wrap Uploaded"}
+                      </div>
+                      <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-primary/80">
+                        {selectedWrapMode === "full-wrap"
+                          ? "Applied Across Mug Body"
+                          : "Centered Print Area"}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearWrapArtwork}
+                      className="shrink-0 text-xs font-bold uppercase tracking-[0.18em] text-primary"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
               </div>
-              <h3 className="text-lg md:text-xl font-bold text-white mb-2">
-                {getText('Premium Quality', 'QualitÃƒÆ’Ã‚Â© Premium')}
-              </h3>
-              <p className="text-sm md:text-base text-muted-foreground">
-                {getText('Professional sublimation printing', 'Impression professionnelle')}
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-3 md:mb-4">
-                <Truck className="text-primary" size={24} />
+
+              <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="rounded-2xl bg-primary/12 p-2.5 text-primary">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary/75">
+                      Output
+                    </div>
+                    <h3 className="text-xl font-black tracking-[-0.04em] text-white">
+                      Finish Design
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/25 px-4 py-3">
+                    <span className="text-white/50">Live price</span>
+                    <span className="font-black text-primary">{displayPrice}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/25 px-4 py-3">
+                    <span className="text-white/50">Print mode</span>
+                    <span className="font-semibold text-white">
+                      {hasWrapArtwork ? "Full Wrap" : "Section Layout"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/25 px-4 py-3">
+                    <span className="text-white/50">Uploaded assets</span>
+                    <span className="font-semibold text-white">
+                      {hasWrapArtwork ? 1 : uploadedImageCount}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-5 space-y-3">
+                  <button
+                    type="button"
+                    onClick={handleOrderNow}
+                    disabled={isOrdering}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-primary to-[#a5ec32] px-4 py-4 text-sm font-black uppercase tracking-[0.24em] text-black shadow-[0_0_26px_rgba(148,218,50,0.25)] disabled:opacity-70"
+                  >
+                    Finish Design
+                    <Sparkles className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/20 bg-primary/8 px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-primary"
+                  >
+                    <Package className="h-4 w-4" />
+                    Add To Cart
+                  </button>
+                </div>
+
+                {orderNowStatus && (
+                  <div className="mt-3 text-center text-xs text-white/45">{orderNowStatus}</div>
+                )}
               </div>
-              <h3 className="text-lg md:text-xl font-bold text-white mb-2">
-                {getText('Fast Delivery', 'Livraison Rapide')}
-              </h3>
-              <p className="text-sm md:text-base text-muted-foreground">
-                {getText('24 hours production', 'Production 24 heures')}
-              </p>
             </div>
-            <div className="text-center">
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-3 md:mb-4">
-                <Shield className="text-primary" size={24} />
-              </div>
-              <h3 className="text-lg md:text-xl font-bold text-white mb-2">
-                {getText('Satisfaction', 'Satisfaction')}
-              </h3>
-              <p className="text-sm md:text-base text-muted-foreground">
-                {getText('100% guaranteed', '100% garantie')}
-              </p>
-            </div>
-          </motion.div>
+          </div>
         </main>
 
-        <Footer />
+        <div className="fixed bottom-20 left-0 z-40 w-full px-4 xl:hidden">
+          <div className="mx-auto max-w-md rounded-[30px] border border-primary/12 bg-[#111411]/88 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById("upload-panel")
+                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                }
+                className="flex flex-1 flex-col items-center gap-1 rounded-[22px] bg-primary/12 px-3 py-3 text-primary"
+              >
+                <Palette className="h-5 w-5" />
+                <span className="text-[9px] font-black uppercase tracking-[0.18em]">Color</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById("templates-panel")
+                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                }
+                className="flex flex-1 flex-col items-center gap-1 px-3 py-3 text-white/55"
+              >
+                <ImageIcon className="h-5 w-5" />
+                <span className="text-[9px] font-black uppercase tracking-[0.18em]">Graphic</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById("templates-panel")
+                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                }
+                className="flex flex-1 flex-col items-center gap-1 px-3 py-3 text-white/55"
+              >
+                <Type className="h-5 w-5" />
+                <span className="text-[9px] font-black uppercase tracking-[0.18em]">Text</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById("upload-panel")
+                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                }
+                className="flex flex-1 flex-col items-center gap-1 px-3 py-3 text-white/55"
+              >
+                <Pipette className="h-5 w-5" />
+                <span className="text-[9px] font-black uppercase tracking-[0.18em]">Finish</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleOrderNow}
+                className="ml-1 flex h-14 w-14 shrink-0 items-center justify-center rounded-[22px] bg-primary text-black shadow-[0_0_24px_rgba(148,218,50,0.35)]"
+              >
+                <CheckCircle2 className="h-6 w-6" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <nav className="fixed bottom-0 left-0 z-50 flex w-full items-center justify-around border-t border-white/6 bg-[#090b09]/86 px-4 pb-5 pt-3 backdrop-blur-xl md:hidden">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="flex flex-col items-center gap-1 text-white/45"
+          >
+            <Home className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.18em]">Home</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/shop")}
+            className="flex flex-col items-center gap-1 text-white/45"
+          >
+            <LayoutGrid className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.18em]">Catalog</span>
+          </button>
+          <div className="rounded-2xl border border-primary/20 bg-primary/8 px-4 py-2 text-primary">
+            <div className="flex flex-col items-center gap-1">
+              <Grid3x3 className="h-5 w-5" />
+              <span className="text-[9px] font-bold uppercase tracking-[0.18em]">Design</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push("/checkout")}
+            className="flex flex-col items-center gap-1 text-white/45"
+          >
+            <ShoppingCart className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.18em]">Cart</span>
+          </button>
+        </nav>
       </div>
     </div>
   );
 }
-
-
-
-
-
-
