@@ -320,6 +320,17 @@ const websiteCustomizerTemplates: DesignTemplate[] = [
     wrapOffsetX: 0.02,
     previewRotation: 0,
   }),
+  createCustomizerTemplate({
+    id: 'website-cosmic-neon-floral-silhouette',
+    name: 'Cosmic Neon Floral Silhouette',
+    image: '/templates/6df1ac1b-0c87-438d-b43e-4723e841fe98.png',
+    category: 'mystical',
+    tags: ['cosmic', 'neon', 'floral', 'silhouette', 'full-wrap'],
+    focalX: 0.5,
+    focalY: 0.48,
+    wrapOffsetX: 0,
+    previewRotation: 0,
+  }),
 ];
 
 const normalizeDesignTemplate = (
