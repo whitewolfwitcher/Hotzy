@@ -228,7 +228,7 @@ export default function CustomizerPage() {
           focalX: 0.5,
           focalY: 0.5,
           wrapOffsetX: 0,
-          previewRotation: 0,
+          previewRotation: Math.PI,
         });
         setImagePosition({ x: 0, y: 0 });
         setImageRotation(0);
@@ -273,7 +273,7 @@ export default function CustomizerPage() {
           focalX: 0.5,
           focalY: 0.5,
           wrapOffsetX: 0,
-          previewRotation: 0,
+          previewRotation: Math.PI,
         });
         setImagePosition({ x: 0, y: 0 });
         setImageRotation(0);
@@ -315,7 +315,7 @@ export default function CustomizerPage() {
       wrapOffsetX:
         mode === "full-wrap" ? selectedTemplate?.wrapOffsetX ?? 0 : undefined,
       previewRotation:
-        mode === "full-wrap" ? selectedTemplate?.previewRotation ?? 0 : undefined,
+        mode === "full-wrap" ? selectedTemplate?.previewRotation ?? Math.PI : undefined,
     });
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
@@ -491,8 +491,8 @@ export default function CustomizerPage() {
         </header>
 
         <main className="px-4 pb-28 pt-20 md:px-6 md:pb-10">
-          <div className="mx-auto grid max-w-[1700px] gap-6 xl:grid-cols-[320px_minmax(0,1fr)_360px]">
-            <aside className="hidden xl:flex xl:flex-col xl:gap-5">
+          <div className="mx-auto grid max-w-[1700px] gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+            <aside className="hidden">
               <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
                 <div className="mb-8">
                   <div className="text-[10px] font-bold uppercase tracking-[0.28em] text-primary/80">
@@ -924,9 +924,7 @@ export default function CustomizerPage() {
                   </div>
                 )}
               </div>
-            </aside>
-
-            <div id="templates-panel" className="space-y-5">
+              <div id="templates-panel" className="space-y-5">
               <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="rounded-2xl bg-primary/12 p-2.5 text-primary">
@@ -1054,7 +1052,8 @@ export default function CustomizerPage() {
                   <div className="mt-3 text-center text-xs text-white/45">{orderNowStatus}</div>
                 )}
               </div>
-            </div>
+              </div>
+            </aside>
           </div>
         </main>
 

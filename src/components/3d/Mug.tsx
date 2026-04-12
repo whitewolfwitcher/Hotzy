@@ -101,6 +101,7 @@ function FallbackMug({
         loadedCount++
         if (loadedCount === totalImages) {
           const canvasTexture = new THREE.CanvasTexture(canvas)
+          canvasTexture.flipY = false
           canvasTexture.wrapS = THREE.RepeatWrapping
           canvasTexture.wrapT = THREE.ClampToEdgeWrapping
           canvasTexture.minFilter = THREE.LinearMipMapLinearFilter
@@ -211,6 +212,7 @@ function FallbackMug({
         }
 
         const canvasTexture = new THREE.CanvasTexture(canvas)
+        canvasTexture.flipY = false
         canvasTexture.wrapS =
           mode === 'full-wrap' ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping
         canvasTexture.wrapT = THREE.ClampToEdgeWrapping
