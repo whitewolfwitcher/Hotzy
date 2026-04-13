@@ -120,20 +120,20 @@ export default function MugViewer({
   previewRotation = 0,
   previewResetToken = 0,
 }: MugViewerProps) {
-  const backgroundColor = cupType === 'standard' ? '#F4F4F4' : '#D8D8D8'
-  const floorColor = cupType === 'standard' ? '#E9E9E9' : '#D6D6D6'
-  const initialCameraPosition: [number, number, number] = [0.12, 0.2, 0.78]
-  const initialTarget: [number, number, number] = [0, 0.14, 0]
+  const backgroundColor = cupType === 'standard' ? '#2b2828' : '#171717'
+  const floorColor = cupType === 'standard' ? '#4a4545' : '#2a2828'
+  const initialCameraPosition: [number, number, number] = [0.16, 0.17, 0.5]
+  const initialTarget: [number, number, number] = [0, 0.115, 0]
   const previewRotationY =
     customImage && artworkMode === 'full-wrap' ? previewRotation : 0.15
 
   return (
-    <div className="h-[70vh] w-full relative overflow-hidden rounded-lg border border-border" style={{ background: backgroundColor }}>
+    <div className="relative mx-auto h-[72vh] min-h-[620px] max-h-[860px] w-full max-w-[720px] overflow-hidden rounded-[28px] border border-white/10 bg-[#121212]" style={{ background: backgroundColor }}>
       <Canvas
         shadows
         camera={{ 
           position: initialCameraPosition, 
-          fov: 28, 
+          fov: 24, 
           near: 0.05, 
           far: 8 
         }}
@@ -162,19 +162,19 @@ export default function MugViewer({
         {/* Balanced studio lighting - performance optimized */}
         
         {/* Ambient light - reduced for balanced look */}
-        <ambientLight intensity={0.45} color="#FFFFFF" />
+          <ambientLight intensity={0.34} color="#FFFFFF" />
         
         {/* Hemisphere light - mid-tone sky/ground */}
-        <hemisphereLight 
-          color="#F1F1F1"
-          groundColor="#CFCFCF"
-          intensity={0.72}
+          <hemisphereLight 
+          color="#E6E6E6"
+          groundColor="#1B1B1B"
+          intensity={0.52}
         />
         
         {/* Main directional light - soft shadows with 1024 map */}
         <directionalLight
           position={[2.8, 3.4, 2.6]}
-          intensity={2.35}
+          intensity={2.2}
           color="#FFFFFF"
           castShadow
           shadow-mapSize-width={1024}
@@ -191,8 +191,8 @@ export default function MugViewer({
         {/* Fill directional light - no shadows for performance */}
         <directionalLight 
           position={[-2.4, 1.9, -1.8]} 
-          intensity={1.05} 
-          color="#E7E7E7"
+          intensity={0.62} 
+          color="#AFAFAF"
           castShadow={false}
         />
 
@@ -200,14 +200,14 @@ export default function MugViewer({
           position={[-1.6, 1.3, 2.2]}
           angle={0.45}
           penumbra={0.9}
-          intensity={0.75}
+          intensity={0.48}
           color="#ffffff"
           castShadow={false}
         />
 
         <pointLight
           position={[0.65, 0.22, 0.85]}
-          intensity={0.35}
+          intensity={0.2}
           distance={2}
           color="#ffffff"
         />
@@ -217,9 +217,9 @@ export default function MugViewer({
           <BalancedStudioFloor floorColor={floorColor} />
 
           {/* Mug with material tuning for balanced look */}
-          <group position={[0, -0.005, 0]} rotation={[0, previewRotationY, 0]} scale={[1, 1, 1]}>
+          <group position={[0, -0.012, 0]} rotation={[0, previewRotationY, 0]} scale={[1, 1, 1]}>
             <Mug 
-              scale={1.34} 
+              scale={1.82} 
               customImage={customImage} 
               artworkSource={artworkSource}
               customImageFit={customImageFit}

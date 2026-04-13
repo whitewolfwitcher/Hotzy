@@ -694,7 +694,7 @@ export default function CustomizerPage() {
                   <div className="pointer-events-none absolute inset-x-10 bottom-16 top-24 hidden rounded-full border border-primary/8 md:block" />
                   <div className="pointer-events-none absolute inset-x-20 bottom-6 top-32 hidden rounded-full border border-primary/5 md:block" />
 
-                  <div className="relative mx-auto h-full max-w-5xl pt-12 md:pt-8">
+                  <div className="relative mx-auto h-full max-w-[860px] pt-8 md:pt-4">
                     <MugViewer
                       customImage={selectedWrapArtwork?.image ?? null}
                       artworkSource={selectedWrapArtwork?.source}
