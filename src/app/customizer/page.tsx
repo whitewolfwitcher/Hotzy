@@ -49,18 +49,6 @@ const MugViewer = dynamic(() => import("@/components/3d/mug-viewer"), {
   ),
 });
 
-const CircularGallery = dynamic(() => import("@/components/3d/CircularGallery"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-[360px] items-center justify-center rounded-[24px] border border-primary/10 bg-[#0d0f0d]">
-      <div className="text-center">
-        <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        <p className="text-sm text-white/55">Loading Gallery...</p>
-      </div>
-    </div>
-  ),
-});
-
 type SectionKey = "section1" | "section2" | "section3";
 type SectionImages = Record<SectionKey, string | null>;
 type SectionImageTypes = Record<SectionKey, "uploaded" | null>;
@@ -770,6 +758,65 @@ export default function CustomizerPage() {
                     </button>
                   </div>
                 </div>
+
+                <div id="templates-panel" className="border-t border-primary/10 bg-[#090b09]/88 px-5 py-10 md:px-8 md:py-12">
+                  <div className="mx-auto max-w-[1120px]">
+                    <div className="text-center">
+                      <div className="text-[12px] font-bold uppercase tracking-[0.32em] text-primary/75">
+                        Select A Template Below
+                      </div>
+                      <p className="mx-auto mt-4 max-w-3xl text-sm text-white/50 md:text-lg">
+                        Full-wrap templates wrap automatically onto the mug. Click a template to apply it to the live mug preview.
+                      </p>
+                    </div>
+
+                    <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+                      {customizerDesignTemplates.map((template) => {
+                        const isSelected = selectedWrapArtwork?.image === template.image
+
+                        return (
+                          <button
+                            key={template.id}
+                            type="button"
+                            onClick={() => handleTemplateSelect(template.image)}
+                            className={`text-left transition ${
+                              isSelected ? "scale-[1.02]" : "hover:-translate-y-1"
+                            }`}
+                          >
+                            <div
+                              className={`overflow-hidden rounded-[20px] border bg-black/35 shadow-[0_20px_60px_rgba(0,0,0,0.28)] ${
+                                isSelected ? "border-primary shadow-[0_0_0_1px_rgba(148,218,50,0.35)]" : "border-white/8"
+                              }`}
+                            >
+                              <img
+                                src={template.image}
+                                alt={getText(template.name, template.nameFr)}
+                                className="aspect-[16/10] w-full object-cover"
+                              />
+                            </div>
+                            <div className="px-2 pt-3 text-center">
+                              <div className="text-lg leading-tight text-primary">
+                                {getText(template.name, template.nameFr)}
+                              </div>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {(hasTemplateWrap || hasUploadWrap) && (
+                      <div className="mt-8 flex justify-center">
+                        <button
+                          type="button"
+                          onClick={handleClearWrapArtwork}
+                          className="rounded-full border border-primary/35 bg-primary/8 px-10 py-3 text-sm font-bold uppercase tracking-[0.28em] text-primary"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -979,76 +1026,6 @@ export default function CustomizerPage() {
                   </div>
                 )}
               </div>
-              <div id="templates-panel" className="space-y-5">
-              <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="rounded-2xl bg-primary/12 p-2.5 text-primary">
-                    <ImageIcon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary/75">
-                      Template Bank
-                    </div>
-                    <h3 className="text-xl font-black tracking-[-0.04em] text-white">
-                      Graphic Carousel
-                    </h3>
-                  </div>
-                </div>
-
-                <p className="mb-4 text-xs text-white/45">
-                  Full-wrap templates wrap automatically. Click a card to apply it to the live mug preview.
-                </p>
-
-                <div className="relative">
-                  <CircularGallery
-                    items={customizerDesignTemplates.map((template) => ({
-                      image: template.image,
-                      text: getText(template.name, template.nameFr),
-                    }))}
-                    bend={3}
-                    textColor="#76B900"
-                    borderRadius={0.05}
-                    font="bold 28px Inter"
-                    scrollSpeed={2}
-                    scrollEase={0.05}
-                    onItemClick={(image) => {
-                      handleTemplateSelect(image);
-                    }}
-                  />
-
-                  <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-primary/20 bg-black/55 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-white/70 backdrop-blur-md">
-                    Drag Or Click
-                  </div>
-                </div>
-
-                {(hasTemplateWrap || hasUploadWrap) && (
-                  <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/10 p-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-white">
-                        {hasTemplateWrap
-                          ? getText(
-                              selectedWrapTemplate?.name ?? "Template Applied",
-                              selectedWrapTemplate?.nameFr ?? "Template Applied"
-                            )
-                          : "Custom Wrap Uploaded"}
-                      </div>
-                      <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-primary/80">
-                        {selectedWrapMode === "full-wrap"
-                          ? "Applied Across Mug Body"
-                          : "Centered Print Area"}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleClearWrapArtwork}
-                      className="shrink-0 text-xs font-bold uppercase tracking-[0.18em] text-primary"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                )}
-              </div>
-
               <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="rounded-2xl bg-primary/12 p-2.5 text-primary">
@@ -1106,7 +1083,6 @@ export default function CustomizerPage() {
                 {orderNowStatus && (
                   <div className="mt-3 text-center text-xs text-white/45">{orderNowStatus}</div>
                 )}
-              </div>
               </div>
             </aside>
           </div>
