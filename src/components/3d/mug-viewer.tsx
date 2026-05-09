@@ -26,7 +26,7 @@ interface MugViewerProps {
   previewResetToken?: number
 }
 
-const INITIAL_CAMERA_POSITION: [number, number, number] = [0.13, 0.18, 0.72]
+const INITIAL_CAMERA_POSITION: [number, number, number] = [0.12, 0.21, 0.88]
 const INITIAL_CAMERA_TARGET: [number, number, number] = [0, 0.12, 0]
 
 // Balanced mid-tone studio floor
@@ -88,8 +88,8 @@ function ResetCamera({
       autoRotate={false}
       enableDamping={true}
       dampingFactor={0.1}
-      minDistance={0.62}
-      maxDistance={1.35}
+      minDistance={0.68}
+      maxDistance={1.45}
       target={target}
       mouseButtons={{
         LEFT: THREE.MOUSE.ROTATE,
@@ -217,7 +217,7 @@ export default function MugViewer({
           <BalancedStudioFloor floorColor={floorColor} />
 
           {/* Mug with material tuning for balanced look */}
-          <group position={[0.055, -0.018, 0]} rotation={[0, previewRotationY, 0]} scale={[1.02, 1.06, 1.02]}>
+          <group position={[0.035, -0.08, 0]} rotation={[0, previewRotationY, 0]} scale={[0.9, 1.2, 0.9]}>
             <Mug 
               scale={1.78}
               customImage={customImage} 
