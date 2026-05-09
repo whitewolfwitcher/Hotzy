@@ -26,6 +26,9 @@ interface MugViewerProps {
   previewResetToken?: number
 }
 
+const INITIAL_CAMERA_POSITION: [number, number, number] = [0.13, 0.18, 0.72]
+const INITIAL_CAMERA_TARGET: [number, number, number] = [0, 0.12, 0]
+
 // Balanced mid-tone studio floor
 function BalancedStudioFloor({ floorColor }: { floorColor: string }) {
   return (
@@ -64,12 +67,14 @@ function ResetCamera({
   resetToken: number
 }) {
   const { camera } = useThree()
-  const controlsRef = useRef<{
-    target: THREE.Vector3
-    update: () => void
-  } | null>(null)
+  const hasInitialized = useRef(false)
 
   useEffect(() => {
+    if (hasInitialized.current && resetToken === 0) {
+      return
+    }
+
+    hasInitialized.current = true
     camera.position.set(position[0], position[1], position[2])
     camera.lookAt(target[0], target[1], target[2])
     camera.updateProjectionMatrix()
@@ -77,27 +82,22 @@ function ResetCamera({
 
   return (
     <OrbitControls
-      ref={controlsRef}
-      enablePan={true}
+      enablePan={false}
       enableZoom={true}
       enableRotate={true}
       autoRotate={false}
       enableDamping={true}
       dampingFactor={0.1}
-      minDistance={0.5}
-      maxDistance={1.55}
+      minDistance={0.62}
+      maxDistance={1.35}
       target={target}
       mouseButtons={{
         LEFT: THREE.MOUSE.ROTATE,
-        MIDDLE: THREE.MOUSE.PAN,
-        RIGHT: THREE.MOUSE.PAN,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.ROTATE,
       }}
       maxPolarAngle={Math.PI / 1.8}
       minPolarAngle={Math.PI / 6}
-      onChange={(event) => {
-        const controls = event.target as unknown as { target: THREE.Vector3; update: () => void }
-        controlsRef.current = controls
-      }}
       makeDefault
     />
   )
@@ -122,18 +122,18 @@ export default function MugViewer({
 }: MugViewerProps) {
   const backgroundColor = cupType === 'standard' ? '#2b2828' : '#171717'
   const floorColor = cupType === 'standard' ? '#4a4545' : '#2a2828'
-  const initialCameraPosition: [number, number, number] = [0.16, 0.17, 0.5]
-  const initialTarget: [number, number, number] = [0, 0.115, 0]
+  const initialCameraPosition = INITIAL_CAMERA_POSITION
+  const initialTarget = INITIAL_CAMERA_TARGET
   const previewRotationY =
     customImage && artworkMode === 'full-wrap' ? previewRotation : 0.15
 
   return (
-    <div className="relative mx-auto h-[72vh] min-h-[620px] max-h-[860px] w-full max-w-[720px] overflow-hidden rounded-[28px] border border-white/10 bg-[#121212]" style={{ background: backgroundColor }}>
+    <div className="relative mx-auto h-[68vh] min-h-[560px] max-h-[820px] w-full max-w-[760px] overflow-hidden rounded-[24px] border border-white/10 bg-[#121212]" style={{ background: backgroundColor }}>
       <Canvas
         shadows
         camera={{ 
           position: initialCameraPosition, 
-          fov: 24, 
+          fov: 25,
           near: 0.05, 
           far: 8 
         }}
@@ -217,9 +217,9 @@ export default function MugViewer({
           <BalancedStudioFloor floorColor={floorColor} />
 
           {/* Mug with material tuning for balanced look */}
-          <group position={[0, -0.012, 0]} rotation={[0, previewRotationY, 0]} scale={[1, 1, 1]}>
+          <group position={[0.055, -0.018, 0]} rotation={[0, previewRotationY, 0]} scale={[1.02, 1.06, 1.02]}>
             <Mug 
-              scale={1.82} 
+              scale={1.78}
               customImage={customImage} 
               artworkSource={artworkSource}
               customImageFit={customImageFit}
@@ -246,8 +246,8 @@ export default function MugViewer({
       </Canvas>
 
       {/* Tooltip - updated instructions */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-black/60 backdrop-blur-xl border border-white/20 rounded-full z-10 pointer-events-none">
-        <span className="text-xs font-semibold text-white">Drag: Rotate | Middle/Right Drag: Move | Scroll: Zoom</span>
+      <div className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/20 bg-black/60 px-4 py-2 backdrop-blur-xl pointer-events-none">
+        <span className="text-xs font-semibold text-white">Drag to rotate | Scroll to zoom</span>
       </div>
     </div>
   )

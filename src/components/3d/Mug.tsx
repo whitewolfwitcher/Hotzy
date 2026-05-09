@@ -361,7 +361,9 @@ function FallbackMug({
       }
     })
 
-    if (!targetMesh) {
+    const resolvedTargetMesh = targetMesh as THREE.Mesh | null
+
+    if (!resolvedTargetMesh) {
       return {
         radiusTop: OUTER_DIAMETER + 0.0008,
         radiusBottom: OUTER_DIAMETER + 0.0008,
@@ -370,8 +372,8 @@ function FallbackMug({
       }
     }
 
-    targetMesh.updateWorldMatrix(true, false)
-    const box = new THREE.Box3().setFromObject(targetMesh)
+    resolvedTargetMesh.updateWorldMatrix(true, false)
+    const box = new THREE.Box3().setFromObject(resolvedTargetMesh)
     const size = new THREE.Vector3()
     const center = new THREE.Vector3()
     box.getSize(size)

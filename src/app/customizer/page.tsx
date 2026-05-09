@@ -18,7 +18,6 @@ import {
   Home,
   LayoutGrid,
   Palette,
-  Type,
   Pipette,
   CheckCircle2,
 } from "lucide-react";
@@ -220,7 +219,6 @@ export default function CustomizerPage() {
         });
         setImagePosition({ x: 0, y: 0 });
         setImageRotation(0);
-        setPreviewResetToken((token) => token + 1);
       } else {
         applyDesignToSections(processedUpload.image);
       }
@@ -265,7 +263,6 @@ export default function CustomizerPage() {
         });
         setImagePosition({ x: 0, y: 0 });
         setImageRotation(0);
-        setPreviewResetToken((token) => token + 1);
       } else {
         applyDesignToSections(processedUpload.image);
       }
@@ -307,7 +304,6 @@ export default function CustomizerPage() {
     });
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
-    setPreviewResetToken((token) => token + 1);
 
     if (selectedTemplate) {
       void track("template_apply", {
@@ -479,7 +475,7 @@ export default function CustomizerPage() {
         </header>
 
         <main className="px-4 pb-28 pt-20 md:px-6 md:pb-10">
-          <div className="mx-auto grid max-w-[1700px] gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="mx-auto grid max-w-[1700px] gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
             <aside className="hidden">
               <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
                 <div className="mb-8">
@@ -653,36 +649,43 @@ export default function CustomizerPage() {
               </div>
             </aside>
 
-            <section className="relative overflow-hidden rounded-[30px] border border-primary/10 bg-[#080908] shadow-[0_32px_120px_rgba(0,0,0,0.45)]">
+            <section className="relative overflow-hidden rounded-[24px] border border-primary/10 bg-[#080908] shadow-[0_32px_120px_rgba(0,0,0,0.45)]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(148,218,50,0.12),transparent_40%)]" />
               <div className="absolute inset-x-0 bottom-0 h-[36%] bg-[linear-gradient(rgba(118,185,0,0.16)_2px,transparent_2px),linear-gradient(90deg,rgba(118,185,0,0.16)_2px,transparent_2px)] bg-[size:84px_84px] [mask-image:linear-gradient(to_top,black_20%,transparent_90%)]" />
 
-              <div className="relative z-10 flex min-h-[820px] flex-col">
-                <div className="flex items-center justify-between px-5 py-5 md:px-8">
+              <div className="relative z-10 flex min-h-[760px] flex-col">
+                <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-5 md:px-8">
                   <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.26em]">
                     <div className="flex items-center gap-2 text-white/65">
                       <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_10px_rgba(118,185,0,0.9)]" />
                       Live
                     </div>
                     <div className="h-4 w-px bg-white/10" />
-                    <div className="text-primary">4K Kinetic</div>
+                    <div className="text-primary">3D Preview</div>
                   </div>
 
-                  <div className="hidden items-center gap-3 md:flex">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewResetToken((token) => token + 1)}
+                      className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/70 transition hover:border-primary/40 hover:text-primary"
+                    >
+                      Reset View
+                    </button>
                     <div className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
                       {hasWrapArtwork ? "Wrap Active" : `Section ${activeSectionNumber}`}
                     </div>
-                    <div className="rounded-full border border-white/8 bg-white/[0.03] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-white/65">
+                    <div className="hidden rounded-full border border-white/8 bg-white/[0.03] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-white/65 md:block">
                       {displayPrice}
                     </div>
                   </div>
                 </div>
 
-                <div className="relative flex-1 px-4 pb-4 md:px-8 md:pb-8">
+                <div className="relative flex-1 px-4 pb-4 md:px-7 md:pb-7">
                   <div className="pointer-events-none absolute inset-x-10 bottom-16 top-24 hidden rounded-full border border-primary/8 md:block" />
                   <div className="pointer-events-none absolute inset-x-20 bottom-6 top-32 hidden rounded-full border border-primary/5 md:block" />
 
-                  <div className="relative mx-auto h-full max-w-[860px] pt-8 md:pt-4">
+                  <div className="relative mx-auto h-full max-w-[900px] pt-3">
                     <MugViewer
                       customImage={selectedWrapArtwork?.image ?? null}
                       artworkSource={selectedWrapArtwork?.source}
@@ -759,18 +762,18 @@ export default function CustomizerPage() {
                   </div>
                 </div>
 
-                <div id="templates-panel" className="border-t border-primary/10 bg-[#090b09]/88 px-5 py-10 md:px-8 md:py-12">
+                <div id="templates-panel" className="border-t border-primary/10 bg-[#090b09]/88 px-5 py-8 md:px-8 md:py-10">
                   <div className="mx-auto max-w-[1120px]">
                     <div className="text-center">
-                      <div className="text-[12px] font-bold uppercase tracking-[0.32em] text-primary/75">
-                        Select A Template Below
+                      <div className="text-[12px] font-bold uppercase tracking-[0.28em] text-primary/75">
+                        Choose A Ready Design
                       </div>
-                      <p className="mx-auto mt-4 max-w-3xl text-sm text-white/50 md:text-lg">
-                        Full-wrap templates wrap automatically onto the mug. Click a template to apply it to the live mug preview.
+                      <p className="mx-auto mt-3 max-w-3xl text-sm text-white/50 md:text-base">
+                        Templates apply without moving your current 3D view, so you can compare designs from the same angle.
                       </p>
                     </div>
 
-                    <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+                    <div className="mt-7 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
                       {customizerDesignTemplates.map((template) => {
                         const isSelected = selectedWrapArtwork?.image === template.image
 
@@ -784,7 +787,7 @@ export default function CustomizerPage() {
                             }`}
                           >
                             <div
-                              className={`overflow-hidden rounded-[20px] border bg-black/35 shadow-[0_20px_60px_rgba(0,0,0,0.28)] ${
+                              className={`overflow-hidden rounded-[14px] border bg-black/35 shadow-[0_20px_60px_rgba(0,0,0,0.28)] ${
                                 isSelected ? "border-primary shadow-[0_0_0_1px_rgba(148,218,50,0.35)]" : "border-white/8"
                               }`}
                             >
@@ -820,24 +823,24 @@ export default function CustomizerPage() {
               </div>
             </section>
 
-            <aside className="space-y-5">
-              <div id="upload-panel" className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
+            <aside className="space-y-4 xl:sticky xl:top-20">
+              <div id="upload-panel" className="rounded-[20px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
                 <div className="mb-4 flex items-center gap-3">
-                  <div className="rounded-2xl bg-primary/12 p-2.5 text-primary">
+                  <div className="rounded-xl bg-primary/12 p-2.5 text-primary">
                     <Upload className="h-5 w-5" />
                   </div>
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary/75">
                       Visual Assets
                     </div>
-                    <h2 className="text-xl font-black tracking-[-0.04em] text-white">
+                    <h2 className="text-xl font-black text-white">
                       Upload Design
                     </h2>
                   </div>
                 </div>
 
                 <div
-                  className={`rounded-[24px] border border-dashed p-5 text-center transition ${
+                  className={`rounded-[16px] border border-dashed p-5 text-center transition ${
                     isDragging
                       ? "border-primary bg-primary/10"
                       : "border-primary/20 bg-black/30"
@@ -870,20 +873,20 @@ export default function CustomizerPage() {
                     </div>
                     <p className="mt-3 text-sm font-semibold text-white">Upload image</p>
                     <p className="mt-1 text-xs text-white/45">
-                      Portrait fills a section. Wide artwork wraps the whole mug.
+                      Wide images wrap the mug. Square or portrait images fill the selected section.
                     </p>
                   </label>
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
+              <div className="rounded-[20px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary/75">
                       Mug Sections
                     </div>
-                    <h2 className="mt-1 text-xl font-black tracking-[-0.04em] text-white">
-                      Placement Grid
+                    <h2 className="mt-1 text-xl font-black text-white">
+                      Placement
                     </h2>
                   </div>
                   {!hasWrapArtwork && (
@@ -894,7 +897,7 @@ export default function CustomizerPage() {
                 </div>
 
                 <div className="mb-4 flex items-center justify-between">
-                  <span className="text-xs text-white/50">Cup Type</span>
+                  <span className="text-xs text-white/50">Mug color</span>
                   <div className="flex items-center gap-2 rounded-full border border-primary/15 bg-black/35 p-1">
                     <button
                       type="button"
@@ -903,7 +906,7 @@ export default function CustomizerPage() {
                         cupType === "hotzy" ? "bg-primary text-black" : "text-white/65"
                       }`}
                     >
-                      Hotzy
+                      Black
                     </button>
                     <button
                       type="button"
@@ -912,7 +915,7 @@ export default function CustomizerPage() {
                         cupType === "standard" ? "bg-primary text-black" : "text-white/65"
                       }`}
                     >
-                      Standard
+                      White
                     </button>
                   </div>
                 </div>
@@ -923,7 +926,7 @@ export default function CustomizerPage() {
                       key={section}
                       type="button"
                       onClick={() => setActiveSection(section)}
-                      className={`relative aspect-square overflow-hidden rounded-[20px] border transition ${
+                      className={`relative aspect-square overflow-hidden rounded-[14px] border transition ${
                         activeSection === section
                           ? "border-primary bg-primary/8"
                           : "border-white/10 bg-black/30"
@@ -959,7 +962,7 @@ export default function CustomizerPage() {
                   ))}
                 </div>
 
-                <p className="mt-4 text-xs text-white/45">
+                <p className="mt-4 text-xs leading-relaxed text-white/45">
                   {hasTemplateWrap && selectedWrapMode === "full-wrap"
                     ? "Full-wrap template is covering the mug body. Manual sections stay available for upload work."
                     : hasUploadWrap
@@ -979,7 +982,7 @@ export default function CustomizerPage() {
                 )}
 
                 {!hasWrapArtwork && currentSectionImage && (
-                  <div className="mt-4 rounded-2xl border border-white/8 bg-black/25 p-4">
+                  <div className="mt-4 rounded-[16px] border border-white/8 bg-black/25 p-4">
                     <div className="mb-3 flex items-center justify-between text-xs text-white/60">
                       <span className="flex items-center gap-2">
                         <RotateCw className="h-3.5 w-3.5 text-primary" />
@@ -1026,16 +1029,16 @@ export default function CustomizerPage() {
                   </div>
                 )}
               </div>
-              <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
+              <div className="rounded-[20px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
                 <div className="mb-4 flex items-center gap-3">
-                  <div className="rounded-2xl bg-primary/12 p-2.5 text-primary">
+                  <div className="rounded-xl bg-primary/12 p-2.5 text-primary">
                     <CheckCircle2 className="h-5 w-5" />
                   </div>
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary/75">
                       Output
                     </div>
-                    <h3 className="text-xl font-black tracking-[-0.04em] text-white">
+                    <h3 className="text-xl font-black text-white">
                       Finish Design
                     </h3>
                   </div>
@@ -1100,8 +1103,8 @@ export default function CustomizerPage() {
                 }
                 className="flex flex-1 flex-col items-center gap-1 rounded-[22px] bg-primary/12 px-3 py-3 text-primary"
               >
-                <Palette className="h-5 w-5" />
-                <span className="text-[9px] font-black uppercase tracking-[0.18em]">Color</span>
+                <Upload className="h-5 w-5" />
+                <span className="text-[9px] font-black uppercase tracking-[0.18em]">Upload</span>
               </button>
               <button
                 type="button"
@@ -1113,19 +1116,15 @@ export default function CustomizerPage() {
                 className="flex flex-1 flex-col items-center gap-1 px-3 py-3 text-white/55"
               >
                 <ImageIcon className="h-5 w-5" />
-                <span className="text-[9px] font-black uppercase tracking-[0.18em]">Graphic</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.18em]">Designs</span>
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  document
-                    .getElementById("templates-panel")
-                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
-                }
+                onClick={() => setPreviewResetToken((token) => token + 1)}
                 className="flex flex-1 flex-col items-center gap-1 px-3 py-3 text-white/55"
               >
-                <Type className="h-5 w-5" />
-                <span className="text-[9px] font-black uppercase tracking-[0.18em]">Text</span>
+                <RotateCw className="h-5 w-5" />
+                <span className="text-[9px] font-black uppercase tracking-[0.18em]">View</span>
               </button>
               <button
                 type="button"
