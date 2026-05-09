@@ -503,8 +503,8 @@ export default function CustomizerPage() {
                             : "border-white/8 bg-white/[0.03] text-white/70"
                         }`}
                       >
-                        <div className="text-xs font-bold uppercase tracking-[0.18em]">Black</div>
-                        <div className="mt-1 text-xs text-white/45">Signature body</div>
+                        <div className="text-xs font-bold uppercase tracking-[0.18em]">Hotzy</div>
+                        <div className="mt-1 text-xs text-white/45">Black signature mug</div>
                       </button>
                       <button
                         type="button"
@@ -515,8 +515,8 @@ export default function CustomizerPage() {
                             : "border-white/8 bg-white/[0.03] text-white/70"
                         }`}
                       >
-                        <div className="text-xs font-bold uppercase tracking-[0.18em]">White</div>
-                        <div className="mt-1 text-xs text-white/45">Bright print base</div>
+                        <div className="text-xs font-bold uppercase tracking-[0.18em]">Standard</div>
+                        <div className="mt-1 text-xs text-white/45">White classic mug</div>
                       </button>
                     </div>
                   </section>
@@ -897,7 +897,7 @@ export default function CustomizerPage() {
                 </div>
 
                 <div className="mb-4 flex items-center justify-between">
-                  <span className="text-xs text-white/50">Mug color</span>
+                  <span className="text-xs text-white/50">Mug type</span>
                   <div className="flex items-center gap-2 rounded-full border border-primary/15 bg-black/35 p-1">
                     <button
                       type="button"
@@ -906,7 +906,7 @@ export default function CustomizerPage() {
                         cupType === "hotzy" ? "bg-primary text-black" : "text-white/65"
                       }`}
                     >
-                      Black
+                      Hotzy
                     </button>
                     <button
                       type="button"
@@ -915,7 +915,7 @@ export default function CustomizerPage() {
                         cupType === "standard" ? "bg-primary text-black" : "text-white/65"
                       }`}
                     >
-                      White
+                      Standard
                     </button>
                   </div>
                 </div>
