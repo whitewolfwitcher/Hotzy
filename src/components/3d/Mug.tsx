@@ -398,7 +398,10 @@ function FallbackMug({
       const materials = Array.isArray(child.material) ? child.material : [child.material]
 
       materials.forEach((material) => {
-        if (!(material instanceof THREE.MeshStandardMaterial)) {
+        if (
+          !(material instanceof THREE.MeshStandardMaterial) &&
+          !(material instanceof THREE.MeshPhysicalMaterial)
+        ) {
           return
         }
 
@@ -411,6 +414,7 @@ function FallbackMug({
           clearcoatRoughness: 0.12,
           envMapIntensity: 0.8,
         })
+        upgradedMaterial.name = material.name
 
         if (material.name === 'PrintMat') {
           upgradedMaterial.color.set(mugBodyColor)
