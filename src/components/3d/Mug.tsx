@@ -307,6 +307,43 @@ function FallbackMug({
 
   const mugBodyColor = cupType === 'standard' ? '#f4f4f4' : '#0f0f12'
   const handleColor = cupType === 'standard' ? '#f1f1f1' : '#111113'
+  const ceramicDetailColor = cupType === 'standard' ? '#f6f6f4' : '#111113'
+  const footShadowColor = cupType === 'standard' ? '#d7d7d2' : '#060607'
+  const realHandleCurve = useMemo(
+    () =>
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.015, 0.019, 0),
+        new THREE.Vector3(0.006, 0.017, 0),
+        new THREE.Vector3(0.020, 0.001, 0),
+        new THREE.Vector3(0.008, -0.018, 0),
+        new THREE.Vector3(-0.015, -0.026, 0),
+      ]),
+    []
+  )
+  const ceramicDetailMaterial = useMemo(
+    () =>
+      new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(ceramicDetailColor),
+        roughness: cupType === 'standard' ? 0.27 : 0.2,
+        metalness: 0,
+        clearcoat: 1,
+        clearcoatRoughness: cupType === 'standard' ? 0.08 : 0.05,
+        envMapIntensity: 1.18,
+      }),
+    [ceramicDetailColor, cupType]
+  )
+  const footShadowMaterial = useMemo(
+    () =>
+      new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(footShadowColor),
+        roughness: 0.5,
+        metalness: 0,
+        clearcoat: 0.35,
+        clearcoatRoughness: 0.22,
+        envMapIntensity: 0.45,
+      }),
+    [footShadowColor]
+  )
   const shellMaterial = useMemo(() => {
     if (!texture) {
       return null
@@ -333,6 +370,16 @@ function FallbackMug({
 
       child.castShadow = true
       child.receiveShadow = true
+
+      const sourceMaterials = Array.isArray(child.material) ? child.material : [child.material]
+      const sourceMaterialNames = sourceMaterials
+        .filter((material): material is THREE.Material => Boolean(material))
+        .map((material) => material.name)
+
+      if (sourceMaterialNames.includes('HandleMat')) {
+        child.visible = false
+        return
+      }
 
       if (Array.isArray(child.material)) {
         child.material = child.material.map((material) => material.clone())
@@ -461,6 +508,53 @@ function FallbackMug({
     >
       <group scale={[1.02, 1.02, 1.02]} position={[0, 0.115, 0]}>
         <primitive object={mugScene} />
+        <group>
+          <mesh
+            position={[0.003, -0.003, 0]}
+            scale={[1, 1, 0.72]}
+            castShadow
+            receiveShadow
+            material={ceramicDetailMaterial}
+          >
+            <tubeGeometry args={[realHandleCurve, 96, 0.0054, 28, false]} />
+          </mesh>
+          <mesh
+            position={[-0.0145, 0.019, 0]}
+            rotation={[0, 0, -0.12]}
+            scale={[0.78, 1.08, 0.48]}
+            castShadow
+            receiveShadow
+            material={ceramicDetailMaterial}
+          >
+            <sphereGeometry args={[0.0115, 32, 18]} />
+          </mesh>
+          <mesh
+            position={[-0.0145, -0.026, 0]}
+            rotation={[0, 0, 0.18]}
+            scale={[0.72, 1, 0.44]}
+            castShadow
+            receiveShadow
+            material={ceramicDetailMaterial}
+          >
+            <sphereGeometry args={[0.0105, 32, 18]} />
+          </mesh>
+          <mesh
+            position={[-0.0567, -0.0582, 0]}
+            castShadow
+            receiveShadow
+            material={ceramicDetailMaterial}
+          >
+            <cylinderGeometry args={[0.0378, 0.0354, 0.0046, 128, 3]} />
+          </mesh>
+          <mesh
+            position={[-0.0567, -0.0608, 0]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            receiveShadow
+            material={footShadowMaterial}
+          >
+            <circleGeometry args={[0.0295, 96]} />
+          </mesh>
+        </group>
         {shellMaterial ? (
           <mesh position={printShellBounds.position} renderOrder={2}>
             <cylinderGeometry
