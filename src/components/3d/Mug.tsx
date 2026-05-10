@@ -311,13 +311,12 @@ function FallbackMug({
   const footShadowColor = cupType === 'standard' ? '#7d7a76' : '#050506'
   const realHandleCurve = useMemo(
     () =>
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-0.016, 0.017, 0),
-        new THREE.Vector3(0.006, 0.016, 0),
-        new THREE.Vector3(0.026, 0.0005, 0),
-        new THREE.Vector3(0.012, -0.019, 0),
-        new THREE.Vector3(-0.016, -0.025, 0),
-      ]),
+      new THREE.CubicBezierCurve3(
+        new THREE.Vector3(-0.0145, 0.021, 0),
+        new THREE.Vector3(0.034, 0.021, 0),
+        new THREE.Vector3(0.039, -0.032, 0),
+        new THREE.Vector3(-0.0145, -0.031, 0)
+      ),
     []
   )
   const ceramicDetailMaterial = useMemo(
@@ -377,7 +376,10 @@ function FallbackMug({
         .filter((material): material is THREE.Material => Boolean(material))
         .map((material) => material.name)
 
-      if (sourceMaterialNames.includes('HandleMat')) {
+      if (
+        sourceMaterialNames.includes('HandleMat') ||
+        sourceMaterialNames.includes('BaseMat')
+      ) {
         child.visible = false
         return
       }
@@ -513,41 +515,58 @@ function FallbackMug({
         <primitive object={mugScene} />
         <group>
           <mesh
-            position={[0.002, -0.0035, 0]}
-            scale={[1, 1, 0.58]}
+            position={[0, -0.004, 0]}
+            scale={[1, 1, 0.62]}
             castShadow
             receiveShadow
             material={ceramicDetailMaterial}
           >
-            <tubeGeometry args={[realHandleCurve, 112, 0.0042, 24, false]} />
+            <tubeGeometry args={[realHandleCurve, 128, 0.0046, 28, false]} />
           </mesh>
           <mesh
-            position={[-0.0165, 0.017, 0]}
+            position={[-0.0155, 0.017, 0]}
             rotation={[0, 0, -0.06]}
-            scale={[0.5, 1.15, 0.32]}
+            scale={[0.62, 1.28, 0.36]}
             castShadow
             receiveShadow
             material={ceramicDetailMaterial}
           >
-            <sphereGeometry args={[0.0082, 32, 18]} />
+            <sphereGeometry args={[0.008, 32, 18]} />
           </mesh>
           <mesh
-            position={[-0.0165, -0.0255, 0]}
+            position={[-0.0155, -0.032, 0]}
             rotation={[0, 0, 0.08]}
-            scale={[0.5, 1.05, 0.32]}
+            scale={[0.58, 1.12, 0.34]}
             castShadow
             receiveShadow
             material={ceramicDetailMaterial}
           >
-            <sphereGeometry args={[0.0078, 32, 18]} />
+            <sphereGeometry args={[0.0076, 32, 18]} />
           </mesh>
           <mesh
-            position={[-0.0567, -0.0599, 0]}
+            position={[-0.0567, -0.0572, 0]}
+            rotation={[Math.PI / 2, 0, 0]}
+            castShadow
+            receiveShadow
+            material={ceramicDetailMaterial}
+          >
+            <torusGeometry args={[0.0338, 0.0022, 18, 128]} />
+          </mesh>
+          <mesh
+            position={[-0.0567, -0.0594, 0]}
             rotation={[Math.PI / 2, 0, 0]}
             receiveShadow
             material={footShadowMaterial}
           >
-            <ringGeometry args={[0.028, 0.035, 128]} />
+            <circleGeometry args={[0.0305, 128]} />
+          </mesh>
+          <mesh
+            position={[-0.0567, -0.0602, 0]}
+            rotation={[Math.PI / 2, 0, 0]}
+            receiveShadow
+            material={footShadowMaterial}
+          >
+            <ringGeometry args={[0.0305, 0.0355, 128]} />
           </mesh>
         </group>
         {shellMaterial ? (
