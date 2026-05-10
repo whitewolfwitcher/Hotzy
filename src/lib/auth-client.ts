@@ -28,10 +28,10 @@ export function useSession(): SessionData {
    const [isRefetching, setIsRefetching] = useState(false);
    const [error, setError] = useState<any>(null);
 
-   const refetch = () => {
+   const refetch = async () => {
       setIsRefetching(true);
       setError(null);
-      fetchSession();
+      await fetchSession();
    };
 
    const fetchSession = async () => {

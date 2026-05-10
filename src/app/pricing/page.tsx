@@ -5,7 +5,21 @@ import { Sparkles, Check, Zap, Crown, Shield } from 'lucide-react';
 import NavigationHeader from '@/components/sections/navigation-header';
 import Footer from '@/components/sections/footer';
 
-const productDetails = [
+type ProductDetail = {
+  id: string;
+  description: string;
+  recommendText?: string;
+  price?: {
+    primaryText: string;
+    secondaryText: string;
+  };
+  items: Array<{
+    primaryText: string;
+    secondaryText?: string;
+  }>;
+};
+
+const productDetails: ProductDetail[] = [
   {
     id: "hotzy_basic",
     description: "Perfect for exploring mug customization",

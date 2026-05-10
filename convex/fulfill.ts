@@ -4,8 +4,15 @@ import { api } from "./_generated/api";
 
 export const fulfillFromStripe = action({
   args: { paymentIntentId: v.string(), orderId: v.optional(v.id("orders")) },
-  handler: async (ctx, args) => {
-    const order = args.orderId
+  handler: async (ctx, args): Promise<{
+    ok: true;
+    orderId: string;
+    pdfFileId: string | null;
+    cupType: "hotzy" | "standard";
+    currency: "CAD" | "USD";
+    emailSent: boolean;
+  }> => {
+    const order: any = args.orderId
       ? await ctx.runQuery(api.orders.getById, { orderId: args.orderId })
       : await ctx.runQuery(api.orders.getByPaymentIntent, {
           stripePaymentIntentId: args.paymentIntentId,
@@ -24,7 +31,9 @@ export const fulfillFromStripe = action({
       await ctx.runAction(api.print.generatePdfForOrder, { orderId: order._id });
     }
 
-    const updated = await ctx.runQuery(api.orders.getById, { orderId: order._id });
+    const updated: any = await ctx.runQuery(api.orders.getById, {
+      orderId: order._id,
+    });
 
     return {
       ok: true,

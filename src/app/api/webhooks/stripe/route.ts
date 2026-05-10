@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
-import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../../convex/_generated/api';
 import { getStripeSecretKey, getStripeWebhookSecret } from '@/lib/env';
+import { getConvexHttpClient } from '@/lib/convex-server';
 
 export const runtime = 'nodejs';
 
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   }
 
   const stripe = new Stripe(getStripeSecretKey(), {
-    apiVersion: '2023-10-16',
+    apiVersion: '2025-10-29.clover',
   });
 
   let event: Stripe.Event;
@@ -58,24 +58,16 @@ export async function POST(req: Request) {
       const paymentIntentId = intent.id;
       console.log('webhook paymentIntent id', paymentIntentId);
 
-      const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
-      const deployKey = process.env.CONVEX_DEPLOY_KEY;
-      if (!convexUrl || !deployKey) {
-        throw new Error('Missing Convex env vars');
-      }
+      const convex = getConvexHttpClient();
 
-      const convex = new ConvexHttpClient(convexUrl);
-      convex.setAdminAuth(deployKey);
-
-      const markPaidByPaymentIntentFunction =
-        'api.orders.markPaidByPaymentIntent';
+      const fulfillFromStripeFunction = 'api.fulfill.fulfillFromStripe';
       const result = await (async () => {
         try {
-          return await convex.mutation(api.orders.markPaidByPaymentIntent, {
-            stripePaymentIntentId: paymentIntentId,
+          return await convex.action(api.fulfill.fulfillFromStripe, {
+            paymentIntentId,
           });
         } catch (err) {
-          logConvexCallError(markPaidByPaymentIntentFunction, err);
+          logConvexCallError(fulfillFromStripeFunction, err);
           throw err;
         }
       })();

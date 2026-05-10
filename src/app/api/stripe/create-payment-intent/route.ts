@@ -1,5 +1,5 @@
-import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../../convex/_generated/api";
+import { getConvexHttpClient } from "@/lib/convex-server";
 import { getStripe } from "@/lib/stripe";
 import { getUnitAmount } from "@/lib/pricing";
 
@@ -16,17 +16,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-    const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
-    const deployKey = process.env.CONVEX_DEPLOY_KEY;
     const missing: string[] = [];
-    if (!stripeSecretKey) missing.push("STRIPE_SECRET_KEY");
-    if (!stripeWebhookSecret) missing.push("STRIPE_WEBHOOK_SECRET");
-    if (!siteUrl) missing.push("NEXT_PUBLIC_SITE_URL");
-    if (!convexUrl) missing.push("NEXT_PUBLIC_CONVEX_URL");
-    if (!deployKey) missing.push("CONVEX_DEPLOY_KEY");
+    if (!process.env.STRIPE_SECRET_KEY) missing.push("STRIPE_SECRET_KEY");
+    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+      missing.push("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY");
+    }
+    if (!process.env.NEXT_PUBLIC_CONVEX_URL) missing.push("NEXT_PUBLIC_CONVEX_URL");
 
     if (missing.length > 0) {
       return Response.json(
@@ -35,9 +30,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const convex = new ConvexHttpClient(convexUrl);
-    convex.setAdminAuth(deployKey);
-
+    const convex = getConvexHttpClient();
     const order = await convex.query(api.orders.getForPayment, {
       orderId: orderId as any,
     });
@@ -50,6 +43,19 @@ export async function POST(request: Request) {
     const amountCents = Math.round(unitAmount * 100);
 
     const stripe = getStripe();
+    if (order.stripePaymentIntentId) {
+      const existingIntent = await stripe.paymentIntents.retrieve(
+        order.stripePaymentIntentId
+      );
+
+      if (existingIntent.client_secret && existingIntent.status !== "canceled") {
+        return Response.json({
+          ok: true,
+          clientSecret: existingIntent.client_secret,
+        });
+      }
+    }
+
     const intent = await stripe.paymentIntents.create({
       amount: amountCents,
       currency: order.currency.toLowerCase(),

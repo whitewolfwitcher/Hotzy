@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useAction, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 export default function ConvexUploadTestPage() {
   const createDraft = useMutation(api.orders.createDraft);
@@ -9,9 +10,9 @@ export default function ConvexUploadTestPage() {
   const attachWrap = useMutation(api.orders.attachWrap);
   const generatePdfForOrder = useAction(api.print.generatePdfForOrder);
 
-  const [orderId, setOrderId] = useState<string | null>(null);
-  const [wrapFileId, setWrapFileId] = useState<string | null>(null);
-  const [pdfFileId, setPdfFileId] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<Id<"orders"> | null>(null);
+  const [wrapFileId, setWrapFileId] = useState<Id<"_storage"> | null>(null);
+  const [pdfFileId, setPdfFileId] = useState<Id<"_storage"> | null>(null);
   const [status, setStatus] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -21,7 +22,7 @@ export default function ConvexUploadTestPage() {
     setPdfFileId(null);
     setStatus("Creating draft order...");
     const draft = await createDraft({ cupType: "hotzy", currency: "CAD" });
-    setOrderId(draft.orderId as string);
+    setOrderId(draft.orderId);
 
     setStatus("Requesting upload URL...");
     const uploadUrl = await generateUploadUrl({});
@@ -35,7 +36,9 @@ export default function ConvexUploadTestPage() {
       throw new Error(`Upload failed: ${uploadRes.status}`);
     }
     const uploadJson = (await uploadRes.json()) as { storageId?: string; fileId?: string };
-    const storageId = uploadJson.storageId ?? uploadJson.fileId;
+    const storageId = (uploadJson.storageId ?? uploadJson.fileId) as
+      | Id<"_storage">
+      | undefined;
     if (!storageId) {
       throw new Error("No storageId returned from upload");
     }
@@ -53,7 +56,7 @@ export default function ConvexUploadTestPage() {
     setStatus("Generating PDF...");
     try {
       const result = await generatePdfForOrder({ orderId });
-      setPdfFileId(result.pdfFileId as string);
+      setPdfFileId(result.pdfFileId);
       setStatus("PDF ready");
     } catch (err) {
       setError(err instanceof Error ? err.message : "PDF generation failed");

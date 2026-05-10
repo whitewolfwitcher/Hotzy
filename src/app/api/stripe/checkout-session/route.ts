@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getSiteUrl } from '@/lib/env';
 import { getStripe } from '@/lib/stripe';
 
 export const runtime = 'nodejs';
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
 
   try {
     const stripe = getStripe();
+    const siteUrl = getSiteUrl().replace(/\/$/, '');
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: items.map((item) => ({
@@ -60,9 +62,8 @@ export async function POST(req: Request) {
         },
         quantity: item.qty,
       })),
-      success_url:
-        'https://www.hotzy.ca/checkout/success?session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: 'https://www.hotzy.ca/checkout/cancel',
+      success_url: `${siteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/checkout/cancel`,
     });
 
     if (!session.url) {

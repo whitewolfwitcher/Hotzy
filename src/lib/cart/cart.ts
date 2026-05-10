@@ -1,7 +1,7 @@
 const STORAGE_KEY = "hotzy_cart_v1";
 const CART_EVENT = "hotzy:cart-updated";
 
-type CartItem = {
+export type CartItem = {
   id: string;
   name: string;
   priceCents: number;

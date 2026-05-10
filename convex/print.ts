@@ -31,8 +31,12 @@ export const generatePdfForOrder = action({
     page.drawImage(image, { x: 0, y: 0, width: pageWidth, height: pageHeight });
 
     const pdfBytes = await pdfDoc.save();
+    const pdfArrayBuffer = pdfBytes.buffer.slice(
+      pdfBytes.byteOffset,
+      pdfBytes.byteOffset + pdfBytes.byteLength
+    ) as ArrayBuffer;
     const pdfFileId = await ctx.storage.store(
-      new Blob([pdfBytes], { type: "application/pdf" })
+      new Blob([pdfArrayBuffer], { type: "application/pdf" })
     );
 
     await ctx.runMutation(api.orders.attachPdf, { orderId: args.orderId, pdfFileId });
