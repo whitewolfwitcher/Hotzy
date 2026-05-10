@@ -544,29 +544,21 @@ function FallbackMug({
             <sphereGeometry args={[0.0076, 32, 18]} />
           </mesh>
           <mesh
-            position={[-0.0567, -0.0572, 0]}
+            position={[-0.0567, -0.0539, 0]}
             rotation={[Math.PI / 2, 0, 0]}
             castShadow
             receiveShadow
             material={ceramicDetailMaterial}
           >
-            <torusGeometry args={[0.0338, 0.0022, 18, 128]} />
+            <torusGeometry args={[0.0326, 0.00115, 12, 128]} />
           </mesh>
           <mesh
-            position={[-0.0567, -0.0594, 0]}
+            position={[-0.0567, -0.055, 0]}
             rotation={[Math.PI / 2, 0, 0]}
             receiveShadow
             material={footShadowMaterial}
           >
-            <circleGeometry args={[0.0305, 128]} />
-          </mesh>
-          <mesh
-            position={[-0.0567, -0.0602, 0]}
-            rotation={[Math.PI / 2, 0, 0]}
-            receiveShadow
-            material={footShadowMaterial}
-          >
-            <ringGeometry args={[0.0305, 0.0355, 128]} />
+            <circleGeometry args={[0.029, 128]} />
           </mesh>
         </group>
         {shellMaterial ? (
