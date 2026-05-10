@@ -6,14 +6,19 @@ export const createDraft = mutation({
   args: {
     cupType: v.union(v.literal("hotzy"), v.literal("standard")),
     currency: v.union(v.literal("CAD"), v.literal("USD")),
+    quantity: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const amount = getUnitAmount(args.cupType, args.currency);
+    const quantity = Math.min(999, Math.max(1, Math.round(args.quantity ?? 1)));
+    const amount = Number(
+      (getUnitAmount(args.cupType, args.currency) * quantity).toFixed(2)
+    );
     const id = await ctx.db.insert("orders", {
       status: "draft",
       cupType: args.cupType,
       currency: args.currency,
+      quantity,
       amount,
       createdAt: now,
       updatedAt: now,
@@ -69,6 +74,7 @@ export const getForPayment = query({
     return {
       cupType: order.cupType,
       currency: order.currency,
+      quantity: order.quantity ?? 1,
       amount: order.amount ?? getUnitAmount(order.cupType, order.currency),
       stripePaymentIntentId: order.stripePaymentIntentId ?? null,
       status: order.status,

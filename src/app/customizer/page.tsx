@@ -20,6 +20,8 @@ import {
   Palette,
   Pipette,
   CheckCircle2,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -88,6 +90,7 @@ export default function CustomizerPage() {
   const [orderNowStatus, setOrderNowStatus] = useState<string | null>(null);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [imageRotation, setImageRotation] = useState(0);
+  const [quantity, setQuantity] = useState(1);
   const hasTrackedCustomizerView = useRef(false);
 
   const router = useRouter();
@@ -120,12 +123,17 @@ export default function CustomizerPage() {
   ).length;
 
   const basePriceCad = PRICE_CAD[cupType];
-  const displayPriceAmount =
+  const unitPriceAmount =
     currency === "USD" ? basePriceCad * CAD_TO_USD : basePriceCad;
+  const displayPriceAmount = unitPriceAmount * quantity;
   const displayPrice = `$${new Intl.NumberFormat("en-CA", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(displayPriceAmount)} ${currency}`;
+  const unitDisplayPrice = `$${new Intl.NumberFormat("en-CA", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(unitPriceAmount)} ${currency}`;
 
   const currentSectionImage = sectionImages[activeSection];
   const currentSectionType = imageTypes[activeSection];
@@ -359,11 +367,14 @@ export default function CustomizerPage() {
     });
   };
 
+  const updateQuantity = (nextQuantity: number) => {
+    if (!Number.isFinite(nextQuantity)) return;
+    setQuantity(Math.min(999, Math.max(1, Math.round(nextQuantity))));
+  };
+
   const handleAddToCart = async () => {
     try {
-      const price =
-        currency === "USD" ? basePriceCad * CAD_TO_USD : basePriceCad;
-      const priceCents = Math.round(price * 100);
+      const priceCents = Math.round(unitPriceAmount * 100);
       const hasCustomDesign = uploadedImageCount > 0 || hasWrapArtwork;
 
       addCartItem({
@@ -373,7 +384,7 @@ export default function CustomizerPage() {
           : getText("Premium Black Mug", "Tasse Noire Premium"),
         priceCents,
         currency,
-        qty: 1,
+        qty: quantity,
         meta: {
           sectionImages,
           fullWrapArtwork: selectedWrapArtwork,
@@ -382,6 +393,7 @@ export default function CustomizerPage() {
           layoutMode: hasWrapArtwork ? "full-wrap" : "triple",
           productType: "custom-mug",
           imageCount: hasWrapArtwork ? 1 : uploadedImageCount,
+          quantity,
         },
       });
 
@@ -389,6 +401,7 @@ export default function CustomizerPage() {
       void trackEvent("add_to_cart", {
         item_name: "Custom Mug",
         item_category: "Mugs",
+        quantity,
       });
     } catch {
       toast.error(getText("Something went wrong", "Erreur"));
@@ -400,7 +413,7 @@ export default function CustomizerPage() {
     setIsOrdering(true);
     try {
       setOrderNowStatus(getText("Creating order...", "Creation de la commande..."));
-      const draft = await createDraft({ cupType, currency });
+      const draft = await createDraft({ cupType, currency, quantity });
       setOrderNowStatus(
         getText("Redirecting to payment...", "Redirection vers le paiement...")
       );
@@ -628,6 +641,42 @@ export default function CustomizerPage() {
                 </div>
 
                 <div className="mt-8 space-y-3">
+                  <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/25 px-4 py-3">
+                    <div>
+                      <div className="text-xs font-semibold text-white">Quantity</div>
+                      <div className="mt-0.5 text-[11px] text-white/45">
+                        {unitDisplayPrice} each
+                      </div>
+                    </div>
+                    <div className="flex items-center rounded-full border border-primary/20 bg-black/35 p-1">
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(quantity - 1)}
+                        disabled={quantity <= 1}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-primary disabled:cursor-not-allowed disabled:opacity-35"
+                        aria-label="Decrease quantity"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        max={999}
+                        value={quantity}
+                        onChange={(event) => updateQuantity(Number(event.target.value))}
+                        className="h-8 w-14 bg-transparent text-center text-sm font-black text-white outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        aria-label="Quantity"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(quantity + 1)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-black"
+                        aria-label="Increase quantity"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={handleOrderNow}
@@ -1045,6 +1094,42 @@ export default function CustomizerPage() {
                 </div>
 
                 <div className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/25 px-4 py-3">
+                    <div>
+                      <span className="text-white/50">Quantity</span>
+                      <div className="mt-0.5 text-[11px] text-white/35">
+                        {unitDisplayPrice} each
+                      </div>
+                    </div>
+                    <div className="flex items-center rounded-full border border-primary/20 bg-black/35 p-1">
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(quantity - 1)}
+                        disabled={quantity <= 1}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-primary disabled:cursor-not-allowed disabled:opacity-35"
+                        aria-label="Decrease quantity"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        max={999}
+                        value={quantity}
+                        onChange={(event) => updateQuantity(Number(event.target.value))}
+                        className="h-8 w-14 bg-transparent text-center text-sm font-black text-white outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        aria-label="Quantity"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(quantity + 1)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-black"
+                        aria-label="Increase quantity"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/25 px-4 py-3">
                     <span className="text-white/50">Live price</span>
                     <span className="font-black text-primary">{displayPrice}</span>

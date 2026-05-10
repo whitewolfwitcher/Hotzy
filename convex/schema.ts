@@ -12,6 +12,7 @@ export default defineSchema({
 
     cupType: v.union(v.literal("hotzy"), v.literal("standard")),
     currency: v.union(v.literal("CAD"), v.literal("USD")),
+    quantity: v.optional(v.number()),
     amount: v.optional(v.number()),
 
     stripePaymentIntentId: v.optional(v.string()),
