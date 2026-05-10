@@ -308,15 +308,15 @@ function FallbackMug({
   const mugBodyColor = cupType === 'standard' ? '#f4f4f4' : '#0f0f12'
   const handleColor = cupType === 'standard' ? '#f1f1f1' : '#111113'
   const ceramicDetailColor = cupType === 'standard' ? '#f6f6f4' : '#111113'
-  const footShadowColor = cupType === 'standard' ? '#d7d7d2' : '#060607'
+  const footShadowColor = cupType === 'standard' ? '#7d7a76' : '#050506'
   const realHandleCurve = useMemo(
     () =>
       new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-0.015, 0.019, 0),
-        new THREE.Vector3(0.006, 0.017, 0),
-        new THREE.Vector3(0.020, 0.001, 0),
-        new THREE.Vector3(0.008, -0.018, 0),
-        new THREE.Vector3(-0.015, -0.026, 0),
+        new THREE.Vector3(-0.016, 0.017, 0),
+        new THREE.Vector3(0.006, 0.016, 0),
+        new THREE.Vector3(0.026, 0.0005, 0),
+        new THREE.Vector3(0.012, -0.019, 0),
+        new THREE.Vector3(-0.016, -0.025, 0),
       ]),
     []
   )
@@ -324,11 +324,11 @@ function FallbackMug({
     () =>
       new THREE.MeshPhysicalMaterial({
         color: new THREE.Color(ceramicDetailColor),
-        roughness: cupType === 'standard' ? 0.27 : 0.2,
+        roughness: cupType === 'standard' ? 0.38 : 0.26,
         metalness: 0,
-        clearcoat: 1,
-        clearcoatRoughness: cupType === 'standard' ? 0.08 : 0.05,
-        envMapIntensity: 1.18,
+        clearcoat: 0.82,
+        clearcoatRoughness: cupType === 'standard' ? 0.16 : 0.08,
+        envMapIntensity: cupType === 'standard' ? 0.9 : 1.05,
       }),
     [ceramicDetailColor, cupType]
   )
@@ -341,6 +341,7 @@ function FallbackMug({
         clearcoat: 0.35,
         clearcoatRoughness: 0.22,
         envMapIntensity: 0.45,
+        side: THREE.DoubleSide,
       }),
     [footShadowColor]
   )
@@ -466,22 +467,24 @@ function FallbackMug({
         if (material.name === 'PrintMat') {
           upgradedMaterial.color.set(mugBodyColor)
           upgradedMaterial.map = null
-          upgradedMaterial.roughness = cupType === 'standard' ? 0.3 : 0.18
-          upgradedMaterial.clearcoat = 1
-          upgradedMaterial.clearcoatRoughness = cupType === 'standard' ? 0.1 : 0.06
-          upgradedMaterial.envMapIntensity = 1.1
+          upgradedMaterial.roughness = cupType === 'standard' ? 0.42 : 0.24
+          upgradedMaterial.clearcoat = cupType === 'standard' ? 0.8 : 1
+          upgradedMaterial.clearcoatRoughness = cupType === 'standard' ? 0.16 : 0.07
+          upgradedMaterial.envMapIntensity = cupType === 'standard' ? 0.88 : 1.1
         } else if (material.name === 'mug_body.007') {
           upgradedMaterial.color.set(mugBodyColor)
           upgradedMaterial.map = null
-          upgradedMaterial.roughness = cupType === 'standard' ? 0.32 : 0.22
-          upgradedMaterial.clearcoatRoughness = 0.08
-          upgradedMaterial.envMapIntensity = 1.1
+          upgradedMaterial.roughness = cupType === 'standard' ? 0.44 : 0.28
+          upgradedMaterial.clearcoat = cupType === 'standard' ? 0.75 : 1
+          upgradedMaterial.clearcoatRoughness = cupType === 'standard' ? 0.17 : 0.08
+          upgradedMaterial.envMapIntensity = cupType === 'standard' ? 0.86 : 1.1
         } else if (material.name === 'HandleMat' || material.name === 'BaseMat') {
           upgradedMaterial.color.set(handleColor)
           upgradedMaterial.map = null
-          upgradedMaterial.roughness = cupType === 'standard' ? 0.28 : 0.2
-          upgradedMaterial.clearcoatRoughness = 0.06
-          upgradedMaterial.envMapIntensity = 1.15
+          upgradedMaterial.roughness = cupType === 'standard' ? 0.42 : 0.24
+          upgradedMaterial.clearcoat = cupType === 'standard' ? 0.78 : 1
+          upgradedMaterial.clearcoatRoughness = cupType === 'standard' ? 0.16 : 0.07
+          upgradedMaterial.envMapIntensity = cupType === 'standard' ? 0.88 : 1.12
         }
 
         upgradedMaterial.needsUpdate = true
@@ -510,49 +513,41 @@ function FallbackMug({
         <primitive object={mugScene} />
         <group>
           <mesh
-            position={[0.003, -0.003, 0]}
-            scale={[1, 1, 0.72]}
+            position={[0.002, -0.0035, 0]}
+            scale={[1, 1, 0.58]}
             castShadow
             receiveShadow
             material={ceramicDetailMaterial}
           >
-            <tubeGeometry args={[realHandleCurve, 96, 0.0054, 28, false]} />
+            <tubeGeometry args={[realHandleCurve, 112, 0.0042, 24, false]} />
           </mesh>
           <mesh
-            position={[-0.0145, 0.019, 0]}
-            rotation={[0, 0, -0.12]}
-            scale={[0.78, 1.08, 0.48]}
+            position={[-0.0165, 0.017, 0]}
+            rotation={[0, 0, -0.06]}
+            scale={[0.5, 1.15, 0.32]}
             castShadow
             receiveShadow
             material={ceramicDetailMaterial}
           >
-            <sphereGeometry args={[0.0115, 32, 18]} />
+            <sphereGeometry args={[0.0082, 32, 18]} />
           </mesh>
           <mesh
-            position={[-0.0145, -0.026, 0]}
-            rotation={[0, 0, 0.18]}
-            scale={[0.72, 1, 0.44]}
+            position={[-0.0165, -0.0255, 0]}
+            rotation={[0, 0, 0.08]}
+            scale={[0.5, 1.05, 0.32]}
             castShadow
             receiveShadow
             material={ceramicDetailMaterial}
           >
-            <sphereGeometry args={[0.0105, 32, 18]} />
+            <sphereGeometry args={[0.0078, 32, 18]} />
           </mesh>
           <mesh
-            position={[-0.0567, -0.0582, 0]}
-            castShadow
-            receiveShadow
-            material={ceramicDetailMaterial}
-          >
-            <cylinderGeometry args={[0.0378, 0.0354, 0.0046, 128, 3]} />
-          </mesh>
-          <mesh
-            position={[-0.0567, -0.0608, 0]}
-            rotation={[-Math.PI / 2, 0, 0]}
+            position={[-0.0567, -0.0599, 0]}
+            rotation={[Math.PI / 2, 0, 0]}
             receiveShadow
             material={footShadowMaterial}
           >
-            <circleGeometry args={[0.0295, 96]} />
+            <ringGeometry args={[0.028, 0.035, 128]} />
           </mesh>
         </group>
         {shellMaterial ? (
