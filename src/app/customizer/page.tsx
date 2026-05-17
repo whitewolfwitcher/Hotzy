@@ -56,6 +56,7 @@ type SectionImageTypes = Record<SectionKey, "uploaded" | null>;
 type SectionImageScales = Record<SectionKey, number>;
 type ArtworkMode = "full-wrap" | "panel";
 type ArtworkSource = "template" | "upload";
+type UploadPrintMode = "sections" | "full-wrap";
 
 type WrapArtwork = {
   image: string;
@@ -90,6 +91,7 @@ export default function CustomizerPage() {
   const [selectedWrapArtwork, setSelectedWrapArtwork] = useState<WrapArtwork | null>(null);
   const [previewResetToken, setPreviewResetToken] = useState(0);
   const [activeSection, setActiveSection] = useState<SectionKey>("section1");
+  const [uploadPrintMode, setUploadPrintMode] = useState<UploadPrintMode>("sections");
   const [isDragging, setIsDragging] = useState(false);
   const [cupType, setCupType] = useState<"hotzy" | "standard">("hotzy");
   const [isOrdering, setIsOrdering] = useState(false);
@@ -155,6 +157,7 @@ export default function CustomizerPage() {
     : sectionImageScales[activeSection];
   const selectedWrapMode = selectedWrapArtwork?.mode ?? "full-wrap";
   const activeSectionNumber = activeSection.replace("section", "");
+  const isFullCoverageUploadMode = uploadPrintMode === "full-wrap";
 
   const readFileAsDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -178,17 +181,43 @@ export default function CustomizerPage() {
     setSectionImageScales((prev) => ({ ...prev, [activeSection]: 1 }));
   };
 
+  const applyDesignAsFullWrap = (designImage: string) => {
+    setSelectedWrapArtwork({
+      image: designImage,
+      fit: "cover",
+      mode: "full-wrap",
+      source: "upload",
+      focalX: 0.5,
+      focalY: 0.5,
+      wrapOffsetX: 0,
+      previewRotation: -0.55,
+      scale: 1,
+    });
+    setImagePosition({ x: 0, y: 0 });
+    setImageRotation(0);
+  };
+
+  const applyUploadedDesign = (designImage: string) => {
+    if (uploadPrintMode === "full-wrap") {
+      applyDesignAsFullWrap(designImage);
+      return;
+    }
+
+    applyDesignToSections(designImage);
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       const uploadedImage = await readFileAsDataUrl(file);
-      applyDesignToSections(uploadedImage);
+      applyUploadedDesign(uploadedImage);
 
       void track("design_upload_success", {
         cup_type: cupType,
-        section: activeSection,
+        section: uploadPrintMode === "full-wrap" ? "full_wrap" : activeSection,
+        print_mode: uploadPrintMode,
         file_type: file.type || "unknown",
         file_size_kb: Math.round(file.size / 1024),
       });
@@ -208,12 +237,13 @@ export default function CustomizerPage() {
     try {
       void track("design_upload_start", {
         cup_type: cupType,
-        section: activeSection,
+        section: uploadPrintMode === "full-wrap" ? "full_wrap" : activeSection,
+        print_mode: uploadPrintMode,
         method: "drop",
       });
 
       const uploadedImage = await readFileAsDataUrl(file);
-      applyDesignToSections(uploadedImage);
+      applyUploadedDesign(uploadedImage);
     } catch (error) {
       console.error("Error processing image:", error);
     }
@@ -303,7 +333,7 @@ export default function CustomizerPage() {
 
   const updateImageScale = (nextScale: number) => {
     if (!Number.isFinite(nextScale)) return;
-    const clampedScale = Math.min(2, Math.max(0.5, nextScale));
+    const clampedScale = Math.min(2, Math.max(1, nextScale));
 
     if (hasUploadWrap) {
       setSelectedWrapArtwork((prev) =>
@@ -509,6 +539,30 @@ export default function CustomizerPage() {
                       <ImageIcon className="h-4 w-4 text-primary" />
                       Visual Assets
                     </div>
+                    <div className="mb-3 grid grid-cols-2 gap-2 rounded-2xl border border-primary/15 bg-black/35 p-1">
+                      <button
+                        type="button"
+                        onClick={() => setUploadPrintMode("sections")}
+                        className={`rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] ${
+                          uploadPrintMode === "sections"
+                            ? "bg-primary text-black"
+                            : "text-white/65"
+                        }`}
+                      >
+                        Sections
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUploadPrintMode("full-wrap")}
+                        className={`rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] ${
+                          uploadPrintMode === "full-wrap"
+                            ? "bg-primary text-black"
+                            : "text-white/65"
+                        }`}
+                      >
+                        Full Coverage
+                      </button>
+                    </div>
                     <div
                       className={`rounded-[24px] border border-dashed p-5 text-center transition ${
                         isDragging
@@ -532,18 +586,21 @@ export default function CustomizerPage() {
                         onClick={() => {
                           void track("design_upload_start", {
                             cup_type: cupType,
-                            section: activeSection,
+                            section: uploadPrintMode === "full-wrap" ? "full_wrap" : activeSection,
+                            print_mode: uploadPrintMode,
                             method: "picker",
                           });
                         }}
                       >
                         <Upload className="mx-auto h-9 w-9 text-primary" />
                         <div className="mt-3 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-                          {`Section ${activeSectionNumber}`}
+                          {isFullCoverageUploadMode ? "Full Coverage" : `Section ${activeSectionNumber}`}
                         </div>
                         <p className="mt-3 text-sm font-semibold text-white">Upload image</p>
                         <p className="mt-1 text-xs text-white/45">
-                          Uploads apply to the selected section.
+                          {isFullCoverageUploadMode
+                            ? "One image wraps the entire mug body."
+                            : "Uploads apply to the selected section."}
                         </p>
                       </label>
                     </div>
@@ -573,7 +630,7 @@ export default function CustomizerPage() {
                           </div>
                           <input
                             type="range"
-                            min="0.5"
+                            min="1"
                             max="2"
                             step="0.01"
                             value={currentImageScale}
@@ -881,6 +938,31 @@ export default function CustomizerPage() {
                   </div>
                 </div>
 
+                <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl border border-primary/15 bg-black/35 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setUploadPrintMode("sections")}
+                    className={`rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] ${
+                      uploadPrintMode === "sections"
+                        ? "bg-primary text-black"
+                        : "text-white/65"
+                    }`}
+                  >
+                    Sections
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadPrintMode("full-wrap")}
+                    className={`rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] ${
+                      uploadPrintMode === "full-wrap"
+                        ? "bg-primary text-black"
+                        : "text-white/65"
+                    }`}
+                  >
+                    Full Coverage
+                  </button>
+                </div>
+
                 <div
                   className={`rounded-[16px] border border-dashed p-5 text-center transition ${
                     isDragging
@@ -902,20 +984,23 @@ export default function CustomizerPage() {
                     htmlFor="visible-image-upload"
                     className="block cursor-pointer"
                     onClick={() => {
-                      void track("design_upload_start", {
-                        cup_type: cupType,
-                        section: activeSection,
-                        method: "picker",
-                      });
+                          void track("design_upload_start", {
+                            cup_type: cupType,
+                            section: uploadPrintMode === "full-wrap" ? "full_wrap" : activeSection,
+                            print_mode: uploadPrintMode,
+                            method: "picker",
+                          });
                     }}
                   >
                     <Upload className="mx-auto h-9 w-9 text-primary" />
                     <div className="mt-3 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-                      {`Section ${activeSectionNumber}`}
+                      {isFullCoverageUploadMode ? "Full Coverage" : `Section ${activeSectionNumber}`}
                     </div>
                     <p className="mt-3 text-sm font-semibold text-white">Upload image</p>
                     <p className="mt-1 text-xs text-white/45">
-                      Select a placement box, then upload or replace its image.
+                      {isFullCoverageUploadMode
+                        ? "Upload one image to cover the full mug."
+                        : "Select a placement box, then upload or replace its image."}
                     </p>
                   </label>
                 </div>
@@ -1008,7 +1093,7 @@ export default function CustomizerPage() {
                   {hasTemplateWrap && selectedWrapMode === "full-wrap"
                     ? "Full-wrap template is covering the mug body. Manual sections stay available for upload work."
                     : hasUploadWrap
-                      ? "Wide upload is active as a full-wrap layout."
+                      ? "Full coverage upload is wrapping the whole mug body."
                       : "Choose a placement box, then upload an image for that mug section."}
                 </p>
 
@@ -1045,7 +1130,7 @@ export default function CustomizerPage() {
                       </div>
                       <input
                         type="range"
-                        min="0.5"
+                        min="1"
                         max="2"
                         step="0.01"
                         value={currentImageScale}

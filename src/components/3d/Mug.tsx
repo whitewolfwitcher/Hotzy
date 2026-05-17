@@ -14,8 +14,9 @@ function applyCoverTexture(
   maxAnisotropy: number,
   wrapS: THREE.Wrapping
 ) {
-  const repeatX = imageAspect > targetAspect ? targetAspect / imageAspect : 1
-  const repeatY = imageAspect < targetAspect ? imageAspect / targetAspect : 1
+  const resolvedImageAspect = Number.isFinite(imageAspect) && imageAspect > 0 ? imageAspect : targetAspect
+  const resolvedTargetAspect = Number.isFinite(targetAspect) && targetAspect > 0 ? targetAspect : resolvedImageAspect
+  texture.userData.coverScale = Math.max(resolvedTargetAspect / resolvedImageAspect, 1)
 
   texture.wrapS = wrapS
   texture.wrapT = THREE.ClampToEdgeWrapping
@@ -23,8 +24,8 @@ function applyCoverTexture(
   texture.magFilter = THREE.LinearFilter
   texture.anisotropy = maxAnisotropy
   texture.colorSpace = THREE.SRGBColorSpace
-  texture.repeat.set(repeatX, repeatY)
-  texture.offset.set((1 - repeatX) / 2, (1 - repeatY) / 2)
+  texture.repeat.set(1, 1)
+  texture.offset.set(0, 0)
   texture.center.set(0.5, 0.5)
   texture.rotation = 0
   texture.needsUpdate = true
@@ -86,8 +87,8 @@ function FallbackMug({
   const HANDLE_THICKNESS = 0.008
   const SEGMENTS_RADIAL = 64
   const SEGMENTS_HEIGHT = 32
-  const WRAP_TEXTURE_WIDTH = 2850
-  const WRAP_TEXTURE_HEIGHT = 1050
+  const WRAP_TEXTURE_WIDTH = 4500
+  const WRAP_TEXTURE_HEIGHT = 1800
   const PANEL_AREA_WIDTH = WRAP_TEXTURE_WIDTH * 0.38
   const PANEL_AREA_HEIGHT = WRAP_TEXTURE_HEIGHT * 0.82
   const PANEL_AREA_X = (WRAP_TEXTURE_WIDTH - PANEL_AREA_WIDTH) / 2
@@ -150,7 +151,7 @@ function FallbackMug({
           canvasTexture.magFilter = THREE.LinearFilter
           canvasTexture.anisotropy = maxAnisotropy
           canvasTexture.colorSpace = THREE.SRGBColorSpace
-          canvasTexture.repeat.set(1 * imageZoom, imageZoom)
+          canvasTexture.repeat.set(1 / imageZoom, 1 / imageZoom)
           canvasTexture.offset.set(imagePosition.x, imagePosition.y)
           canvasTexture.center.set(0.5, 0.5)
           canvasTexture.rotation = (imageRotation * Math.PI) / 180
@@ -262,7 +263,7 @@ function FallbackMug({
         canvasTexture.flipY = true
         applyCoverTexture(
           canvasTexture,
-          targetAspect,
+          imageAspect,
           targetAspect,
           maxAnisotropy,
           mode === 'full-wrap' ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping
