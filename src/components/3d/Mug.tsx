@@ -240,24 +240,30 @@ function FallbackMug({
             ? coverageScale
             : Math.min(targetWidth / img.width, targetHeight / img.height)
         const safeScaleMultiplier = isFullWrap
-          ? Math.max(scaleMultiplier, 1)
+          ? Math.max(scaleMultiplier, 0.5)
           : Math.max(scaleMultiplier, 0.5)
-        const scale = Math.max(fitScale * safeScaleMultiplier, coverageScale)
-
-        const drawWidth = img.width * scale
-        const drawHeight = img.height * scale
         const resolvedFocalX = isFullWrap ? focalPoint.x : 0.5
         const resolvedFocalY = isFullWrap ? focalPoint.y : 0.5
-        const drawX =
-          effectiveFit === 'cover'
-            ? targetX + targetWidth / 2 - drawWidth * resolvedFocalX
-            : targetX + (targetWidth - drawWidth) / 2
-        const drawY =
-          effectiveFit === 'cover'
-            ? targetY + targetHeight / 2 - drawHeight * resolvedFocalY
-            : targetY + (targetHeight - drawHeight) / 2
+        const drawCoverImage = (drawScale: number) => {
+          const drawWidth = img.width * drawScale
+          const drawHeight = img.height * drawScale
+          const drawX =
+            effectiveFit === 'cover'
+              ? targetX + targetWidth / 2 - drawWidth * resolvedFocalX
+              : targetX + (targetWidth - drawWidth) / 2
+          const drawY =
+            effectiveFit === 'cover'
+              ? targetY + targetHeight / 2 - drawHeight * resolvedFocalY
+              : targetY + (targetHeight - drawHeight) / 2
 
-        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+        }
+
+        if (isFullWrap) {
+          drawCoverImage(coverageScale)
+        }
+
+        drawCoverImage(fitScale * safeScaleMultiplier)
 
         const canvasTexture = new THREE.CanvasTexture(canvas)
         canvasTexture.flipY = true

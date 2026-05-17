@@ -152,7 +152,7 @@ export default function CustomizerPage() {
   const hasWrapArtwork = Boolean(selectedWrapArtwork);
   const hasTemplateWrap = selectedWrapArtwork?.source === "template";
   const hasUploadWrap = selectedWrapArtwork?.source === "upload";
-  const currentImageScale = hasUploadWrap
+  const currentImageScale = hasWrapArtwork
     ? selectedWrapArtwork?.scale ?? 1
     : sectionImageScales[activeSection];
   const selectedWrapMode = selectedWrapArtwork?.mode ?? "full-wrap";
@@ -324,7 +324,7 @@ export default function CustomizerPage() {
   const resetPositionControls = () => {
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
-    if (hasUploadWrap) {
+    if (hasWrapArtwork) {
       setSelectedWrapArtwork((prev) => (prev ? { ...prev, scale: 1 } : prev));
     } else {
       setSectionImageScales((prev) => ({ ...prev, [activeSection]: 1 }));
@@ -333,9 +333,9 @@ export default function CustomizerPage() {
 
   const updateImageScale = (nextScale: number) => {
     if (!Number.isFinite(nextScale)) return;
-    const clampedScale = Math.min(2, Math.max(1, nextScale));
+    const clampedScale = Math.min(2, Math.max(0.5, nextScale));
 
-    if (hasUploadWrap) {
+    if (hasWrapArtwork) {
       setSelectedWrapArtwork((prev) =>
         prev ? { ...prev, scale: clampedScale } : prev
       );
@@ -1004,8 +1004,42 @@ export default function CustomizerPage() {
                     </p>
                   </label>
                 </div>
+
+                {hasWrapArtwork && (
+                  <div className="mt-4 rounded-[16px] border border-white/8 bg-black/25 p-4">
+                    <div className="mb-3 flex items-center justify-between text-xs text-white/60">
+                      <span className="flex items-center gap-2">
+                        <Move className="h-3.5 w-3.5 text-primary" />
+                        Size on mug
+                      </span>
+                      <button
+                        type="button"
+                        onClick={resetPositionControls}
+                        className="font-semibold text-primary"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                    <div>
+                      <div className="mb-2 flex items-center justify-between text-xs text-white/60">
+                        <span>Scale</span>
+                        <span>{Math.round(currentImageScale * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="2"
+                        step="0.01"
+                        value={currentImageScale}
+                        onChange={(e) => updateImageScale(parseFloat(e.target.value))}
+                        className="w-full accent-primary"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
+              {uploadPrintMode === "sections" && (
               <div className="rounded-[20px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
                 <div className="mb-4 flex items-center justify-between">
                   <div>
@@ -1108,7 +1142,7 @@ export default function CustomizerPage() {
                   </button>
                 )}
 
-                {!hasTemplateWrap && (hasUploadWrap || (!hasWrapArtwork && currentSectionImage)) && (
+                {!hasWrapArtwork && currentSectionImage && (
                   <div className="mt-4 rounded-[16px] border border-white/8 bg-black/25 p-4">
                     <div className="mb-3 flex items-center justify-between text-xs text-white/60">
                       <span className="flex items-center gap-2">
@@ -1130,7 +1164,7 @@ export default function CustomizerPage() {
                       </div>
                       <input
                         type="range"
-                        min="1"
+                        min="0.5"
                         max="2"
                         step="0.01"
                         value={currentImageScale}
@@ -1138,7 +1172,6 @@ export default function CustomizerPage() {
                         className="w-full accent-primary"
                       />
                     </div>
-                    {!hasUploadWrap && (
                       <>
                         <div className="mt-4 mb-2 flex items-center justify-between text-xs text-white/60">
                           <span className="flex items-center gap-2">
@@ -1178,10 +1211,10 @@ export default function CustomizerPage() {
                           </button>
                         </div>
                       </>
-                    )}
                   </div>
                 )}
               </div>
+              )}
               <div className="rounded-[20px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="rounded-xl bg-primary/12 p-2.5 text-primary">
