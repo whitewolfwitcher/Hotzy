@@ -69,7 +69,6 @@ type WrapArtwork = {
   scale?: number;
 };
 
-const WRAP_UPLOAD_ASPECT_RATIO = 1.45;
 const sectionOrder: SectionKey[] = ["section1", "section2", "section3"];
 
 export default function CustomizerPage() {
@@ -157,15 +156,6 @@ export default function CustomizerPage() {
   const selectedWrapMode = selectedWrapArtwork?.mode ?? "full-wrap";
   const activeSectionNumber = activeSection.replace("section", "");
 
-  const loadImageFromSource = (src: string): Promise<HTMLImageElement> =>
-    new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error("Failed to load image"));
-      img.crossOrigin = "anonymous";
-      img.src = src;
-    });
-
   const readFileAsDataUrl = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -181,17 +171,6 @@ export default function CustomizerPage() {
       reader.readAsDataURL(file);
     });
 
-  const processUploadImage = async (
-    file: File
-  ): Promise<{ image: string; mode: "section" | "wrap" }> => {
-    const dataUrl = await readFileAsDataUrl(file);
-    const img = await loadImageFromSource(dataUrl);
-    if (img.width / img.height >= WRAP_UPLOAD_ASPECT_RATIO) {
-      return { image: dataUrl, mode: "wrap" };
-    }
-    return { image: dataUrl, mode: "section" };
-  };
-
   const applyDesignToSections = (designImage: string) => {
     setSelectedWrapArtwork(null);
     setSectionImages((prev) => ({ ...prev, [activeSection]: designImage }));
@@ -204,28 +183,12 @@ export default function CustomizerPage() {
     if (!file) return;
 
     try {
-      const processedUpload = await processUploadImage(file);
-      if (processedUpload.mode === "wrap") {
-        setSelectedWrapArtwork({
-          image: processedUpload.image,
-          fit: "cover",
-          mode: "full-wrap",
-          source: "upload",
-          focalX: 0.5,
-          focalY: 0.5,
-          wrapOffsetX: 0,
-          previewRotation: -0.55,
-          scale: 1,
-        });
-        setImagePosition({ x: 0, y: 0 });
-        setImageRotation(0);
-      } else {
-        applyDesignToSections(processedUpload.image);
-      }
+      const uploadedImage = await readFileAsDataUrl(file);
+      applyDesignToSections(uploadedImage);
 
       void track("design_upload_success", {
         cup_type: cupType,
-        section: processedUpload.mode === "wrap" ? "full_wrap" : activeSection,
+        section: activeSection,
         file_type: file.type || "unknown",
         file_size_kb: Math.round(file.size / 1024),
       });
@@ -249,24 +212,8 @@ export default function CustomizerPage() {
         method: "drop",
       });
 
-      const processedUpload = await processUploadImage(file);
-      if (processedUpload.mode === "wrap") {
-        setSelectedWrapArtwork({
-          image: processedUpload.image,
-          fit: "cover",
-          mode: "full-wrap",
-          source: "upload",
-          focalX: 0.5,
-          focalY: 0.5,
-          wrapOffsetX: 0,
-          previewRotation: -0.55,
-          scale: 1,
-        });
-        setImagePosition({ x: 0, y: 0 });
-        setImageRotation(0);
-      } else {
-        applyDesignToSections(processedUpload.image);
-      }
+      const uploadedImage = await readFileAsDataUrl(file);
+      applyDesignToSections(uploadedImage);
     } catch (error) {
       console.error("Error processing image:", error);
     }
@@ -592,11 +539,11 @@ export default function CustomizerPage() {
                       >
                         <Upload className="mx-auto h-9 w-9 text-primary" />
                         <div className="mt-3 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-                          {hasWrapArtwork ? "Replace Wrap" : `Section ${activeSectionNumber}`}
+                          {`Section ${activeSectionNumber}`}
                         </div>
                         <p className="mt-3 text-sm font-semibold text-white">Upload image</p>
                         <p className="mt-1 text-xs text-white/45">
-                          Portrait fills section, wide image wraps full mug.
+                          Uploads apply to the selected section.
                         </p>
                       </label>
                     </div>
@@ -964,11 +911,11 @@ export default function CustomizerPage() {
                   >
                     <Upload className="mx-auto h-9 w-9 text-primary" />
                     <div className="mt-3 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-                      {hasWrapArtwork ? "Replace Wrap" : `Section ${activeSectionNumber}`}
+                      {`Section ${activeSectionNumber}`}
                     </div>
                     <p className="mt-3 text-sm font-semibold text-white">Upload image</p>
                     <p className="mt-1 text-xs text-white/45">
-                      Wide images wrap the mug. Square or portrait images fill the selected section.
+                      Select a placement box, then upload or replace its image.
                     </p>
                   </label>
                 </div>
@@ -1062,7 +1009,7 @@ export default function CustomizerPage() {
                     ? "Full-wrap template is covering the mug body. Manual sections stay available for upload work."
                     : hasUploadWrap
                       ? "Wide upload is active as a full-wrap layout."
-                      : "Choose a section for focused uploads, or use a wide image to cover the whole mug."}
+                      : "Choose a placement box, then upload an image for that mug section."}
                 </p>
 
                 {!hasWrapArtwork && currentSectionType === "uploaded" && (
