@@ -1,8 +1,34 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 
 type ArtworkMode = 'full-wrap' | 'panel'
+
+const PRINTABLE_MATERIAL_NAMES = new Set(['mug_body.007', 'PrintMat'])
+
+function applyCoverTexture(
+  texture: THREE.Texture,
+  imageAspect: number,
+  targetAspect: number,
+  maxAnisotropy: number,
+  wrapS: THREE.Wrapping
+) {
+  const repeatX = imageAspect > targetAspect ? targetAspect / imageAspect : 1
+  const repeatY = imageAspect < targetAspect ? imageAspect / targetAspect : 1
+
+  texture.wrapS = wrapS
+  texture.wrapT = THREE.ClampToEdgeWrapping
+  texture.minFilter = THREE.LinearMipMapLinearFilter
+  texture.magFilter = THREE.LinearFilter
+  texture.anisotropy = maxAnisotropy
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.repeat.set(repeatX, repeatY)
+  texture.offset.set((1 - repeatX) / 2, (1 - repeatY) / 2)
+  texture.center.set(0.5, 0.5)
+  texture.rotation = 0
+  texture.needsUpdate = true
+}
 
 // 11 OZ Sublimation Mug - Exact specifications from reference images
 function FallbackMug({ 
@@ -69,6 +95,11 @@ function FallbackMug({
 
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const { scene } = useGLTF('/3d/Mug_AR_Rebuild.glb')
+  const { gl } = useThree()
+  const maxAnisotropy = useMemo(
+    () => gl.capabilities.getMaxAnisotropy(),
+    [gl]
+  )
   const normalizeWrapOffset = (value: number) => ((value % 1) + 1) % 1
 
   // Create combined texture from 3 section images
@@ -117,7 +148,8 @@ function FallbackMug({
           canvasTexture.wrapT = THREE.ClampToEdgeWrapping
           canvasTexture.minFilter = THREE.LinearMipMapLinearFilter
           canvasTexture.magFilter = THREE.LinearFilter
-          canvasTexture.anisotropy = 16
+          canvasTexture.anisotropy = maxAnisotropy
+          canvasTexture.colorSpace = THREE.SRGBColorSpace
           canvasTexture.repeat.set(1 * imageZoom, imageZoom)
           canvasTexture.offset.set(imagePosition.x, imagePosition.y)
           canvasTexture.center.set(0.5, 0.5)
@@ -133,7 +165,7 @@ function FallbackMug({
         sectionScale: number
       ) => {
         const baseScale = Math.max(800 / img.width, 800 / img.height)
-        const drawScale = baseScale * sectionScale
+        const drawScale = baseScale * Math.max(sectionScale, 1)
         const drawWidth = img.width * drawScale
         const drawHeight = img.height * drawScale
         const sectionX = sectionIndex * 800
@@ -197,68 +229,46 @@ function FallbackMug({
         const targetHeight = mode === 'panel' ? PANEL_AREA_HEIGHT : canvas.height
         const targetX = mode === 'panel' ? PANEL_AREA_X : 0
         const targetY = mode === 'panel' ? PANEL_AREA_Y : 0
-        const wrapAspect = targetWidth / targetHeight
+        const targetAspect = targetWidth / targetHeight
         const imageAspect = img.width / img.height
-        const shouldTileTemplate =
-          mode === 'full-wrap' &&
-          artworkSource === 'template' &&
-          fit === 'cover' &&
-          imageAspect < wrapAspect * 0.92
+        const isFullWrap = mode === 'full-wrap'
+        const effectiveFit = isFullWrap ? 'cover' : fit
+        const coverageScale = Math.max(targetWidth / img.width, targetHeight / img.height)
+        const fitScale =
+          effectiveFit === 'cover'
+            ? coverageScale
+            : Math.min(targetWidth / img.width, targetHeight / img.height)
+        const safeScaleMultiplier = isFullWrap
+          ? Math.max(scaleMultiplier, 1)
+          : Math.max(scaleMultiplier, 0.5)
+        const scale = Math.max(fitScale * safeScaleMultiplier, coverageScale)
 
-        if (shouldTileTemplate) {
-          const drawHeight = targetHeight
-          const drawWidth = drawHeight * imageAspect
-          const repeatCount = Math.max(3, Math.ceil(targetWidth / drawWidth) + 2)
-          const startX = targetX + (targetWidth - drawWidth * repeatCount) / 2
+        const drawWidth = img.width * scale
+        const drawHeight = img.height * scale
+        const resolvedFocalX = isFullWrap ? focalPoint.x : 0.5
+        const resolvedFocalY = isFullWrap ? focalPoint.y : 0.5
+        const drawX =
+          effectiveFit === 'cover'
+            ? targetX + targetWidth / 2 - drawWidth * resolvedFocalX
+            : targetX + (targetWidth - drawWidth) / 2
+        const drawY =
+          effectiveFit === 'cover'
+            ? targetY + targetHeight / 2 - drawHeight * resolvedFocalY
+            : targetY + (targetHeight - drawHeight) / 2
 
-          for (let index = 0; index < repeatCount; index += 1) {
-            ctx.drawImage(
-              img,
-              startX + drawWidth * index,
-              targetY,
-              drawWidth,
-              drawHeight
-            )
-          }
-        } else {
-          const scale =
-            (fit === 'cover'
-              ? Math.max(targetWidth / img.width, targetHeight / img.height)
-              : Math.min(targetWidth / img.width, targetHeight / img.height)) *
-            scaleMultiplier
-
-          const drawWidth = img.width * scale
-          const drawHeight = img.height * scale
-          const resolvedFocalX = mode === 'full-wrap' ? focalPoint.x : 0.5
-          const resolvedFocalY = mode === 'full-wrap' ? focalPoint.y : 0.5
-          const drawX =
-            fit === 'cover'
-              ? targetX + targetWidth / 2 - drawWidth * resolvedFocalX
-              : targetX + (targetWidth - drawWidth) / 2
-          const drawY =
-            fit === 'cover'
-              ? targetY + targetHeight / 2 - drawHeight * resolvedFocalY
-              : targetY + (targetHeight - drawHeight) / 2
-
-          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
-        }
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
 
         const canvasTexture = new THREE.CanvasTexture(canvas)
         canvasTexture.flipY = true
-        canvasTexture.wrapS =
+        applyCoverTexture(
+          canvasTexture,
+          targetAspect,
+          targetAspect,
+          maxAnisotropy,
           mode === 'full-wrap' ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping
-        canvasTexture.wrapT = THREE.ClampToEdgeWrapping
-        canvasTexture.minFilter = THREE.LinearMipMapLinearFilter
-        canvasTexture.magFilter = THREE.LinearFilter
-        canvasTexture.anisotropy = 16
-        canvasTexture.colorSpace = THREE.SRGBColorSpace
-        canvasTexture.repeat.set(1, 1)
-        canvasTexture.offset.set(
-          mode === 'full-wrap' ? normalizeWrapOffset(wrapOffsetX) : 0,
-          0
         )
-        canvasTexture.center.set(0.5, 0.5)
-        canvasTexture.rotation = 0
+        canvasTexture.offset.x =
+          mode === 'full-wrap' ? normalizeWrapOffset(wrapOffsetX) : 0
         canvasTexture.needsUpdate = true
         resolve(canvasTexture)
       }
@@ -337,6 +347,7 @@ function FallbackMug({
     focalX,
     focalY,
     imageScale,
+    maxAnisotropy,
     sectionImages,
     sectionImageScales,
     imagePosition.x,
@@ -507,21 +518,16 @@ function FallbackMug({
         })
         upgradedMaterial.name = material.name
 
-        if (material.name === 'PrintMat') {
-          upgradedMaterial.color.set(mugBodyColor)
-          upgradedMaterial.map = null
-          upgradedMaterial.roughness = cupType === 'standard' ? 0.42 : 0.24
-          upgradedMaterial.clearcoat = cupType === 'standard' ? 0.8 : 1
-          upgradedMaterial.clearcoatRoughness = cupType === 'standard' ? 0.16 : 0.07
-          upgradedMaterial.envMapIntensity = cupType === 'standard' ? 0.88 : 1.1
-        } else if (material.name === 'mug_body.007') {
-          upgradedMaterial.color.set(mugBodyColor)
-          upgradedMaterial.map = null
-          upgradedMaterial.roughness = cupType === 'standard' ? 0.44 : 0.28
-          upgradedMaterial.clearcoat = cupType === 'standard' ? 0.75 : 1
-          upgradedMaterial.clearcoatRoughness = cupType === 'standard' ? 0.17 : 0.08
-          upgradedMaterial.envMapIntensity = cupType === 'standard' ? 0.86 : 1.1
-        } else if (material.name === 'HandleMat' || material.name === 'BaseMat') {
+      if (PRINTABLE_MATERIAL_NAMES.has(material.name)) {
+        upgradedMaterial.color.set(
+          texture && artworkMode === 'full-wrap' ? '#ffffff' : mugBodyColor
+        )
+        upgradedMaterial.map = texture && artworkMode === 'full-wrap' ? texture : null
+        upgradedMaterial.roughness = cupType === 'standard' ? 0.42 : 0.24
+        upgradedMaterial.clearcoat = cupType === 'standard' ? 0.8 : 1
+        upgradedMaterial.clearcoatRoughness = cupType === 'standard' ? 0.16 : 0.07
+        upgradedMaterial.envMapIntensity = cupType === 'standard' ? 0.86 : 1.1
+      } else if (material.name === 'HandleMat' || material.name === 'BaseMat') {
           upgradedMaterial.color.set(handleColor)
           upgradedMaterial.map = null
           upgradedMaterial.roughness = cupType === 'standard' ? 0.42 : 0.24
@@ -543,7 +549,7 @@ function FallbackMug({
         }
       })
     })
-  }, [cupType, handleColor, mugBodyColor, mugScene, texture])
+  }, [artworkMode, cupType, handleColor, mugBodyColor, mugScene, texture])
 
   return (
     <group
