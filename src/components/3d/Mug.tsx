@@ -15,7 +15,9 @@ function FallbackMug({
   artworkMode = 'full-wrap',
   dividedMode,
   sectionImages,
+  sectionImageScales,
   imagePosition = { x: 0, y: 0 },
+  imageScale = 1,
   imageZoom = 1,
   imageRotation = 0,
   focalX = 0.5,
@@ -37,7 +39,13 @@ function FallbackMug({
     section2: string | null
     section3: string | null
   }
+  sectionImageScales?: {
+    section1: number
+    section2: number
+    section3: number
+  }
   imagePosition?: { x: number; y: number }
+  imageScale?: number
   imageZoom?: number
   imageRotation?: number
   focalX?: number
@@ -64,7 +72,10 @@ function FallbackMug({
   const normalizeWrapOffset = (value: number) => ((value % 1) + 1) % 1
 
   // Create combined texture from 3 section images
-  const createCombinedTexture = (images: typeof sectionImages): Promise<THREE.CanvasTexture | null> => {
+  const createCombinedTexture = (
+    images: typeof sectionImages,
+    scales: typeof sectionImageScales
+  ): Promise<THREE.CanvasTexture | null> => {
     return new Promise((resolve) => {
       if (!images) {
         resolve(null)
@@ -116,14 +127,33 @@ function FallbackMug({
         }
       }
 
+      const drawImageCover = (
+        img: HTMLImageElement,
+        sectionIndex: number,
+        sectionScale: number
+      ) => {
+        const baseScale = Math.max(800 / img.width, 800 / img.height)
+        const drawScale = baseScale * sectionScale
+        const drawWidth = img.width * drawScale
+        const drawHeight = img.height * drawScale
+        const sectionX = sectionIndex * 800
+        const drawX = sectionX + (800 - drawWidth) / 2
+        const drawY = (800 - drawHeight) / 2
+
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+      }
+
       // Load and draw each section image
-      [section1, section2, section3].forEach((imgSrc, index) => {
+      ;[
+        { src: section1, key: 'section1' as const },
+        { src: section2, key: 'section2' as const },
+        { src: section3, key: 'section3' as const },
+      ].forEach(({ src: imgSrc, key }, index) => {
         if (imgSrc) {
           const img = new Image()
           img.crossOrigin = 'anonymous'
           img.onload = () => {
-            const xPos = index * 800 // Position each image at its section
-            ctx.drawImage(img, xPos, 0, 800, 800)
+            drawImageCover(img, index, scales?.[key] ?? 1)
             checkComplete()
           }
           img.onerror = () => {
@@ -143,7 +173,8 @@ function FallbackMug({
     artworkSource: 'template' | 'upload',
     fit: 'cover' | 'contain',
     mode: ArtworkMode,
-    focalPoint: { x: number; y: number }
+    focalPoint: { x: number; y: number },
+    scaleMultiplier = 1
   ): Promise<THREE.CanvasTexture | null> => {
     return new Promise((resolve) => {
       const img = new Image()
@@ -191,9 +222,10 @@ function FallbackMug({
           }
         } else {
           const scale =
-            fit === 'cover'
+            (fit === 'cover'
               ? Math.max(targetWidth / img.width, targetHeight / img.height)
-              : Math.min(targetWidth / img.width, targetHeight / img.height)
+              : Math.min(targetWidth / img.width, targetHeight / img.height)) *
+            scaleMultiplier
 
           const drawWidth = img.width * scale
           const drawHeight = img.height * scale
@@ -242,7 +274,7 @@ function FallbackMug({
     // Priority 1: If dividedMode with sectionImages, use combined texture
     if (dividedMode && sectionImages) {
       console.log('Loading 3-section combined texture', sectionImages)
-      createCombinedTexture(sectionImages).then((combinedTexture) => {
+      createCombinedTexture(sectionImages, sectionImageScales).then((combinedTexture) => {
         if (combinedTexture) {
           console.log('3-section texture created successfully')
           setTexture(combinedTexture)
@@ -263,10 +295,17 @@ function FallbackMug({
     }
     
     console.log('Loading wrap texture:', customImage)
-    createWrapTexture(customImage, artworkSource, customImageFit, artworkMode, {
-      x: focalX,
-      y: focalY,
-    })
+    createWrapTexture(
+      customImage,
+      artworkSource,
+      customImageFit,
+      artworkMode,
+      {
+        x: focalX,
+        y: focalY,
+      },
+      imageScale
+    )
       .then((wrapTexture) => {
         if (wrapTexture) {
           console.log('Wrap texture created successfully')
@@ -297,7 +336,9 @@ function FallbackMug({
     dividedMode,
     focalX,
     focalY,
+    imageScale,
     sectionImages,
+    sectionImageScales,
     imagePosition.x,
     imagePosition.y,
     imageZoom,
@@ -591,7 +632,9 @@ export default function Mug({
   artworkMode,
   dividedMode,
   sectionImages,
+  sectionImageScales,
   imagePosition,
+  imageScale,
   imageZoom,
   imageRotation,
   focalX,
@@ -613,7 +656,13 @@ export default function Mug({
     section2: string | null
     section3: string | null
   }
+  sectionImageScales?: {
+    section1: number
+    section2: number
+    section3: number
+  }
   imagePosition?: { x: number; y: number }
+  imageScale?: number
   imageZoom?: number
   imageRotation?: number
   focalX?: number
@@ -633,7 +682,9 @@ export default function Mug({
       dividedMode={dividedMode}
       cupType={cupType}
       sectionImages={sectionImages}
+      sectionImageScales={sectionImageScales}
       imagePosition={imagePosition}
+      imageScale={imageScale}
       imageZoom={imageZoom}
       imageRotation={imageRotation}
       focalX={focalX}

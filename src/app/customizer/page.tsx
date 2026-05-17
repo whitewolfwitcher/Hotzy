@@ -53,6 +53,7 @@ const MugViewer = dynamic(() => import("@/components/3d/mug-viewer"), {
 type SectionKey = "section1" | "section2" | "section3";
 type SectionImages = Record<SectionKey, string | null>;
 type SectionImageTypes = Record<SectionKey, "uploaded" | null>;
+type SectionImageScales = Record<SectionKey, number>;
 type ArtworkMode = "full-wrap" | "panel";
 type ArtworkSource = "template" | "upload";
 
@@ -65,9 +66,10 @@ type WrapArtwork = {
   focalY?: number;
   wrapOffsetX?: number;
   previewRotation?: number;
+  scale?: number;
 };
 
-const WRAP_UPLOAD_ASPECT_RATIO = 2;
+const WRAP_UPLOAD_ASPECT_RATIO = 1.45;
 const sectionOrder: SectionKey[] = ["section1", "section2", "section3"];
 
 export default function CustomizerPage() {
@@ -80,6 +82,11 @@ export default function CustomizerPage() {
     section1: null,
     section2: null,
     section3: null,
+  });
+  const [sectionImageScales, setSectionImageScales] = useState<SectionImageScales>({
+    section1: 1,
+    section2: 1,
+    section3: 1,
   });
   const [selectedWrapArtwork, setSelectedWrapArtwork] = useState<WrapArtwork | null>(null);
   const [previewResetToken, setPreviewResetToken] = useState(0);
@@ -144,6 +151,9 @@ export default function CustomizerPage() {
   const hasWrapArtwork = Boolean(selectedWrapArtwork);
   const hasTemplateWrap = selectedWrapArtwork?.source === "template";
   const hasUploadWrap = selectedWrapArtwork?.source === "upload";
+  const currentImageScale = hasUploadWrap
+    ? selectedWrapArtwork?.scale ?? 1
+    : sectionImageScales[activeSection];
   const selectedWrapMode = selectedWrapArtwork?.mode ?? "full-wrap";
   const activeSectionNumber = activeSection.replace("section", "");
 
@@ -171,26 +181,6 @@ export default function CustomizerPage() {
       reader.readAsDataURL(file);
     });
 
-  const createSectionUploadImage = (img: HTMLImageElement): string => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 800;
-    canvas.height = 800;
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) throw new Error("Failed to get canvas context");
-
-    const scale = Math.min(800 / img.width, 800 / img.height);
-    const scaledWidth = img.width * scale;
-    const scaledHeight = img.height * scale;
-    const x = (800 - scaledWidth) / 2;
-    const y = (800 - scaledHeight) / 2;
-
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, 800, 800);
-    ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-    return canvas.toDataURL("image/png");
-  };
-
   const processUploadImage = async (
     file: File
   ): Promise<{ image: string; mode: "section" | "wrap" }> => {
@@ -199,13 +189,14 @@ export default function CustomizerPage() {
     if (img.width / img.height >= WRAP_UPLOAD_ASPECT_RATIO) {
       return { image: dataUrl, mode: "wrap" };
     }
-    return { image: createSectionUploadImage(img), mode: "section" };
+    return { image: dataUrl, mode: "section" };
   };
 
   const applyDesignToSections = (designImage: string) => {
     setSelectedWrapArtwork(null);
     setSectionImages((prev) => ({ ...prev, [activeSection]: designImage }));
     setImageTypes((prev) => ({ ...prev, [activeSection]: "uploaded" }));
+    setSectionImageScales((prev) => ({ ...prev, [activeSection]: 1 }));
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -224,6 +215,7 @@ export default function CustomizerPage() {
           focalY: 0.5,
           wrapOffsetX: 0,
           previewRotation: -0.55,
+          scale: 1,
         });
         setImagePosition({ x: 0, y: 0 });
         setImageRotation(0);
@@ -268,6 +260,7 @@ export default function CustomizerPage() {
           focalY: 0.5,
           wrapOffsetX: 0,
           previewRotation: -0.55,
+          scale: 1,
         });
         setImagePosition({ x: 0, y: 0 });
         setImageRotation(0);
@@ -309,6 +302,7 @@ export default function CustomizerPage() {
         mode === "full-wrap" ? selectedTemplate?.wrapOffsetX ?? 0 : undefined,
       previewRotation:
         mode === "full-wrap" ? selectedTemplate?.previewRotation ?? -0.55 : undefined,
+      scale: 1,
     });
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
@@ -328,6 +322,7 @@ export default function CustomizerPage() {
   const handleRemoveImage = (section: SectionKey) => {
     setSectionImages((prev) => ({ ...prev, [section]: null }));
     setImageTypes((prev) => ({ ...prev, [section]: null }));
+    setSectionImageScales((prev) => ({ ...prev, [section]: 1 }));
   };
 
   const handleDuplicateToAll = () => {
@@ -342,11 +337,38 @@ export default function CustomizerPage() {
       section2: currentSectionType,
       section3: currentSectionType,
     });
+    setSectionImageScales({
+      section1: currentImageScale,
+      section2: currentImageScale,
+      section3: currentImageScale,
+    });
   };
 
   const resetPositionControls = () => {
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
+    if (hasUploadWrap) {
+      setSelectedWrapArtwork((prev) => (prev ? { ...prev, scale: 1 } : prev));
+    } else {
+      setSectionImageScales((prev) => ({ ...prev, [activeSection]: 1 }));
+    }
+  };
+
+  const updateImageScale = (nextScale: number) => {
+    if (!Number.isFinite(nextScale)) return;
+    const clampedScale = Math.min(2, Math.max(0.5, nextScale));
+
+    if (hasUploadWrap) {
+      setSelectedWrapArtwork((prev) =>
+        prev ? { ...prev, scale: clampedScale } : prev
+      );
+      return;
+    }
+
+    setSectionImageScales((prev) => ({
+      ...prev,
+      [activeSection]: clampedScale,
+    }));
   };
 
   const moveImage = (direction: "up" | "down" | "left" | "right") => {
@@ -387,6 +409,7 @@ export default function CustomizerPage() {
         qty: quantity,
         meta: {
           sectionImages,
+          sectionImageScales,
           fullWrapArtwork: selectedWrapArtwork,
           fullWrapTemplate: selectedWrapArtwork?.image ?? null,
           selectedTemplateId: hasTemplateWrap ? selectedWrapTemplate?.id ?? null : null,
@@ -579,15 +602,15 @@ export default function CustomizerPage() {
                     </div>
                   </section>
 
-                  {!hasWrapArtwork && currentSectionImage && (
+                  {!hasTemplateWrap && (hasUploadWrap || (!hasWrapArtwork && currentSectionImage)) && (
                     <section>
                       <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white/55">
                         <Move className="h-4 w-4 text-primary" />
-                        Placement
+                        {hasUploadWrap ? "Wrap Scale" : "Placement"}
                       </div>
                       <div className="rounded-[24px] border border-white/8 bg-black/25 p-4">
                         <div className="mb-4 flex items-center justify-between text-xs text-white/65">
-                          <span>Move Image</span>
+                          <span>Scale Image</span>
                           <button
                             type="button"
                             onClick={resetPositionControls}
@@ -596,28 +619,48 @@ export default function CustomizerPage() {
                             Reset
                           </button>
                         </div>
-                        <div className="flex items-center justify-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => moveImage("left")}
-                            className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-primary"
-                          >
-                            <ArrowLeft className="h-4 w-4" />
-                          </button>
-                          <div className="min-w-16 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-center text-[11px] text-white/55">
-                            {imagePosition.x.toFixed(2)}
-                            <br />
-                            {imagePosition.y.toFixed(2)}
+                        <div>
+                          <div className="mb-2 flex items-center justify-between text-xs text-white/65">
+                            <span>Size on mug</span>
+                            <span>{Math.round(currentImageScale * 100)}%</span>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => moveImage("right")}
-                            className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-primary"
-                          >
-                            <ArrowRight className="h-4 w-4" />
-                          </button>
+                          <input
+                            type="range"
+                            min="0.5"
+                            max="2"
+                            step="0.01"
+                            value={currentImageScale}
+                            onChange={(e) => updateImageScale(parseFloat(e.target.value))}
+                            className="w-full accent-primary"
+                          />
                         </div>
-                        <div className="mt-4">
+
+                        {!hasUploadWrap && (
+                          <div className="mt-4 flex items-center justify-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => moveImage("left")}
+                              className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-primary"
+                            >
+                              <ArrowLeft className="h-4 w-4" />
+                            </button>
+                            <div className="min-w-16 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-center text-[11px] text-white/55">
+                              {imagePosition.x.toFixed(2)}
+                              <br />
+                              {imagePosition.y.toFixed(2)}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => moveImage("right")}
+                              className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-primary"
+                            >
+                              <ArrowRight className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+
+                        {!hasUploadWrap && (
+                          <div className="mt-4">
                           <div className="mb-2 flex items-center justify-between text-xs text-white/65">
                             <span className="flex items-center gap-2">
                               <RotateCw className="h-3.5 w-3.5 text-primary" />
@@ -634,7 +677,8 @@ export default function CustomizerPage() {
                             onChange={(e) => setImageRotation(parseFloat(e.target.value))}
                             className="w-full accent-primary"
                           />
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </section>
                   )}
@@ -743,7 +787,9 @@ export default function CustomizerPage() {
                       dividedMode={!hasWrapArtwork}
                       cupType={cupType}
                       sectionImages={sectionImages}
+                      sectionImageScales={sectionImageScales}
                       imagePosition={imagePosition}
+                      imageScale={selectedWrapArtwork?.scale}
                       imageRotation={imageRotation}
                       focalX={selectedWrapArtwork?.focalX}
                       focalY={selectedWrapArtwork?.focalY}
@@ -1030,12 +1076,12 @@ export default function CustomizerPage() {
                   </button>
                 )}
 
-                {!hasWrapArtwork && currentSectionImage && (
+                {!hasTemplateWrap && (hasUploadWrap || (!hasWrapArtwork && currentSectionImage)) && (
                   <div className="mt-4 rounded-[16px] border border-white/8 bg-black/25 p-4">
                     <div className="mb-3 flex items-center justify-between text-xs text-white/60">
                       <span className="flex items-center gap-2">
-                        <RotateCw className="h-3.5 w-3.5 text-primary" />
-                        Rotation
+                        <Move className="h-3.5 w-3.5 text-primary" />
+                        Size on mug
                       </span>
                       <button
                         type="button"
@@ -1045,36 +1091,62 @@ export default function CustomizerPage() {
                         Reset
                       </button>
                     </div>
-                    <input
-                      type="range"
-                      min="-45"
-                      max="45"
-                      step="1"
-                      value={imageRotation}
-                      onChange={(e) => setImageRotation(parseFloat(e.target.value))}
-                      className="w-full accent-primary"
-                    />
-                    <div className="mt-3 flex items-center justify-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => moveImage("left")}
-                        className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-primary"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                      </button>
-                      <div className="min-w-16 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-center text-[11px] text-white/55">
-                        {imagePosition.x.toFixed(2)}
-                        <br />
-                        {imagePosition.y.toFixed(2)}
+                    <div>
+                      <div className="mb-2 flex items-center justify-between text-xs text-white/60">
+                        <span>Scale</span>
+                        <span>{Math.round(currentImageScale * 100)}%</span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => moveImage("right")}
-                        className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-primary"
-                      >
-                        <ArrowRight className="h-4 w-4" />
-                      </button>
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="2"
+                        step="0.01"
+                        value={currentImageScale}
+                        onChange={(e) => updateImageScale(parseFloat(e.target.value))}
+                        className="w-full accent-primary"
+                      />
                     </div>
+                    {!hasUploadWrap && (
+                      <>
+                        <div className="mt-4 mb-2 flex items-center justify-between text-xs text-white/60">
+                          <span className="flex items-center gap-2">
+                            <RotateCw className="h-3.5 w-3.5 text-primary" />
+                            Rotation
+                          </span>
+                          <span>{imageRotation.toFixed(0)}°</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="-45"
+                          max="45"
+                          step="1"
+                          value={imageRotation}
+                          onChange={(e) => setImageRotation(parseFloat(e.target.value))}
+                          className="w-full accent-primary"
+                        />
+                        <div className="mt-3 flex items-center justify-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => moveImage("left")}
+                            className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-primary"
+                          >
+                            <ArrowLeft className="h-4 w-4" />
+                          </button>
+                          <div className="min-w-16 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-center text-[11px] text-white/55">
+                            {imagePosition.x.toFixed(2)}
+                            <br />
+                            {imagePosition.y.toFixed(2)}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => moveImage("right")}
+                            className="rounded-xl border border-primary/25 bg-primary/10 p-3 text-primary"
+                          >
+                            <ArrowRight className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

@@ -16,7 +16,13 @@ interface MugViewerProps {
     section2: string | null
     section3: string | null
   }
+  sectionImageScales?: {
+    section1: number
+    section2: number
+    section3: number
+  }
   imagePosition?: { x: number; y: number }
+  imageScale?: number
   imageZoom?: number
   imageRotation?: number
   focalX?: number
@@ -111,7 +117,9 @@ export default function MugViewer({
   dividedMode,
   cupType = 'hotzy',
   sectionImages,
+  sectionImageScales,
   imagePosition = { x: 0, y: 0 },
+  imageScale = 1,
   imageZoom = 1,
   imageRotation = 0,
   focalX = 0.5,
@@ -227,7 +235,9 @@ export default function MugViewer({
               dividedMode={dividedMode}
               cupType={cupType}
               sectionImages={sectionImages}
+              sectionImageScales={sectionImageScales}
               imagePosition={imagePosition}
+              imageScale={imageScale}
               imageZoom={imageZoom}
               imageRotation={imageRotation}
               focalX={focalX}
