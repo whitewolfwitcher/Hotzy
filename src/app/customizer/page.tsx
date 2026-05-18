@@ -288,7 +288,7 @@ export default function CustomizerPage() {
         mode === "full-wrap" ? selectedTemplate?.wrapOffsetX ?? 0 : undefined,
       previewRotation:
         mode === "full-wrap" ? selectedTemplate?.previewRotation ?? -0.55 : undefined,
-      scale: mode === "full-wrap" && templateFit === "contain" ? 0.88 : 1,
+      scale: 1,
     });
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);

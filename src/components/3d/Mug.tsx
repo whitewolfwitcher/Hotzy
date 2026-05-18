@@ -260,22 +260,7 @@ function FallbackMug({
               : targetY + (targetHeight - drawHeight) * resolvedFocalY
 
           ctx.filter = PRINT_IMAGE_FILTER
-
-          if (isFullWrap && effectiveFit === 'contain' && drawWidth > 0) {
-            let tiledX = drawX
-
-            while (tiledX > targetX) {
-              tiledX -= drawWidth
-            }
-
-            while (tiledX < targetX + targetWidth) {
-              ctx.drawImage(img, tiledX, drawY, drawWidth, drawHeight)
-              tiledX += drawWidth
-            }
-          } else {
-            ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
-          }
-
+          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
           ctx.filter = 'none'
         }
 
