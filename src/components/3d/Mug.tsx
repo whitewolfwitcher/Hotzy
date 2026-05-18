@@ -264,10 +264,6 @@ function FallbackMug({
           ctx.filter = 'none'
         }
 
-        if (isFullWrap && effectiveFit === 'contain') {
-          drawCoverImage(coverageScale)
-        }
-
         drawCoverImage(fitScale * safeScaleMultiplier)
 
         const canvasTexture = new THREE.CanvasTexture(canvas)
