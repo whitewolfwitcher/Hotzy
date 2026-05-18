@@ -6,6 +6,7 @@ import * as THREE from 'three'
 type ArtworkMode = 'full-wrap' | 'panel'
 
 const PRINTABLE_MATERIAL_NAMES = new Set(['mug_body.007', 'PrintMat'])
+const PRINT_IMAGE_FILTER = 'brightness(1.18) contrast(1.06) saturate(1.08)'
 
 function applyCoverTexture(
   texture: THREE.Texture,
@@ -173,7 +174,9 @@ function FallbackMug({
         const drawX = sectionX + (800 - drawWidth) / 2
         const drawY = (800 - drawHeight) / 2
 
+        ctx.filter = PRINT_IMAGE_FILTER
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+        ctx.filter = 'none'
       }
 
       // Load and draw each section image
@@ -250,13 +253,15 @@ function FallbackMug({
           const drawX =
             effectiveFit === 'cover'
               ? targetX + targetWidth / 2 - drawWidth * resolvedFocalX
-              : targetX + (targetWidth - drawWidth) / 2
+              : targetX + (targetWidth - drawWidth) * resolvedFocalX
           const drawY =
             effectiveFit === 'cover'
               ? targetY + targetHeight / 2 - drawHeight * resolvedFocalY
-              : targetY + (targetHeight - drawHeight) / 2
+              : targetY + (targetHeight - drawHeight) * resolvedFocalY
 
+          ctx.filter = PRINT_IMAGE_FILTER
           ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+          ctx.filter = 'none'
         }
 
         if (isFullWrap && effectiveFit === 'contain') {
@@ -410,12 +415,15 @@ function FallbackMug({
 
     return new THREE.MeshPhysicalMaterial({
       map: texture,
+      emissive: new THREE.Color('#ffffff'),
+      emissiveMap: texture,
+      emissiveIntensity: 0.22,
       color: new THREE.Color('#ffffff'),
-      roughness: 0.34,
+      roughness: 0.28,
       metalness: 0,
-      clearcoat: 1,
-      clearcoatRoughness: 0.12,
-      envMapIntensity: 1.05,
+      clearcoat: 0.84,
+      clearcoatRoughness: 0.1,
+      envMapIntensity: 1.18,
       side: THREE.DoubleSide,
     })
   }, [texture])

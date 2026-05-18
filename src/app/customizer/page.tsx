@@ -200,7 +200,7 @@ export default function CustomizerPage() {
       focalY: 0.5,
       wrapOffsetX: 0,
       previewRotation: -0.55,
-      scale: 1,
+      scale: 0.9,
     });
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
@@ -279,7 +279,7 @@ export default function CustomizerPage() {
 
     setSelectedWrapArtwork({
       image: templateImage,
-      fit: mode === "full-wrap" ? "cover" : templateFit,
+      fit: templateFit,
       mode,
       source: "template",
       focalX: mode === "full-wrap" ? selectedTemplate?.focalX ?? 0.5 : undefined,
@@ -288,7 +288,7 @@ export default function CustomizerPage() {
         mode === "full-wrap" ? selectedTemplate?.wrapOffsetX ?? 0 : undefined,
       previewRotation:
         mode === "full-wrap" ? selectedTemplate?.previewRotation ?? -0.55 : undefined,
-      scale: 1,
+      scale: mode === "full-wrap" && templateFit === "contain" ? 0.88 : 1,
     });
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
