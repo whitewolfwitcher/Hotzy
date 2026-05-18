@@ -174,6 +174,15 @@ export default function CustomizerPage() {
       reader.readAsDataURL(file);
     });
 
+  const scrollToCustomizerPanel = (
+    panelId: "preview-panel" | "upload-panel" | "templates-panel" | "finish-panel",
+    block: ScrollLogicalPosition = "start"
+  ) => {
+    document
+      .getElementById(panelId)
+      ?.scrollIntoView({ behavior: "smooth", block });
+  };
+
   const applyDesignToSections = (designImage: string) => {
     setSelectedWrapArtwork(null);
     setSectionImages((prev) => ({ ...prev, [activeSection]: designImage }));
@@ -184,7 +193,7 @@ export default function CustomizerPage() {
   const applyDesignAsFullWrap = (designImage: string) => {
     setSelectedWrapArtwork({
       image: designImage,
-      fit: "cover",
+      fit: "contain",
       mode: "full-wrap",
       source: "upload",
       focalX: 0.5,
@@ -487,7 +496,7 @@ export default function CustomizerPage() {
           </div>
         </header>
 
-        <main className="px-4 pb-28 pt-20 md:px-6 md:pb-10">
+        <main className="px-4 pb-52 pt-20 md:px-6 md:pb-10">
           <div className="mx-auto grid max-w-[1700px] gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
             <aside className="hidden">
               <div className="rounded-[28px] border border-primary/10 bg-[#111411]/85 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
@@ -746,11 +755,11 @@ export default function CustomizerPage() {
               </div>
             </aside>
 
-            <section className="relative overflow-hidden rounded-[24px] border border-primary/10 bg-[#080908] shadow-[0_32px_120px_rgba(0,0,0,0.45)]">
+            <section id="preview-panel" className="relative scroll-mt-20 overflow-hidden rounded-[24px] border border-primary/10 bg-[#080908] shadow-[0_32px_120px_rgba(0,0,0,0.45)]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(148,218,50,0.12),transparent_40%)]" />
               <div className="absolute inset-x-0 bottom-0 h-[36%] bg-[linear-gradient(rgba(118,185,0,0.16)_2px,transparent_2px),linear-gradient(90deg,rgba(118,185,0,0.16)_2px,transparent_2px)] bg-[size:84px_84px] [mask-image:linear-gradient(to_top,black_20%,transparent_90%)]" />
 
-              <div className="relative z-10 flex min-h-[760px] flex-col">
+              <div className="relative z-10 flex min-h-[560px] flex-col md:min-h-[760px]">
                 <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-5 md:px-8">
                   <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.26em]">
                     <div className="flex items-center gap-2 text-white/65">
@@ -831,22 +840,14 @@ export default function CustomizerPage() {
                     />
                     <button
                       type="button"
-                      onClick={() =>
-                        document
-                          .getElementById("upload-panel")
-                          ?.scrollIntoView({ behavior: "smooth", block: "nearest" })
-                      }
+                      onClick={() => scrollToCustomizerPanel("upload-panel", "nearest")}
                       className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary"
                     >
                       Upload
                     </button>
                     <button
                       type="button"
-                      onClick={() =>
-                        document
-                          .getElementById("templates-panel")
-                          ?.scrollIntoView({ behavior: "smooth", block: "nearest" })
-                      }
+                      onClick={() => scrollToCustomizerPanel("templates-panel", "nearest")}
                       className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/65"
                     >
                       Templates
@@ -861,7 +862,7 @@ export default function CustomizerPage() {
                   </div>
                 </div>
 
-                <div id="templates-panel" className="border-t border-primary/10 bg-[#090b09]/88 px-5 py-8 md:px-8 md:py-10">
+                <div id="templates-panel" className="scroll-mt-20 border-t border-primary/10 bg-[#090b09]/88 px-5 py-8 md:px-8 md:py-10">
                   <div className="mx-auto max-w-[1120px]">
                     <div className="text-center">
                       <div className="text-[12px] font-bold uppercase tracking-[0.28em] text-primary/75">
@@ -872,7 +873,7 @@ export default function CustomizerPage() {
                       </p>
                     </div>
 
-                    <div className="mt-7 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+                    <div className="mt-7 grid grid-cols-2 gap-x-3 gap-y-6 md:grid-cols-3 md:gap-4 xl:grid-cols-5">
                       {customizerDesignTemplates.map((template) => {
                         const isSelected = selectedWrapArtwork?.image === template.image
 
@@ -893,11 +894,11 @@ export default function CustomizerPage() {
                               <img
                                 src={template.image}
                                 alt={getText(template.name, template.nameFr)}
-                                className="aspect-[16/10] w-full object-cover"
+                                className="aspect-[16/10] w-full bg-black object-contain"
                               />
                             </div>
                             <div className="px-2 pt-3 text-center">
-                              <div className="text-lg leading-tight text-primary">
+                              <div className="text-sm leading-tight text-primary md:text-lg">
                                 {getText(template.name, template.nameFr)}
                               </div>
                             </div>
@@ -923,7 +924,7 @@ export default function CustomizerPage() {
             </section>
 
             <aside className="space-y-4 xl:sticky xl:top-20">
-              <div id="upload-panel" className="rounded-[20px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
+              <div id="upload-panel" className="scroll-mt-20 rounded-[20px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="rounded-xl bg-primary/12 p-2.5 text-primary">
                     <Upload className="h-5 w-5" />
@@ -1215,7 +1216,7 @@ export default function CustomizerPage() {
                 )}
               </div>
               )}
-              <div className="rounded-[20px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
+              <div id="finish-panel" className="scroll-mt-20 rounded-[20px] border border-primary/10 bg-[#111411]/85 p-5 backdrop-blur-xl">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="rounded-xl bg-primary/12 p-2.5 text-primary">
                     <CheckCircle2 className="h-5 w-5" />
@@ -1313,49 +1314,40 @@ export default function CustomizerPage() {
           </div>
         </main>
 
-        <div className="fixed bottom-20 left-0 z-40 w-full px-4 xl:hidden">
-          <div className="mx-auto max-w-md rounded-[30px] border border-primary/12 bg-[#111411]/88 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+        <div className="fixed bottom-[5.75rem] left-0 z-40 w-full px-3 xl:hidden">
+          <div className="mx-auto max-w-[calc(100vw-1.5rem)] rounded-[26px] border border-primary/12 bg-[#111411]/88 p-1.5 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:max-w-md">
             <div className="flex items-center justify-between gap-2">
               <button
                 type="button"
-                onClick={() =>
-                  document
-                    .getElementById("upload-panel")
-                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
-                }
-                className="flex flex-1 flex-col items-center gap-1 rounded-[22px] bg-primary/12 px-3 py-3 text-primary"
+                onClick={() => scrollToCustomizerPanel("upload-panel", "center")}
+                className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[20px] bg-primary/12 px-2 py-2.5 text-primary"
               >
                 <Upload className="h-5 w-5" />
                 <span className="text-[9px] font-black uppercase tracking-[0.18em]">Upload</span>
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  document
-                    .getElementById("templates-panel")
-                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
-                }
-                className="flex flex-1 flex-col items-center gap-1 px-3 py-3 text-white/55"
+                onClick={() => scrollToCustomizerPanel("templates-panel", "start")}
+                className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[20px] px-2 py-2.5 text-white/55"
               >
                 <ImageIcon className="h-5 w-5" />
                 <span className="text-[9px] font-black uppercase tracking-[0.18em]">Designs</span>
               </button>
               <button
                 type="button"
-                onClick={() => setPreviewResetToken((token) => token + 1)}
-                className="flex flex-1 flex-col items-center gap-1 px-3 py-3 text-white/55"
+                onClick={() => {
+                  setPreviewResetToken((token) => token + 1);
+                  scrollToCustomizerPanel("preview-panel", "start");
+                }}
+                className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[20px] px-2 py-2.5 text-white/55"
               >
                 <RotateCw className="h-5 w-5" />
                 <span className="text-[9px] font-black uppercase tracking-[0.18em]">View</span>
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  document
-                    .getElementById("upload-panel")
-                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
-                }
-                className="flex flex-1 flex-col items-center gap-1 px-3 py-3 text-white/55"
+                onClick={() => scrollToCustomizerPanel("finish-panel", "center")}
+                className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[20px] px-2 py-2.5 text-white/55"
               >
                 <Pipette className="h-5 w-5" />
                 <span className="text-[9px] font-black uppercase tracking-[0.18em]">Finish</span>
@@ -1363,7 +1355,7 @@ export default function CustomizerPage() {
               <button
                 type="button"
                 onClick={handleOrderNow}
-                className="ml-1 flex h-14 w-14 shrink-0 items-center justify-center rounded-[22px] bg-primary text-black shadow-[0_0_24px_rgba(148,218,50,0.35)]"
+                className="ml-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] bg-primary text-black shadow-[0_0_24px_rgba(148,218,50,0.35)]"
               >
                 <CheckCircle2 className="h-6 w-6" />
               </button>

@@ -88,6 +88,7 @@ const createCustomizerTemplate = ({
   focalY,
   wrapOffsetX,
   previewRotation,
+  fit = 'cover',
 }: {
   id: string;
   name: string;
@@ -99,6 +100,7 @@ const createCustomizerTemplate = ({
   focalY?: number;
   wrapOffsetX?: number;
   previewRotation?: number;
+  fit?: 'cover' | 'contain';
 }): DesignTemplate => ({
   id,
   name,
@@ -111,7 +113,7 @@ const createCustomizerTemplate = ({
   palette: [],
   payload_to_customizer: {
     overlay_image_url: image,
-    fit: 'cover',
+    fit,
     area: 'full',
   },
   wrap: 'full',
@@ -396,6 +398,7 @@ const websiteCustomizerTemplates: DesignTemplate[] = [
     focalY: 0.44,
     wrapOffsetX: 0.02,
     previewRotation: -0.55,
+    fit: 'contain',
   }),
   createCustomizerTemplate({
     id: 'website-cosmic-neon-floral-silhouette',
@@ -407,6 +410,7 @@ const websiteCustomizerTemplates: DesignTemplate[] = [
     focalY: 0.48,
     wrapOffsetX: 0,
     previewRotation: -0.55,
+    fit: 'contain',
   }),
 ];
 

@@ -160,12 +160,12 @@ function FallbackMug({
         }
       }
 
-      const drawImageCover = (
+      const drawImageContain = (
         img: HTMLImageElement,
         sectionIndex: number,
         sectionScale: number
       ) => {
-        const baseScale = Math.max(800 / img.width, 800 / img.height)
+        const baseScale = Math.min(800 / img.width, 800 / img.height)
         const drawScale = baseScale * Math.max(sectionScale, 1)
         const drawWidth = img.width * drawScale
         const drawHeight = img.height * drawScale
@@ -186,7 +186,7 @@ function FallbackMug({
           const img = new Image()
           img.crossOrigin = 'anonymous'
           img.onload = () => {
-            drawImageCover(img, index, scales?.[key] ?? 1)
+            drawImageContain(img, index, scales?.[key] ?? 1)
             checkComplete()
           }
           img.onerror = () => {
@@ -233,7 +233,7 @@ function FallbackMug({
         const targetAspect = targetWidth / targetHeight
         const imageAspect = img.width / img.height
         const isFullWrap = mode === 'full-wrap'
-        const effectiveFit = isFullWrap ? 'cover' : fit
+        const effectiveFit = fit
         const coverageScale = Math.max(targetWidth / img.width, targetHeight / img.height)
         const fitScale =
           effectiveFit === 'cover'
@@ -259,7 +259,7 @@ function FallbackMug({
           ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
         }
 
-        if (isFullWrap) {
+        if (isFullWrap && effectiveFit === 'contain') {
           drawCoverImage(coverageScale)
         }
 

@@ -1,5 +1,5 @@
 import { Canvas, useThree } from '@react-three/fiber'
-import { Suspense, useEffect, useRef } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { OrbitControls, ContactShadows } from '@react-three/drei'
 import Mug from './Mug'
 import * as THREE from 'three'
@@ -128,20 +128,44 @@ export default function MugViewer({
   previewRotation = 0,
   previewResetToken = 0,
 }: MugViewerProps) {
+  const [isCompactViewport, setIsCompactViewport] = useState(false)
   const backgroundColor = cupType === 'standard' ? '#2b2828' : '#171717'
   const floorColor = cupType === 'standard' ? '#4a4545' : '#2a2828'
-  const initialCameraPosition = INITIAL_CAMERA_POSITION
-  const initialTarget = INITIAL_CAMERA_TARGET
+  const initialCameraPosition = useMemo<[number, number, number]>(
+    () => (isCompactViewport ? [0.06, 0.17, 1.18] : INITIAL_CAMERA_POSITION),
+    [isCompactViewport]
+  )
+  const initialTarget = useMemo<[number, number, number]>(
+    () => (isCompactViewport ? [0, 0.11, 0] : INITIAL_CAMERA_TARGET),
+    [isCompactViewport]
+  )
   const previewRotationY =
     customImage && artworkMode === 'full-wrap' ? previewRotation : 0.15
+  const cameraFov = isCompactViewport ? 33 : 25
+  const mugScale = isCompactViewport ? 1.34 : 1.78
+  const mugGroupScale: [number, number, number] = isCompactViewport
+    ? [0.82, 1.04, 0.82]
+    : [0.9, 1.2, 0.9]
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)')
+    const updateViewport = () => setIsCompactViewport(mediaQuery.matches)
+
+    updateViewport()
+    mediaQuery.addEventListener('change', updateViewport)
+
+    return () => {
+      mediaQuery.removeEventListener('change', updateViewport)
+    }
+  }, [])
 
   return (
-    <div className="relative mx-auto h-[68vh] min-h-[560px] max-h-[820px] w-full max-w-[760px] overflow-hidden rounded-[24px] border border-white/10 bg-[#121212]" style={{ background: backgroundColor }}>
+    <div className="relative mx-auto h-[58vh] min-h-[390px] max-h-[560px] w-full max-w-[760px] overflow-hidden rounded-[24px] border border-white/10 bg-[#121212] md:h-[68vh] md:min-h-[560px] md:max-h-[820px]" style={{ background: backgroundColor }}>
       <Canvas
         shadows
         camera={{ 
           position: initialCameraPosition, 
-          fov: 25,
+          fov: cameraFov,
           near: 0.05, 
           far: 8 
         }}
@@ -225,9 +249,9 @@ export default function MugViewer({
           <BalancedStudioFloor floorColor={floorColor} />
 
           {/* Mug with material tuning for balanced look */}
-          <group position={[0.035, -0.08, 0]} rotation={[0, previewRotationY, 0]} scale={[0.9, 1.2, 0.9]}>
+          <group position={[0, -0.08, 0]} rotation={[0, previewRotationY, 0]} scale={mugGroupScale}>
             <Mug 
-              scale={1.78}
+              scale={mugScale}
               customImage={customImage} 
               artworkSource={artworkSource}
               customImageFit={customImageFit}
