@@ -629,6 +629,8 @@ function FallbackMug({
                 128,
                 1,
                 true,
+                Math.PI,
+                Math.PI * 2,
               ]}
             />
             <primitive object={shellMaterial} attach="material" />

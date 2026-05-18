@@ -9,6 +9,8 @@ import {
   Move,
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
+  ArrowDown,
   RotateCw,
   Image as ImageIcon,
   X,
@@ -334,7 +336,17 @@ export default function CustomizerPage() {
     setImagePosition({ x: 0, y: 0 });
     setImageRotation(0);
     if (hasWrapArtwork) {
-      setSelectedWrapArtwork((prev) => (prev ? { ...prev, scale: 1 } : prev));
+      setSelectedWrapArtwork((prev) =>
+        prev
+          ? {
+              ...prev,
+              focalX: 0.5,
+              focalY: 0.5,
+              wrapOffsetX: 0,
+              scale: 1,
+            }
+          : prev
+      );
     } else {
       setSectionImageScales((prev) => ({ ...prev, [activeSection]: 1 }));
     }
@@ -358,6 +370,33 @@ export default function CustomizerPage() {
   };
 
   const moveImage = (direction: "up" | "down" | "left" | "right") => {
+    if (hasWrapArtwork) {
+      const wrap = (value: number) => ((value % 1) + 1) % 1;
+      const horizontalStep = 0.025;
+      const verticalStep = 0.025;
+
+      setSelectedWrapArtwork((prev) => {
+        if (!prev) return prev;
+
+        const focalY = prev.focalY ?? 0.5;
+        const wrapOffsetX = prev.wrapOffsetX ?? 0;
+
+        switch (direction) {
+          case "up":
+            return { ...prev, focalY: Math.min(0.75, focalY + verticalStep) };
+          case "down":
+            return { ...prev, focalY: Math.max(0.25, focalY - verticalStep) };
+          case "left":
+            return { ...prev, wrapOffsetX: wrap(wrapOffsetX + horizontalStep) };
+          case "right":
+            return { ...prev, wrapOffsetX: wrap(wrapOffsetX - horizontalStep) };
+          default:
+            return prev;
+        }
+      });
+      return;
+    }
+
     const step = 0.05;
     setImagePosition((prev) => {
       switch (direction) {
@@ -1035,6 +1074,53 @@ export default function CustomizerPage() {
                         onChange={(e) => updateImageScale(parseFloat(e.target.value))}
                         className="w-full accent-primary"
                       />
+                    </div>
+                    <div className="mt-4">
+                      <div className="mb-2 flex items-center justify-between text-xs text-white/60">
+                        <span>Move design</span>
+                        <span>{Math.round(((selectedWrapArtwork?.wrapOffsetX ?? 0) % 1) * 100)}%</span>
+                      </div>
+                      <div className="mx-auto grid w-32 grid-cols-3 gap-2">
+                        <span />
+                        <button
+                          type="button"
+                          onClick={() => moveImage("up")}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary"
+                          aria-label="Move design up"
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </button>
+                        <span />
+                        <button
+                          type="button"
+                          onClick={() => moveImage("left")}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary"
+                          aria-label="Move design left"
+                        >
+                          <ArrowLeft className="h-4 w-4" />
+                        </button>
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] text-[10px] font-bold text-white/45">
+                          POS
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => moveImage("right")}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary"
+                          aria-label="Move design right"
+                        >
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                        <span />
+                        <button
+                          type="button"
+                          onClick={() => moveImage("down")}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary"
+                          aria-label="Move design down"
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </button>
+                        <span />
+                      </div>
                     </div>
                   </div>
                 )}
