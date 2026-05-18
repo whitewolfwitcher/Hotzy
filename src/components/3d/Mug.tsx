@@ -247,7 +247,7 @@ function FallbackMug({
           : Math.max(scaleMultiplier, 0.5)
         const resolvedFocalX = isFullWrap ? focalPoint.x : 0.5
         const resolvedFocalY = isFullWrap ? focalPoint.y : 0.5
-        const drawCoverImage = (drawScale: number) => {
+        const drawWrapImage = (drawScale: number) => {
           const drawWidth = img.width * drawScale
           const drawHeight = img.height * drawScale
           const drawX =
@@ -260,11 +260,26 @@ function FallbackMug({
               : targetY + (targetHeight - drawHeight) * resolvedFocalY
 
           ctx.filter = PRINT_IMAGE_FILTER
-          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+
+          if (isFullWrap && effectiveFit === 'contain' && drawWidth > 0) {
+            let tiledX = drawX
+
+            while (tiledX > targetX) {
+              tiledX -= drawWidth
+            }
+
+            while (tiledX < targetX + targetWidth) {
+              ctx.drawImage(img, tiledX, drawY, drawWidth, drawHeight)
+              tiledX += drawWidth
+            }
+          } else {
+            ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+          }
+
           ctx.filter = 'none'
         }
 
-        drawCoverImage(fitScale * safeScaleMultiplier)
+        drawWrapImage(fitScale * safeScaleMultiplier)
 
         const canvasTexture = new THREE.CanvasTexture(canvas)
         canvasTexture.flipY = true
